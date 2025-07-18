@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">Dosify</string>
-    <string name="web_client_id">YOUR_ACTUAL_WEB_CLIENT_ID</string>  <!-- From Firebase console -->
+    <string name="web_client_id">442282970063-fv9d227q9imcntr9i7tbm1akirltjvml.apps.googleusercontent.com</string>  <!-- From Firebase console -->
 </resources>

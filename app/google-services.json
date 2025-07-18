@@ -12,7 +12,20 @@
           "package_name": "com.xai.dosify"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "442282970063-8odqhnhre690smvohqgjt96mn7gi76ls.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.xai.dosify",
+            "certificate_hash": "a3630aaa4a38b3a57ef21cc767051ed50f87f1e0"
+          }
+        },
+        {
+          "client_id": "442282970063-fv9d227q9imcntr9i7tbm1akirltjvml.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC_NtKClPqRQDtvSdl0iSUQL7F76eCn8K4"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "442282970063-fv9d227q9imcntr9i7tbm1akirltjvml.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
