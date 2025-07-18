@@ -18,7 +18,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "dosify_db")
-            .fallbackToDestructiveMigration() // For dev; replace with migrations later
+            .fallbackToDestructiveMigration(dropAllTables = true) // Explicit param; for dev—use migrations in prod
             .build()
 
     @Provides
