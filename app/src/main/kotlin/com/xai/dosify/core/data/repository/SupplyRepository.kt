@@ -1,25 +1,23 @@
-package com.xai.dosify.core.di
+package com.xai.dosify.core.data.repository
 
-import android.content.Context
-import androidx.room.Room
-import com.xai.dosify.core.data.AppDatabase
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import com.xai.dosify.core.data.dao.SupplyDao
+import com.xai.dosify.core.data.models.Supply
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
 
-@Module
-@InstallIn(SingletonComponent::class)
-object DatabaseModule {
-    @Provides
-    @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
-        return Room.databaseBuilder(
-            context,
-            AppDatabase::class.java,
-            "dosify_db"
-        ).build()  // Add .openHelperFactory for SQLCipher later
-    }
+class SupplyRepository @Inject constructor(
+    private val dao: SupplyDao
+) {
+    suspend fun insert(supply: Supply) = dao.insert(supply)
+
+    suspend fun update(supply: Supply) = dao.update(supply)
+
+    suspend fun delete(supply: Supply) = dao.delete(supply)
+
+    fun getById(id: Long): Flow<Supply?> = dao.getById(id)
+
+    fun getAll(): Flow<List<Supply>> = dao.getAll()
+
+    suspend fun decrementStock(supplyId: Long, amount: Double): Boolean = dao.decrementStock(supplyId, amount) > 0
+
 }
