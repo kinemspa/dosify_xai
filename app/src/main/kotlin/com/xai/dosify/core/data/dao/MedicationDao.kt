@@ -27,5 +27,5 @@ interface MedicationDao {
     fun getAll(): Flow<List<Medication>>
 
     @Query("UPDATE medications SET stock = stock - :amount WHERE id = :medId AND stock >= :amount")
-    suspend fun decrementStock(medId: Long, amount: Double)
+    suspend fun decrementStock(medId: Long, amount: Double): Int
 }

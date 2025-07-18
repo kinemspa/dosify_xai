@@ -27,5 +27,5 @@ interface SupplyDao {
     fun getAll(): Flow<List<Supply>>
 
     @Query("UPDATE supplies SET stock = stock - :amount WHERE id = :supplyId AND stock >= :amount")
-    suspend fun decrementStock(supplyId: Long, amount: Double)
+    suspend fun decrementStock(supplyId: Long, amount: Double): Int
 }

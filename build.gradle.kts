@@ -6,5 +6,6 @@ plugins {
     alias(libs.plugins.hilt.android) apply false
     alias(libs.plugins.room) apply false
     alias(libs.plugins.kotlin.ksp) apply false
+    alias(libs.plugins.google.services) apply false
 
 }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "442282970063",
+    "project_id": "dosifyxai",
+    "storage_bucket": "dosifyxai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:442282970063:android:3c708b23fda43ec27420ba",
+        "android_client_info": {
+          "package_name": "com.xai.dosify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_NtKClPqRQDtvSdl0iSUQL7F76eCn8K4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
