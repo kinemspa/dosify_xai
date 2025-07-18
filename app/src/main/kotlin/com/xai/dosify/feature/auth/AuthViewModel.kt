@@ -9,21 +9,23 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val repo: AuthRepository,
-    private val auth: FirebaseAuth  // Add inject for Flow
+    private val auth: FirebaseAuth
 ) : ViewModel() {
     private val _state = MutableStateFlow(AuthState())
     val state: StateFlow<AuthState> = _state
 
-    val authUser: StateFlow<FirebaseUser?> = auth.authStateChanges().asStateFlow()
+    val authUser: StateFlow<FirebaseUser?> = auth.authStateChanges()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun loginEmail(email: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(loading = true)
@@ -36,6 +38,8 @@ class AuthViewModel @Inject constructor(
         val success = repo.googleLogin(idToken)
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Google login failed" else null)
     }
+
+    fun logout() = repo.logout()
 }
 
 data class AuthState(val loading: Boolean = false, val success: Boolean = false, val error: String? = null)

@@ -16,6 +16,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseUser
+import com.xai.dosify.R
 import kotlinx.coroutines.launch
 
 @Composable
@@ -33,12 +34,12 @@ fun LoginScreen(viewModel: AuthViewModel = hiltViewModel()) {
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (user != null) {
-                Text("Welcome, ${user.displayName}")
-                Button(onClick = { viewModel.repo.logout() }) {  // Access repo via VM if needed; but add logout to VM later
+            user?.let { u ->
+                Text("Welcome, ${u.displayName}")
+                Button(onClick = { viewModel.logout() }) {
                     Text("Logout")
                 }
-            } else {
+            } ?: run {
                 TextField(
                     value = email,
                     onValueChange = { email = it },
@@ -58,7 +59,7 @@ fun LoginScreen(viewModel: AuthViewModel = hiltViewModel()) {
                             try {
                                 val googleIdOption = GetGoogleIdOption.Builder()
                                     .setFilterByAuthorizedAccounts(false)
-                                    .setServerClientId(context.getString(com.xai.dosify.R.string.web_client_id))
+                                    .setServerClientId(context.getString(R.string.web_client_id))
                                     .build()
 
                                 val request = GetCredentialRequest.Builder()
@@ -80,7 +81,7 @@ fun LoginScreen(viewModel: AuthViewModel = hiltViewModel()) {
                                     // Handle invalid credential
                                 }
                             } catch (e: GetCredentialException) {
-                                // Handle error
+                                // Handle error (e.g., show Snackbar)
                             }
                         }
                     }
