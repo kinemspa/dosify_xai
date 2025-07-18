@@ -1,0 +1,1329 @@
+File: app\src\main\kotlin\com\xai\dosify\core\data\dao\DoseLogDao.kt
+```
+package com.xai.dosify.core.data.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import com.xai.dosify.core.data.models.DoseLog
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface DoseLogDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(log: DoseLog)
+
+    @Query("SELECT * FROM dose_logs WHERE scheduleId = :scheduleId ORDER BY takenTime DESC")
+    fun getBySchedule(scheduleId: Long): Flow<List<DoseLog>>
+
+    @Query("SELECT * FROM dose_logs ORDER BY takenTime DESC LIMIT 10")
+    fun getRecent(): Flow<List<DoseLog>>
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\dao\DoseScheduleDao.kt
+```
+package com.xai.dosify.core.data.dao
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import com.xai.dosify.core.data.models.DoseSchedule
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface DoseScheduleDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(schedule: DoseSchedule)
+
+    @Update
+    suspend fun update(schedule: DoseSchedule)
+
+    @Delete
+    suspend fun delete(schedule: DoseSchedule)
+
+    @Query("SELECT * FROM dose_schedules WHERE id = :id")
+    fun getById(id: Long): Flow<DoseSchedule?>
+
+    @Query("SELECT * FROM dose_schedules WHERE medId = :medId")
+    fun getByMedId(medId: Long): Flow<List<DoseSchedule>>
+
+    @Query("SELECT * FROM dose_schedules WHERE isActive = 1")
+    fun getActive(): Flow<List<DoseSchedule>>
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\dao\MedicationDao.kt
+```
+package com.xai.dosify.core.data.dao
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import com.xai.dosify.core.data.models.Medication
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface MedicationDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(medication: Medication)
+
+    @Update
+    suspend fun update(medication: Medication)
+
+    @Delete
+    suspend fun delete(medication: Medication)
+
+    @Query("SELECT * FROM medications WHERE id = :id")
+    fun getById(id: Long): Flow<Medication?>
+
+    @Query("SELECT * FROM medications")
+    fun getAll(): Flow<List<Medication>>
+
+    @Query("UPDATE medications SET stock = stock - :amount WHERE id = :medId AND stock >= :amount")
+    suspend fun decrementStock(medId: Long, amount: Double): Int
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\dao\ReconstitutionDao.kt
+```
+package com.xai.dosify.core.data.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import com.xai.dosify.core.data.models.Reconstitution
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface ReconstitutionDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(reconst: Reconstitution)
+
+    @Update
+    suspend fun update(reconst: Reconstitution)
+
+    @Query("SELECT * FROM reconstitutions WHERE medId = :medId")
+    fun getByMedId(medId: Long): Flow<Reconstitution?>
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\dao\SupplyDao.kt
+```
+package com.xai.dosify.core.data.dao
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import com.xai.dosify.core.data.models.Supply
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface SupplyDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(supply: Supply)
+
+    @Update
+    suspend fun update(supply: Supply)
+
+    @Delete
+    suspend fun delete(supply: Supply)
+
+    @Query("SELECT * FROM supplies WHERE id = :id")
+    fun getById(id: Long): Flow<Supply?>
+
+    @Query("SELECT * FROM supplies")
+    fun getAll(): Flow<List<Supply>>
+
+    @Query("UPDATE supplies SET stock = stock - :amount WHERE id = :supplyId AND stock >= :amount")
+    suspend fun decrementStock(supplyId: Long, amount: Double): Int
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\models\DoseLog.kt
+```
+package com.xai.dosify.core.data.models
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import java.time.LocalDateTime
+
+@Entity(tableName = "dose_logs")
+data class DoseLog(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val scheduleId: Long,
+    val takenTime: LocalDateTime,
+    val amountTaken: Double,
+    val notes: String? = null,
+    val reaction: String? = null
+)
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\models\DoseSchedule.kt
+```
+package com.xai.dosify.core.data.models
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverters
+import com.xai.dosify.core.data.Converters
+import java.time.LocalDate
+import java.time.LocalTime
+
+@Entity(tableName = "dose_schedules")
+@TypeConverters(Converters::class)
+data class DoseSchedule(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val medId: Long,
+    val doseAmount: Double,
+    val unit: String,
+    val frequency: Frequency,
+    val times: List<LocalTime>,
+    val startDate: LocalDate,
+    val endDate: LocalDate? = null,
+    val isActive: Boolean = true,
+    val cycleWeeks: Int? = null,
+    val cycleOffWeeks: Int? = null,
+    val isCycling: Boolean = false,
+    val titrationSteps: List<TitrationStep>? = null
+)
+
+data class TitrationStep(
+    val period: Int,
+    val doseAmount: Double
+)
+
+enum class Frequency {
+    DAILY, WEEKLY, CUSTOM
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\models\medication.kt
+```
+package com.xai.dosify.core.data.models
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "medications")
+data class Medication(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val type: MedType,
+    val strength: Double,
+    val unit: String,
+    val stock: Double,
+    val lowStockThreshold: Double,
+    val reconstitution: Boolean = false
+)
+
+enum class MedType {
+    TABLET, INJECTION, DROPS, OTHER
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\models\Reconstitution.kt
+```
+package com.xai.dosify.core.data.models
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "reconstitutions")
+data class Reconstitution(
+    @PrimaryKey val medId: Long,
+    val powderAmount: Double,
+    val solventVolume: Double,
+    val desiredConcentration: Double? = null,
+    val calculatedVolumePerDose: Double? = null
+)
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\models\Supply.kt
+```
+package com.xai.dosify.core.data.models
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "supplies")
+data class Supply(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val unit: String,
+    val stock: Double,
+    val lowStockThreshold: Double,
+    val linkedMedId: Long? = null
+)
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\repository\AuthRepository.kt
+```
+package com.xai.dosify.core.data.repository
+
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
+import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+
+class AuthRepository @Inject constructor(
+    private val auth: FirebaseAuth
+) {
+    suspend fun emailLogin(email: String, password: String): Boolean = try {
+        auth.signInWithEmailAndPassword(email, password).await() != null
+    } catch (e: Exception) { false }
+
+    suspend fun googleLogin(idToken: String): Boolean = try {
+        auth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null)).await() != null
+    } catch (e: Exception) { false }
+
+    fun logout() = auth.signOut()
+
+    fun currentUser() = auth.currentUser != null
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\repository\DoseLogRepository.kt
+```
+package com.xai.dosify.core.data.repository
+
+import com.xai.dosify.core.data.dao.DoseLogDao
+import com.xai.dosify.core.data.models.DoseLog
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+
+class DoseLogRepository @Inject constructor(
+    private val dao: DoseLogDao
+) {
+    suspend fun insert(log: DoseLog) = dao.insert(log)
+
+    fun getBySchedule(scheduleId: Long): Flow<List<DoseLog>> = dao.getBySchedule(scheduleId)
+
+    fun getRecent(): Flow<List<DoseLog>> = dao.getRecent()
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\repository\DoseScheduleRepository.kt
+```
+package com.xai.dosify.core.data.repository
+
+import com.xai.dosify.core.data.dao.DoseScheduleDao
+import com.xai.dosify.core.data.models.DoseSchedule
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+
+class DoseScheduleRepository @Inject constructor(
+    private val dao: DoseScheduleDao
+) {
+    suspend fun insert(schedule: DoseSchedule) = dao.insert(schedule)
+
+    suspend fun update(schedule: DoseSchedule) = dao.update(schedule)
+
+    suspend fun delete(schedule: DoseSchedule) = dao.delete(schedule)
+
+    fun getById(id: Long): Flow<DoseSchedule?> = dao.getById(id)
+
+    fun getByMedId(medId: Long): Flow<List<DoseSchedule>> = dao.getByMedId(medId)
+
+    fun getActive(): Flow<List<DoseSchedule>> = dao.getActive()
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\repository\MedicationRepository.kt
+```
+package com.xai.dosify.core.data.repository
+
+import com.xai.dosify.core.data.dao.MedicationDao
+import com.xai.dosify.core.data.models.Medication
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+
+class MedicationRepository @Inject constructor(
+    private val dao: MedicationDao
+) {
+    suspend fun insert(medication: Medication) = dao.insert(medication)
+
+    suspend fun update(medication: Medication) = dao.update(medication)
+
+    suspend fun delete(medication: Medication) = dao.delete(medication)
+
+    fun getById(id: Long): Flow<Medication?> = dao.getById(id)
+
+    fun getAll(): Flow<List<Medication>> = dao.getAll()
+
+    suspend fun decrementStock(medId: Long, amount: Double): Boolean = dao.decrementStock(medId, amount) > 0
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\repository\ReconstitutionRepository.kt
+```
+package com.xai.dosify.core.data.repository
+
+import com.xai.dosify.core.data.dao.ReconstitutionDao
+import com.xai.dosify.core.data.models.Reconstitution
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+
+class ReconstitutionRepository @Inject constructor(
+    private val dao: ReconstitutionDao
+) {
+    suspend fun insert(reconst: Reconstitution) = dao.insert(reconst)
+
+    suspend fun update(reconst: Reconstitution) = dao.update(reconst)
+
+    fun getByMedId(medId: Long): Flow<Reconstitution?> = dao.getByMedId(medId)
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\repository\SupplyRepository.kt
+```
+package com.xai.dosify.core.data.repository
+
+import com.xai.dosify.core.data.dao.SupplyDao
+import com.xai.dosify.core.data.models.Supply
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+
+class SupplyRepository @Inject constructor(
+    private val dao: SupplyDao
+) {
+    suspend fun insert(supply: Supply) = dao.insert(supply)
+
+    suspend fun update(supply: Supply) = dao.update(supply)
+
+    suspend fun delete(supply: Supply) = dao.delete(supply)
+
+    fun getById(id: Long): Flow<Supply?> = dao.getById(id)
+
+    fun getAll(): Flow<List<Supply>> = dao.getAll()
+
+    suspend fun decrementStock(supplyId: Long, amount: Double): Boolean = dao.decrementStock(supplyId, amount) > 0
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\AppDatabase.kt
+```
+package com.xai.dosify.core.data
+
+import androidx.room.Database
+import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import com.xai.dosify.core.data.dao.*
+import com.xai.dosify.core.data.models.*
+
+@Database(entities = [Medication::class, DoseSchedule::class, DoseLog::class, Supply::class, Reconstitution::class], version = 1, exportSchema = true)
+@TypeConverters(Converters::class)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun medicationDao(): MedicationDao
+    abstract fun doseScheduleDao(): DoseScheduleDao
+    abstract fun doseLogDao(): DoseLogDao
+    abstract fun supplyDao(): SupplyDao
+    abstract fun reconstitutionDao(): ReconstitutionDao
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\Converters.kt
+```
+package com.xai.dosify.core.data
+
+import androidx.room.TypeConverter
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import com.xai.dosify.core.data.models.TitrationStep
+
+class Converters {
+    private val timeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
+    private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+    private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
+    @TypeConverter
+    fun fromLocalTimeList(times: List<LocalTime>): String = times.joinToString(",") { it.format(timeFormatter) }
+
+    @TypeConverter
+    fun toLocalTimeList(timesStr: String): List<LocalTime> = timesStr.split(",").map { LocalTime.parse(it, timeFormatter) }
+
+    @TypeConverter
+    fun fromLocalDate(date: LocalDate): String = date.format(dateFormatter)
+
+    @TypeConverter
+    fun toLocalDate(dateStr: String): LocalDate = LocalDate.parse(dateStr, dateFormatter)
+
+    @TypeConverter
+    fun fromLocalDateTime(dateTime: LocalDateTime): String = dateTime.format(dateTimeFormatter)
+
+    @TypeConverter
+    fun toLocalDateTime(dateTimeStr: String): LocalDateTime = LocalDateTime.parse(dateTimeStr, dateTimeFormatter)
+
+    private val gson = Gson()
+
+    @TypeConverter
+    fun fromTitrationSteps(steps: List<TitrationStep>?): String? = gson.toJson(steps)
+
+    @TypeConverter
+    fun toTitrationSteps(stepsStr: String?): List<TitrationStep>? {
+        if (stepsStr == null) return null
+        val type = object : TypeToken<List<TitrationStep>>() {}.type
+        return gson.fromJson(stepsStr, type)
+    }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\di\DatabaseModule.kt
+```
+package com.xai.dosify.core.di
+
+import android.content.Context
+import androidx.room.Room
+import com.xai.dosify.core.data.AppDatabase
+import com.xai.dosify.core.data.dao.*
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule {
+    @Provides
+    @Singleton
+    fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
+        Room.databaseBuilder(context, AppDatabase::class.java, "dosify_db")
+            .fallbackToDestructiveMigration() // For dev; replace with migrations later
+            .build()
+
+    @Provides
+    fun provideMedicationDao(db: AppDatabase): MedicationDao = db.medicationDao()
+    @Provides
+    fun provideDoseScheduleDao(db: AppDatabase): DoseScheduleDao = db.doseScheduleDao()
+    @Provides
+    fun provideDoseLogDao(db: AppDatabase): DoseLogDao = db.doseLogDao()
+    @Provides
+    fun provideSupplyDao(db: AppDatabase): SupplyDao = db.supplyDao()
+    @Provides
+    fun provideReconstitutionDao(db: AppDatabase): ReconstitutionDao = db.reconstitutionDao()
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\di\FirebaseModule.kt
+```
+package com.xai.dosify.core.di
+
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object FirebaseModule {
+    @Provides
+    @Singleton
+    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\ui\theme\Color.kt
+```
+package com.xai.dosify.core.ui.theme
+
+import androidx.compose.ui.graphics.Color
+
+val Purple80 = Color(0xFFD0BCFF)
+val PurpleGrey80 = Color(0xFFCCC2DC)
+val Pink80 = Color(0xFFEFB8C8)
+
+val Purple40 = Color(0xFF6650a4)
+val PurpleGrey40 = Color(0xFF625b71)
+val Pink40 = Color(0xFF7D5260)
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\ui\theme\Theme.kt
+```
+package com.xai.dosify.core.ui.theme
+
+import android.app.Activity
+import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+
+private val DarkColorScheme = darkColorScheme(
+    primary = Purple80,
+    secondary = PurpleGrey80,
+    tertiary = Pink80
+)
+
+private val LightColorScheme = lightColorScheme(
+    primary = Purple40,
+    secondary = PurpleGrey40,
+    tertiary = Pink40
+
+    /* Other default colors to override
+    background = Color(0xFFFFFBFE),
+    surface = Color(0xFFFFFBFE),
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onTertiary = Color.White,
+    onBackground = Color(0xFF1C1B1F),
+    onSurface = Color(0xFF1C1B1F),
+    */
+)
+
+@Composable
+fun DosifyTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    // Dynamic color is available on Android 12+
+    dynamicColor: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography,
+        content = content
+    )
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\ui\theme\Type.kt
+```
+package com.xai.dosify.core.ui.theme
+
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+
+// Set of Material typography styles to start with
+val Typography = Typography(
+    bodyLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp
+    )
+    /* Other default text styles to override
+    titleLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Normal,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
+        letterSpacing = 0.sp
+    ),
+    labelSmall = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Medium,
+        fontSize = 11.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp
+    )
+    */
+)
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\ui\MainActivity.kt
+```
+package com.xai.dosify.core.ui
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.xai.dosify.core.ui.theme.DosifyTheme
+import com.xai.dosify.feature.auth.LoginScreen
+import dagger.hilt.android.AndroidEntryPoint
+
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            DosifyTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    LoginScreen()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun Greeting(name: String, modifier: Modifier = Modifier) {
+    Text(
+        text = "Hello $name!",
+        modifier = modifier
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun GreetingPreview() {
+    DosifyTheme {
+        Greeting("Dosify Ready")
+    }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\utils\BiometricUtils.kt
+```
+package com.xai.dosify.core.utils
+
+import android.content.Context
+import androidx.biometric.BiometricPrompt
+import androidx.fragment.app.FragmentActivity
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+
+object BiometricUtils {
+    fun authenticate(activity: FragmentActivity): Flow<Boolean> = callbackFlow {
+        val prompt = BiometricPrompt(activity, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                trySend(true)
+            }
+            override fun onAuthenticationFailed() {
+                trySend(false)
+            }
+        })
+        prompt.authenticate(BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Biometric Login")
+            .setSubtitle("Use fingerprint/face")
+            .setNegativeButtonText("Cancel")
+            .build())
+        awaitClose { }
+    }
+
+    fun getPassphrase(context: Context): String = "secure_passphrase"  // Replace with real (e.g., KeyStore encrypted from biometrics)
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\DosifyApplication.kt
+```
+package com.xai.dosify.core
+
+import android.app.Application
+import dagger.hilt.android.HiltAndroidApp
+
+@HiltAndroidApp
+class DosifyApplication : Application()
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\auth\di\AuthModule.kt
+```
+@Module
+@InstallIn(ViewModelComponent::class)
+object AuthModule {
+
+    @Provides
+    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    fun provideCredentialManager(@ApplicationContext context: Context): CredentialManager =
+        CredentialManager.create(context)
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\auth\AuthViewModel.kt
+```
+package com.xai.dosify.feature.auth
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.xai.dosify.core.data.repository.AuthRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val repo: AuthRepository
+) : ViewModel() {
+    private val _state = MutableStateFlow(AuthState())
+    val state: StateFlow<AuthState> = _state
+
+    fun loginEmail(email: String, password: String) = viewModelScope.launch {
+        _state.value = _state.value.copy(loading = true)
+        val success = repo.emailLogin(email, password)
+        _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Login failed" else null)
+    }
+
+    fun loginGoogle(idToken: String) = viewModelScope.launch {
+        _state.value = _state.value.copy(loading = true)
+        val success = repo.googleLogin(idToken)
+        _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Google login failed" else null)
+    }
+}
+
+data class AuthState(val loading: Boolean = false, val success: Boolean = false, val error: String? = null)
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\auth\LoginScreen.kt
+```
+package com.xai.dosify.feature.auth
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+
+@Composable
+fun LoginScreen(viewModel: AuthViewModel = hiltViewModel()) {
+    val state by viewModel.state.collectAsState()
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") }
+            )
+            TextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") }
+            )
+            Button(onClick = { viewModel.loginEmail(email, password) }) {
+                Text("Login")
+            }
+            Button(onClick = { /* TODO: Google sign-in */ }) {
+                Text("Google Login")
+            }
+            if (state.loading) Text("Loading...")
+            state.error?.let { Text(it) }
+            if (state.success) Text("Logged in")
+        }
+    }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\auth\LoginViewModel.kt
+```
+@HiltViewModel
+class LoginViewModel @Inject constructor(
+    private val auth: FirebaseAuth
+) : ViewModel() {
+
+    val authState: StateFlow<FirebaseUser?> = auth.authStateChanges().asStateFlow()
+
+    suspend fun signInWithGoogleIdToken(idToken: String): Result<FirebaseUser> {
+        return try {
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            val result = auth.signInWithCredential(credential).await()
+            Result.success(result.user!!)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun signOut() {
+        auth.signOut()
+    }
+}
+
+// Extension (add to a utils/Extensions.kt if not in feature/auth/utils/)
+fun FirebaseAuth.authStateChanges(): Flow<FirebaseUser?> = callbackFlow {
+    val listener = FirebaseAuth.AuthStateListener { auth ->
+        trySend(auth.currentUser)
+    }
+    addAuthStateListener(listener)
+    awaitClose { removeAuthStateListener(listener) }
+}
+```
+---
+File: app\src\main\res\drawable\ic_launcher_background.xml
+```
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#3DDC84"
+        android:pathData="M0,0h108v108h-108z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M9,0L9,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,0L19,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M29,0L29,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M39,0L39,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M49,0L49,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M59,0L59,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M69,0L69,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M79,0L79,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M89,0L89,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M99,0L99,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,9L108,9"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,19L108,19"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,29L108,29"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,39L108,39"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,49L108,49"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,59L108,59"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,69L108,69"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,79L108,79"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,89L108,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,99L108,99"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,29L89,29"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,39L89,39"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,49L89,49"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,59L89,59"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,69L89,69"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,79L89,79"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M29,19L29,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M39,19L39,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M49,19L49,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M59,19L59,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M69,19L69,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M79,19L79,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+</vector>
+```
+---
+File: app\src\main\res\drawable\ic_launcher_foreground.xml
+```
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M31,63.928c0,0 6.4,-11 12.1,-13.1c7.2,-2.6 26,-1.4 26,-1.4l38.1,38.1L107,108.928l-32,-1L31,63.928z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endX="85.84757"
+                android:endY="92.4963"
+                android:startX="42.9492"
+                android:startY="49.59793"
+                android:type="linear">
+                <item
+                    android:color="#44000000"
+                    android:offset="0.0" />
+                <item
+                    android:color="#00000000"
+                    android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="nonZero"
+        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
+        android:strokeWidth="1"
+        android:strokeColor="#00000000" />
+</vector>
+```
+---
+File: app\src\main\res\mipmap-anydpi-v26\ic_launcher.xml
+```
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>
+```
+---
+File: app\src\main\res\mipmap-anydpi-v26\ic_launcher_round.xml
+```
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>
+```
+---
+File: app\src\main\res\values\colors.xml
+```
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>
+```
+---
+File: app\src\main\res\values\strings.xml
+```
+<resources>
+    <string name="app_name">Dosify</string>
+    <string name="web_client_id">YOUR_WEB_CLIENT_ID_FROM_FIREBASE</string>
+</resources>
+```
+---
+File: app\src\main\res\values\themes.xml
+```
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.Dosify" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
+```
+---
+File: app\src\main\res\xml\backup_rules.xml
+```
+<?xml version="1.0" encoding="utf-8"?><!--
+   Sample backup rules file; uncomment and customize as necessary.
+   See https://developer.android.com/guide/topics/data/autobackup
+   for details.
+   Note: This file is ignored for devices older than API 31
+   See https://developer.android.com/about/versions/12/backup-restore
+-->
+<full-backup-content>
+    <!--
+   <include domain="sharedpref" path="."/>
+   <exclude domain="sharedpref" path="device.xml"/>
+-->
+</full-backup-content>
+```
+---
+File: app\src\main\res\xml\data_extraction_rules.xml
+```
+<?xml version="1.0" encoding="utf-8"?><!--
+   Sample data extraction rules file; uncomment and customize as necessary.
+   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
+   for details.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- TODO: Use <include> and <exclude> to control what is backed up.
+        <include .../>
+        <exclude .../>
+        -->
+    </cloud-backup>
+    <!--
+    <device-transfer>
+        <include .../>
+        <exclude .../>
+    </device-transfer>
+    -->
+</data-extraction-rules>
+```
+---
+File: app\src\main\AndroidManifest.xml
+```
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:name=".core.DosifyApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Dosify">
+        <activity
+            android:name=".core.ui.MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Dosify">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
+```
+---
+Directory not found: core
+Directory not found: feature
+File: build.gradle.kts
+```
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+plugins {
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.hilt.android) apply false
+    alias(libs.plugins.room) apply false
+    alias(libs.plugins.kotlin.ksp) apply false
+    alias(libs.plugins.google.services) apply false
+
+}
+```
+---
+File: settings.gradle.kts
+```
+pluginManagement {
+    repositories {
+        google {
+            content {
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+                includeGroupByRegex("androidx.*")
+            }
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+
+rootProject.name = "Dosify"
+include(":app")
+```
+---
+File: gradle.properties
+```
+# Project-wide Gradle settings.
+# IDE (e.g. Android Studio) users:
+# Gradle settings configured through the IDE *will override*
+# any settings specified in this file.
+# For more details on how to configure your build environment visit
+# http://www.gradle.org/docs/current/userguide/build_environment.html
+# Specifies the JVM arguments used for the daemon process.
+# The setting is particularly useful for tweaking memory settings.
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+# When configured, Gradle will run in incubating parallel mode.
+# This option should only be used with decoupled projects. For more details, visit
+# https://developer.android.com/r/tools/gradle-multi-project-decoupled-projects
+# org.gradle.parallel=true
+# AndroidX package structure to make it clearer which packages are bundled with the
+# Android operating system, and which are packaged with your app's APK
+# https://developer.android.com/topic/libraries/support-library/androidx-rn
+android.useAndroidX=true
+# Kotlin code style for this project: "official" or "obsolete":
+kotlin.code.style=official
+# Enables namespacing of each library's R class so that its R class includes only the
+# resources declared in the library itself and none from the library's dependencies,
+# thereby reducing the size of the R class for that library
+android.nonTransitiveRClass=true
+```
+---
+File: app/google-services.json
+```
+# Note: Redact API keys before pasting
+{
+  "project_info": {
+    "project_number": "442282970063",
+    "project_id": "dosifyxai",
+    "storage_bucket": "dosifyxai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:442282970063:android:3c708b23fda43ec27420ba",
+        "android_client_info": {
+          "package_name": "com.xai.dosify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_NtKClPqRQDtvSdl0iSUQL7F76eCn8K4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+```
+---
