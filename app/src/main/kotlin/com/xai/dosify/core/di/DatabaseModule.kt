@@ -20,6 +20,6 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "dosify_db"
-        ).build()  // SQLCipher integration later
+        ).build()  // SQLCipher later
     }
 }
