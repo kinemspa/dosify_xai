@@ -19,5 +19,4 @@ class SupplyRepository @Inject constructor(
     fun getAll(): Flow<List<Supply>> = dao.getAll()
 
     suspend fun decrementStock(supplyId: Long, amount: Double): Boolean = dao.decrementStock(supplyId, amount) > 0
-
 }

@@ -19,5 +19,4 @@ class MedicationRepository @Inject constructor(
     fun getAll(): Flow<List<Medication>> = dao.getAll()
 
     suspend fun decrementStock(medId: Long, amount: Double): Boolean = dao.decrementStock(medId, amount) > 0
-
 }
