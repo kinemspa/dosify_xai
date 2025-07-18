@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">Dosify</string>
-    <string name="web_client_id">YOUR_WEB_CLIENT_ID_FROM_FIREBASE</string>
+    <string name="web_client_id">YOUR_ACTUAL_WEB_CLIENT_ID</string>  <!-- From Firebase console -->
 </resources>
