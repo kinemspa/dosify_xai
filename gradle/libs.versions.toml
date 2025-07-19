@@ -7,9 +7,10 @@ compose = "1.6.1"  # Compose UI
 compose-material3 = "1.2.1"  # Material3
 compose-compiler = "2.2.0"  # Matches Kotlin
 coreKtx = "1.16.0"
-google-services = "4.4.2"  # Latest as of July 2025
+google-services = "4.4.3"  # Latest as of July 2025
 junit = "4.13.2"
 junitVersion = "1.2.1"
+hiltWork = "1.2.0"  # New
 espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.9.2"
 hilt = "2.57"  # Hilt (updated)
@@ -53,6 +54,8 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version = "1.2.0" }
+hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
+hilt-work-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltWork" }
 
 # Room
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }

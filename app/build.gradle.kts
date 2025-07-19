@@ -71,6 +71,8 @@ dependencies {
     implementation(libs.room.runtime)
     ksp(libs.room.compiler)
     implementation(libs.room.ktx)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
 
     // Firebase
     implementation(platform(libs.firebase.bom))

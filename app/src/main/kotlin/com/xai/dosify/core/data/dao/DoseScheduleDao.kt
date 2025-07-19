@@ -28,4 +28,7 @@ interface DoseScheduleDao {
 
     @Query("SELECT * FROM dose_schedules WHERE isActive = 1")
     fun getActive(): Flow<List<DoseSchedule>>
+
+    @Query("SELECT * FROM dose_schedules")
+    fun getAll(): Flow<List<DoseSchedule>>
 }

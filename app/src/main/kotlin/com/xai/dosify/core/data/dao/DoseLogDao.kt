@@ -17,4 +17,7 @@ interface DoseLogDao {
 
     @Query("SELECT * FROM dose_logs ORDER BY takenTime DESC LIMIT 10")
     fun getRecent(): Flow<List<DoseLog>>
+
+    @Query("SELECT * FROM dose_logs")
+    fun getAll(): Flow<List<DoseLog>>
 }

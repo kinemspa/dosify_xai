@@ -18,4 +18,7 @@ interface ReconstitutionDao {
 
     @Query("SELECT * FROM reconstitutions WHERE medId = :medId")
     fun getByMedId(medId: Long): Flow<Reconstitution?>
+
+    @Query("SELECT * FROM reconstitutions")
+    fun getAll(): Flow<List<Reconstitution>>
 }
