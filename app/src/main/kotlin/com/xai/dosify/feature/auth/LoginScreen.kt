@@ -20,7 +20,10 @@ import com.xai.dosify.R
 import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(viewModel: AuthViewModel = hiltViewModel()) {
+fun LoginScreen(
+    viewModel: AuthViewModel = hiltViewModel(),
+    onLoginSuccess: () -> Unit  // Add nav callback
+) {
     val state by viewModel.state.collectAsState()
     val user by viewModel.authUser.collectAsState()
     var email by remember { mutableStateOf("") }
@@ -29,6 +32,11 @@ fun LoginScreen(viewModel: AuthViewModel = hiltViewModel()) {
     val credentialManager = remember { CredentialManager.create(context) }
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Override success to nav
+    LaunchedEffect(state.success) {
+        if (state.success) onLoginSuccess()
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -61,7 +69,7 @@ fun LoginScreen(viewModel: AuthViewModel = hiltViewModel()) {
                             coroutineScope.launch {
                                 try {
                                     val googleIdOption = GetGoogleIdOption.Builder()
-                                        .setFilterByAuthorizedAccounts(true)  // First try authorized
+                                        .setFilterByAuthorizedAccounts(true)
                                         .setServerClientId(context.getString(R.string.web_client_id))
                                         .build()
 
@@ -74,9 +82,8 @@ fun LoginScreen(viewModel: AuthViewModel = hiltViewModel()) {
                                         context = context
                                     )
 
-                                    handleCredential(result, viewModel)  // Extract to func
+                                    handleCredential(result, viewModel)
                                 } catch (e: GetCredentialException) {
-                                    // Try without filter if no authorized
                                     try {
                                         val googleIdOptionFallback = GetGoogleIdOption.Builder()
                                             .setFilterByAuthorizedAccounts(false)

@@ -1,11 +1,11 @@
 package com.xai.dosify.core.data.repository
 
 import com.xai.dosify.core.data.dao.MedicationDao
-import com.xai.dosify.core.data.models.Medication
-import com.google.firebase.firestore.FirebaseFirestore
 import com.xai.dosify.core.data.dao.ReconstitutionDao
+import com.xai.dosify.core.data.models.Medication
 import com.xai.dosify.core.data.models.Reconstitution
 import com.xai.dosify.feature.advanced.utils.ReconstitutionUtils
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 class MedicationRepository @Inject constructor(
     private val dao: MedicationDao,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
     private val reconstDao: ReconstitutionDao
 ) {
     suspend fun insert(medication: Medication) = dao.insert(medication)
@@ -43,6 +43,7 @@ class MedicationRepository @Inject constructor(
             }
         }
     }
+
     suspend fun saveWithReconstitution(med: Medication, powder: Double, solvent: Double) {
         dao.insert(med)
         val conc = ReconstitutionUtils.calculateConcentration(powder, solvent)
