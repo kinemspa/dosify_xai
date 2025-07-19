@@ -79,6 +79,8 @@ dependencies {
     implementation(libs.firebase.messaging.ktx)
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation("com.google.firebase:firebase-auth")
+    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.work.runtime.ktx)
 
     // Credential Manager for Google Sign-In
     implementation("androidx.credentials:credentials:1.3.0")
