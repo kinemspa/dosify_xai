@@ -40,3 +40,4 @@ tmp/
 
 # Secrets
 google-services.json  # Add if sensitive
+app/google-services.json

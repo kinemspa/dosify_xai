@@ -1,4 +1,4 @@
-package com.xai.dosify.feature.med.viewmodel
+package com.xai.dosify.feature.advanced.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,7 +17,7 @@ class MedViewModel @Inject constructor(
         repo.insert(med)
     }
 
-    fun saveWithReconst(med: Medication, powder: Double, solvent: Double) = viewModelScope.launch {
+    fun saveWithReconstitution(med: Medication, powder: Double, solvent: Double) = viewModelScope.launch {
         repo.saveWithReconstitution(med, powder, solvent)
     }
 }

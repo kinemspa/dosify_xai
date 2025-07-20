@@ -3,12 +3,7 @@ package com.xai.dosify.feature.advanced.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,8 +14,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xai.dosify.core.data.models.MedType
 import com.xai.dosify.core.data.models.Medication
-import com.xai.dosify.feature.advanced.viewmodel.MedViewModel
+import com.xai.dosify.feature.med.viewmodel.MedViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)  // Add for experimental APIs
 @Composable
 fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
     var name by remember { mutableStateOf("") }
@@ -89,7 +85,7 @@ fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
                 reconstitution = type == MedType.INJECTION
             )
             if (med.reconstitution) {
-                viewModel.saveWithReconst(med, powder.toDoubleOrNull() ?: 0.0, solvent.toDoubleOrNull() ?: 0.0)
+                viewModel.saveWithReconstitution(med, powder.toDoubleOrNull() ?: 0.0, solvent.toDoubleOrNull() ?: 0.0)  // Matches VM
             } else {
                 viewModel.insert(med)
             }
