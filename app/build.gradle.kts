@@ -79,15 +79,15 @@ dependencies {
     implementation(libs.firebase.auth.ktx)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.messaging.ktx)
-    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
-    implementation("com.google.firebase:firebase-auth")
+    implementation(platform(libs.firebase.bom.v3312))
+    implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.work.runtime.ktx)
 
     // Credential Manager for Google Sign-In
-    implementation("androidx.credentials:credentials:1.3.0")
-    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
@@ -103,6 +103,8 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.billing.ktx)
     implementation(libs.gson)
+    implementation (libs.zetetic.android.database.sqlcipher)
+
 
     // Testing
     testImplementation(libs.junit)

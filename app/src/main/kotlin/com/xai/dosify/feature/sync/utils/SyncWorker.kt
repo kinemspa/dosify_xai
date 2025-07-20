@@ -9,6 +9,7 @@ import com.xai.dosify.core.data.repository.*
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import timber.log.Timber
+import java.util.Locale
 
 @HiltWorker
 class SyncWorker @AssistedInject constructor(
@@ -19,12 +20,16 @@ class SyncWorker @AssistedInject constructor(
     private val logRepo: DoseLogRepository,
     private val supplyRepo: SupplyRepository,
     private val reconstRepo: ReconstitutionRepository,
-    private val profileRepo: ProfileRepository,  // Add
+    private val profileRepo: ProfileRepository,
     private val auth: FirebaseAuth
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         Timber.d("SyncWorker started")
+        if (Locale.getDefault().country.equals("CN", ignoreCase = true)) {
+            Timber.w("Firebase disabled in China - local mode only")
+            return Result.success() // Local mode, no sync
+        }
         val userId = auth.currentUser?.uid ?: run {
             Timber.w("No userId - sync failed")
             return Result.failure()
@@ -35,7 +40,7 @@ class SyncWorker @AssistedInject constructor(
             logRepo.syncWithFirestore(userId)
             supplyRepo.syncWithFirestore(userId)
             reconstRepo.syncWithFirestore(userId)
-            profileRepo.syncWithFirestore(userId)  // Add
+            profileRepo.syncWithFirestore(userId)
             Timber.d("Sync success")
             return Result.success()
         } catch (e: Exception) {
