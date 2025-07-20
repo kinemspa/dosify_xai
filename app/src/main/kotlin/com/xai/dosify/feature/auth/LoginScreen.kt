@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
-    onLoginSuccess: () -> Unit  // Add nav callback
+    onLoginSuccess: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val user by viewModel.authUser.collectAsState()
@@ -33,9 +33,9 @@ fun LoginScreen(
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Override success to nav
-    LaunchedEffect(state.success) {
-        if (state.success) onLoginSuccess()
+    // Auto-nav on logged-in (persistent or new)
+    LaunchedEffect(user) {
+        if (user != null) onLoginSuccess()
     }
 
     Scaffold(
@@ -45,12 +45,12 @@ fun LoginScreen(
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                user?.let { u ->
-                    Text("Welcome, ${u.displayName}")
+                if (user != null) {
+                    Text("Welcome, ${user!!.displayName}")
                     Button(onClick = { viewModel.logout() }) {
                         Text("Logout")
                     }
-                } ?: run {
+                } else {
                     TextField(
                         value = email,
                         onValueChange = { email = it },
