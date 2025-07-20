@@ -4,7 +4,6 @@ import android.content.Context
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.Purchase
-import com.android.billingclient.api.PurchasesUpdatedListener
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -20,7 +19,7 @@ object IapModule {
     @Singleton
     fun provideBillingClient(@ApplicationContext context: Context): BillingClient =
         BillingClient.newBuilder(context)
-            .setListener { billingResult: BillingResult, purchases: List<Purchase>? ->  // Fix: Add params
+            .setListener { billingResult: BillingResult, purchases: List<Purchase>? ->
                 // Handle purchase updates
             }
             .enablePendingPurchases()
