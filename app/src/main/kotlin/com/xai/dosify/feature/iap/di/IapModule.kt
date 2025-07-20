@@ -3,6 +3,7 @@ package com.xai.dosify.feature.iap.di
 import android.content.Context
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingResult
+import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.Purchase
 import dagger.Module
 import dagger.Provides
@@ -22,6 +23,6 @@ object IapModule {
             .setListener { billingResult: BillingResult, purchases: List<Purchase>? ->
                 // Handle purchase updates
             }
-            .enablePendingPurchases()
+            .enablePendingPurchases(PendingPurchasesParams.newBuilder().enablePrepaidPlans().build())  // Fix: Add param for 8.0.0
             .build()
 }

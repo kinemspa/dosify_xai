@@ -19,6 +19,9 @@ interface DoseLogDao {
 
     @Query("SELECT * FROM dose_logs ORDER BY takenTime DESC LIMIT 10")
     fun getRecent(): Flow<List<DoseLog>>
+
+    @Query("SELECT * FROM dose_logs")
+    fun getAll(): Flow<List<DoseLog>>
 }
 ```
 ---
@@ -54,6 +57,9 @@ interface DoseScheduleDao {
 
     @Query("SELECT * FROM dose_schedules WHERE isActive = 1")
     fun getActive(): Flow<List<DoseSchedule>>
+
+    @Query("SELECT * FROM dose_schedules")
+    fun getAll(): Flow<List<DoseSchedule>>
 }
 ```
 ---
@@ -92,6 +98,30 @@ interface MedicationDao {
 }
 ```
 ---
+File: app\src\main\kotlin\com\xai\dosify\core\data\dao\ProfileDao.kt
+```
+package com.xai.dosify.core.data.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import com.xai.dosify.core.data.models.Profile
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface ProfileDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(profile: Profile)
+
+    @Query("SELECT * FROM profiles")
+    fun getAll(): Flow<List<Profile>>
+
+    @Query("SELECT * FROM profiles WHERE isPremium = 1 LIMIT 1")
+    fun getPremium(): Flow<Profile?>
+}
+```
+---
 File: app\src\main\kotlin\com\xai\dosify\core\data\dao\ReconstitutionDao.kt
 ```
 package com.xai.dosify.core.data.dao
@@ -114,6 +144,9 @@ interface ReconstitutionDao {
 
     @Query("SELECT * FROM reconstitutions WHERE medId = :medId")
     fun getByMedId(medId: Long): Flow<Reconstitution?>
+
+    @Query("SELECT * FROM reconstitutions")
+    fun getAll(): Flow<List<Reconstitution>>
 }
 ```
 ---
@@ -158,14 +191,16 @@ package com.xai.dosify.core.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.google.firebase.firestore.IgnoreExtraProperties
 import java.time.LocalDateTime
 
+@IgnoreExtraProperties
 @Entity(tableName = "dose_logs")
 data class DoseLog(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val scheduleId: Long,
-    val takenTime: LocalDateTime,
-    val amountTaken: Double,
+    val scheduleId: Long = 0,
+    val takenTime: LocalDateTime = LocalDateTime.now(),
+    val amountTaken: Double = 0.0,
     val notes: String? = null,
     val reaction: String? = null
 )
@@ -179,19 +214,21 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import com.xai.dosify.core.data.Converters
+import com.google.firebase.firestore.IgnoreExtraProperties
 import java.time.LocalDate
 import java.time.LocalTime
 
+@IgnoreExtraProperties
 @Entity(tableName = "dose_schedules")
 @TypeConverters(Converters::class)
 data class DoseSchedule(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val medId: Long,
-    val doseAmount: Double,
-    val unit: String,
-    val frequency: Frequency,
-    val times: List<LocalTime>,
-    val startDate: LocalDate,
+    val medId: Long = 0,
+    val doseAmount: Double = 0.0,
+    val unit: String = "",
+    val frequency: Frequency = Frequency.DAILY,
+    val times: List<LocalTime> = emptyList(),
+    val startDate: LocalDate = LocalDate.now(),
     val endDate: LocalDate? = null,
     val isActive: Boolean = true,
     val cycleWeeks: Int? = null,
@@ -201,8 +238,8 @@ data class DoseSchedule(
 )
 
 data class TitrationStep(
-    val period: Int,
-    val doseAmount: Double
+    val period: Int = 0,
+    val doseAmount: Double = 0.0
 )
 
 enum class Frequency {
@@ -216,16 +253,18 @@ package com.xai.dosify.core.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.google.firebase.firestore.IgnoreExtraProperties
 
+@IgnoreExtraProperties
 @Entity(tableName = "medications")
 data class Medication(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val name: String,
-    val type: MedType,
-    val strength: Double,
-    val unit: String,
-    val stock: Double,
-    val lowStockThreshold: Double,
+    val name: String = "",
+    val type: MedType = MedType.OTHER,
+    val strength: Double = 0.0,
+    val unit: String = "",
+    val stock: Double = 0.0,
+    val lowStockThreshold: Double = 0.0,
     val reconstitution: Boolean = false
 )
 
@@ -234,18 +273,37 @@ enum class MedType {
 }
 ```
 ---
+File: app\src\main\kotlin\com\xai\dosify\core\data\models\Profile.kt
+```
+package com.xai.dosify.core.data.models
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import com.google.firebase.firestore.IgnoreExtraProperties
+
+@IgnoreExtraProperties
+@Entity(tableName = "profiles")
+data class Profile(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String = "",
+    val isPremium: Boolean = false  // From IAP check
+)
+```
+---
 File: app\src\main\kotlin\com\xai\dosify\core\data\models\Reconstitution.kt
 ```
 package com.xai.dosify.core.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.google.firebase.firestore.IgnoreExtraProperties
 
+@IgnoreExtraProperties
 @Entity(tableName = "reconstitutions")
 data class Reconstitution(
-    @PrimaryKey val medId: Long,
-    val powderAmount: Double,
-    val solventVolume: Double,
+    @PrimaryKey val medId: Long = 0,
+    val powderAmount: Double = 0.0,
+    val solventVolume: Double = 0.0,
     val desiredConcentration: Double? = null,
     val calculatedVolumePerDose: Double? = null
 )
@@ -257,14 +315,16 @@ package com.xai.dosify.core.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.google.firebase.firestore.IgnoreExtraProperties
 
+@IgnoreExtraProperties
 @Entity(tableName = "supplies")
 data class Supply(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val name: String,
-    val unit: String,
-    val stock: Double,
-    val lowStockThreshold: Double,
+    val name: String = "",
+    val unit: String = "",
+    val stock: Double = 0.0,
+    val lowStockThreshold: Double = 0.0,
     val linkedMedId: Long? = null
 )
 ```
@@ -301,17 +361,37 @@ package com.xai.dosify.core.data.repository
 
 import com.xai.dosify.core.data.dao.DoseLogDao
 import com.xai.dosify.core.data.models.DoseLog
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class DoseLogRepository @Inject constructor(
-    private val dao: DoseLogDao
+    private val dao: DoseLogDao,
+    private val firestore: FirebaseFirestore
 ) {
     suspend fun insert(log: DoseLog) = dao.insert(log)
 
     fun getBySchedule(scheduleId: Long): Flow<List<DoseLog>> = dao.getBySchedule(scheduleId)
 
     fun getRecent(): Flow<List<DoseLog>> = dao.getRecent()
+
+    suspend fun syncWithFirestore(userId: String) {
+        val localLogs = dao.getAll().first()  // Assume add getAll() to Dao
+        val remoteCollection = firestore.collection("users/$userId/logs")
+
+        localLogs.forEach { log ->
+            remoteCollection.document(log.id.toString()).set(log).await()
+        }
+
+        val remoteLogs = remoteCollection.get().await().toObjects(DoseLog::class.java)
+        remoteLogs.forEach { remote ->
+            if (!localLogs.any { it.id == remote.id }) {
+                dao.insert(remote)
+            }
+        }
+    }
 }
 ```
 ---
@@ -321,11 +401,15 @@ package com.xai.dosify.core.data.repository
 
 import com.xai.dosify.core.data.dao.DoseScheduleDao
 import com.xai.dosify.core.data.models.DoseSchedule
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class DoseScheduleRepository @Inject constructor(
-    private val dao: DoseScheduleDao
+    private val dao: DoseScheduleDao,
+    private val firestore: FirebaseFirestore
 ) {
     suspend fun insert(schedule: DoseSchedule) = dao.insert(schedule)
 
@@ -338,6 +422,22 @@ class DoseScheduleRepository @Inject constructor(
     fun getByMedId(medId: Long): Flow<List<DoseSchedule>> = dao.getByMedId(medId)
 
     fun getActive(): Flow<List<DoseSchedule>> = dao.getActive()
+
+    suspend fun syncWithFirestore(userId: String) {
+        val localSchedules = dao.getAll().first()  // Assume add getAll() to Dao if needed
+        val remoteCollection = firestore.collection("users/$userId/schedules")
+
+        localSchedules.forEach { schedule ->
+            remoteCollection.document(schedule.id.toString()).set(schedule).await()
+        }
+
+        val remoteSchedules = remoteCollection.get().await().toObjects(DoseSchedule::class.java)
+        remoteSchedules.forEach { remote ->
+            if (!localSchedules.any { it.id == remote.id }) {
+                dao.insert(remote)
+            }
+        }
+    }
 }
 ```
 ---
@@ -346,12 +446,21 @@ File: app\src\main\kotlin\com\xai\dosify\core\data\repository\MedicationReposito
 package com.xai.dosify.core.data.repository
 
 import com.xai.dosify.core.data.dao.MedicationDao
+import com.xai.dosify.core.data.dao.ReconstitutionDao
 import com.xai.dosify.core.data.models.Medication
+import com.xai.dosify.core.data.models.Reconstitution
+import com.xai.dosify.feature.advanced.utils.ReconstitutionUtils
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
+import timber.log.Timber  // Add this import
 import javax.inject.Inject
 
 class MedicationRepository @Inject constructor(
-    private val dao: MedicationDao
+    private val dao: MedicationDao,
+    private val firestore: FirebaseFirestore,
+    private val reconstDao: ReconstitutionDao
 ) {
     suspend fun insert(medication: Medication) = dao.insert(medication)
 
@@ -364,6 +473,70 @@ class MedicationRepository @Inject constructor(
     fun getAll(): Flow<List<Medication>> = dao.getAll()
 
     suspend fun decrementStock(medId: Long, amount: Double): Boolean = dao.decrementStock(medId, amount) > 0
+
+    suspend fun syncWithFirestore(userId: String) {
+        val localMeds = dao.getAll().first()
+        val remoteCollection = firestore.collection("users/$userId/meds")
+
+        localMeds.forEach { med ->
+            remoteCollection.document(med.id.toString()).set(med).await()
+        }
+
+        val remoteMeds = remoteCollection.get().await().toObjects(Medication::class.java)
+        remoteMeds.forEach { remote ->
+            if (!localMeds.any { it.id == remote.id }) {
+                dao.insert(remote)
+            }
+        }
+    }
+
+    suspend fun saveWithReconstitution(med: Medication, powder: Double, solvent: Double) {
+        dao.insert(med)
+        val conc = ReconstitutionUtils.calculateConcentration(powder, solvent)
+        val reconst = Reconstitution(medId = med.id, powderAmount = powder, solventVolume = solvent, desiredConcentration = conc)
+        reconstDao.insert(reconst)
+        Timber.d("Reconst inserted for med ${med.id}")
+    }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\core\data\repository\ProfileRepository.kt
+```
+package com.xai.dosify.core.data.repository
+
+import com.xai.dosify.core.data.dao.ProfileDao
+import com.xai.dosify.core.data.models.Profile
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+
+class ProfileRepository @Inject constructor(
+    private val dao: ProfileDao,
+    private val firestore: FirebaseFirestore
+) {
+    suspend fun insert(profile: Profile) = dao.insert(profile)
+
+    fun getAll(): Flow<List<Profile>> = dao.getAll()
+
+    fun getPremium(): Flow<Profile?> = dao.getPremium()
+
+    suspend fun syncWithFirestore(userId: String) {
+        val localProfiles = dao.getAll().first()
+        val remoteCollection = firestore.collection("users/$userId/profiles")
+
+        localProfiles.forEach { profile ->
+            remoteCollection.document(profile.id.toString()).set(profile).await()
+        }
+
+        val remoteProfiles = remoteCollection.get().await().toObjects(Profile::class.java)
+        remoteProfiles.forEach { remote ->
+            if (!localProfiles.any { it.id == remote.id }) {
+                dao.insert(remote)
+            }
+        }
+    }
 }
 ```
 ---
@@ -373,17 +546,37 @@ package com.xai.dosify.core.data.repository
 
 import com.xai.dosify.core.data.dao.ReconstitutionDao
 import com.xai.dosify.core.data.models.Reconstitution
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class ReconstitutionRepository @Inject constructor(
-    private val dao: ReconstitutionDao
+    private val dao: ReconstitutionDao,
+    private val firestore: FirebaseFirestore
 ) {
     suspend fun insert(reconst: Reconstitution) = dao.insert(reconst)
 
     suspend fun update(reconst: Reconstitution) = dao.update(reconst)
 
     fun getByMedId(medId: Long): Flow<Reconstitution?> = dao.getByMedId(medId)
+
+    suspend fun syncWithFirestore(userId: String) {
+        val localReconsts = dao.getAll().first()  // Assume add getAll() to Dao
+        val remoteCollection = firestore.collection("users/$userId/reconsts")
+
+        localReconsts.forEach { reconst ->
+            remoteCollection.document(reconst.medId.toString()).set(reconst).await()
+        }
+
+        val remoteReconsts = remoteCollection.get().await().toObjects(Reconstitution::class.java)
+        remoteReconsts.forEach { remote ->
+            if (!localReconsts.any { it.medId == remote.medId }) {
+                dao.insert(remote)
+            }
+        }
+    }
 }
 ```
 ---
@@ -393,11 +586,15 @@ package com.xai.dosify.core.data.repository
 
 import com.xai.dosify.core.data.dao.SupplyDao
 import com.xai.dosify.core.data.models.Supply
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class SupplyRepository @Inject constructor(
-    private val dao: SupplyDao
+    private val dao: SupplyDao,
+    private val firestore: FirebaseFirestore
 ) {
     suspend fun insert(supply: Supply) = dao.insert(supply)
 
@@ -410,6 +607,22 @@ class SupplyRepository @Inject constructor(
     fun getAll(): Flow<List<Supply>> = dao.getAll()
 
     suspend fun decrementStock(supplyId: Long, amount: Double): Boolean = dao.decrementStock(supplyId, amount) > 0
+
+    suspend fun syncWithFirestore(userId: String) {
+        val localSupplies = dao.getAll().first()
+        val remoteCollection = firestore.collection("users/$userId/supplies")
+
+        localSupplies.forEach { supply ->
+            remoteCollection.document(supply.id.toString()).set(supply).await()
+        }
+
+        val remoteSupplies = remoteCollection.get().await().toObjects(Supply::class.java)
+        remoteSupplies.forEach { remote ->
+            if (!localSupplies.any { it.id == remote.id }) {
+                dao.insert(remote)
+            }
+        }
+    }
 }
 ```
 ---
@@ -423,7 +636,7 @@ import androidx.room.TypeConverters
 import com.xai.dosify.core.data.dao.*
 import com.xai.dosify.core.data.models.*
 
-@Database(entities = [Medication::class, DoseSchedule::class, DoseLog::class, Supply::class, Reconstitution::class], version = 1, exportSchema = true)
+@Database(entities = [Medication::class, DoseSchedule::class, DoseLog::class, Supply::class, Reconstitution::class, Profile::class], version = 2, exportSchema = true)  // Bump version, add migration if needed
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun medicationDao(): MedicationDao
@@ -431,6 +644,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun doseLogDao(): DoseLogDao
     abstract fun supplyDao(): SupplyDao
     abstract fun reconstitutionDao(): ReconstitutionDao
+    abstract fun profileDao(): ProfileDao
 }
 ```
 ---
@@ -506,7 +720,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "dosify_db")
-            .fallbackToDestructiveMigration() // For dev; replace with migrations later
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
 
     @Provides
@@ -519,6 +733,8 @@ object DatabaseModule {
     fun provideSupplyDao(db: AppDatabase): SupplyDao = db.supplyDao()
     @Provides
     fun provideReconstitutionDao(db: AppDatabase): ReconstitutionDao = db.reconstitutionDao()
+    @Provides
+    fun provideProfileDao(db: AppDatabase): ProfileDao = db.profileDao()
 }
 ```
 ---
@@ -671,14 +887,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBarsPadding  // Add this import
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
 import com.xai.dosify.core.ui.theme.DosifyTheme
-import com.xai.dosify.feature.auth.LoginScreen
+import com.xai.dosify.nav.AppNavGraph
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -689,10 +907,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             DosifyTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .systemBarsPadding(),  // Add for top/bottom space
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    LoginScreen()
+                    val navController = rememberNavController()
+                    AppNavGraph(navController)
                 }
             }
         }
@@ -749,25 +970,112 @@ object BiometricUtils {
 }
 ```
 ---
+File: app\src\main\kotlin\com\xai\dosify\core\utils\ReconstitutionUtils.kt
+```
+package com.xai.dosify.feature.advanced.utils
+
+object ReconstitutionUtils {
+    fun calculateConcentration(powderAmount: Double, solventVolume: Double): Double {
+        return powderAmount / solventVolume
+    }
+
+    fun calculateVolumePerDose(desiredDose: Double, concentration: Double): Double {
+        return desiredDose / concentration
+    }
+}
+```
+---
 File: app\src\main\kotlin\com\xai\dosify\core\DosifyApplication.kt
 ```
 package com.xai.dosify.core
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
+import java.util.Locale
 
 @HiltAndroidApp
-class DosifyApplication : Application()
+class DosifyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        if (Locale.getDefault().country.equals("CN", ignoreCase = true)) {
+            // Disable Firebase (e.g., no init or mock)
+        }
+    }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\advanced\ui\ReportsScreen.kt
+```
+package com.xai.dosify.feature.advanced.ui
+
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
+import com.xai.dosify.feature.advanced.viewmodel.ReportsViewModel
+
+@Composable
+fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
+    val logs by viewModel.doseLogs.collectAsState(emptyList())
+
+    AndroidView(
+        factory = { LineChart(it) },
+        modifier = Modifier.fillMaxSize(),
+        update = { chart ->
+            val entries = logs.mapIndexed { i, log -> Entry(i.toFloat(), log.amountTaken.toFloat()) }
+            val dataSet = LineDataSet(entries, "Dose History")
+            chart.data = LineData(dataSet)
+            chart.invalidate()
+        }
+    )
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\advanced\viewmodel\ReportsViewModel.kt
+```
+package com.xai.dosify.feature.advanced.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.xai.dosify.core.data.models.DoseLog
+import com.xai.dosify.core.data.repository.DoseLogRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
+
+@HiltViewModel
+class ReportsViewModel @Inject constructor(
+    private val logRepo: DoseLogRepository
+) : ViewModel() {
+    val doseLogs: Flow<List<DoseLog>> = logRepo.getRecent()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+}
 ```
 ---
 File: app\src\main\kotlin\com\xai\dosify\feature\auth\di\AuthModule.kt
 ```
+package com.xai.dosify.feature.auth.di
+
+import android.content.Context
+import androidx.credentials.CredentialManager
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ViewModelComponent
+import dagger.hilt.android.qualifiers.ApplicationContext
+
 @Module
 @InstallIn(ViewModelComponent::class)
 object AuthModule {
-
-    @Provides
-    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
 
     @Provides
     fun provideCredentialManager(@ApplicationContext context: Context): CredentialManager =
@@ -781,113 +1089,816 @@ package com.xai.dosify.feature.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.xai.dosify.core.data.repository.AuthRepository
+import com.xai.dosify.feature.sync.utils.SyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val repo: AuthRepository
+    private val repo: AuthRepository,
+    private val auth: FirebaseAuth,
+    private val workManager: WorkManager  // Inject
 ) : ViewModel() {
     private val _state = MutableStateFlow(AuthState())
     val state: StateFlow<AuthState> = _state
+
+    val authUser: StateFlow<FirebaseUser?> = auth.authStateChanges()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun loginEmail(email: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(loading = true)
         val success = repo.emailLogin(email, password)
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Login failed" else null)
+        if (success) enqueueSync()
     }
 
     fun loginGoogle(idToken: String) = viewModelScope.launch {
         _state.value = _state.value.copy(loading = true)
         val success = repo.googleLogin(idToken)
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Google login failed" else null)
+        if (success) enqueueSync()
+    }
+
+    fun logout() = repo.logout()
+
+    private fun enqueueSync() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val periodicRequest = PeriodicWorkRequestBuilder<SyncWorker>(1, TimeUnit.HOURS)
+            .setConstraints(constraints)
+            .build()
+
+        workManager.enqueueUniquePeriodicWork("sync", ExistingPeriodicWorkPolicy.KEEP, periodicRequest)
     }
 }
 
 data class AuthState(val loading: Boolean = false, val success: Boolean = false, val error: String? = null)
-```
----
-File: app\src\main\kotlin\com\xai\dosify\feature\auth\LoginScreen.kt
-```
-package com.xai.dosify.feature.auth
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-
-@Composable
-fun LoginScreen(viewModel: AuthViewModel = hiltViewModel()) {
-    val state by viewModel.state.collectAsState()
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            TextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") }
-            )
-            TextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") }
-            )
-            Button(onClick = { viewModel.loginEmail(email, password) }) {
-                Text("Login")
-            }
-            Button(onClick = { /* TODO: Google sign-in */ }) {
-                Text("Google Login")
-            }
-            if (state.loading) Text("Loading...")
-            state.error?.let { Text(it) }
-            if (state.success) Text("Logged in")
-        }
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\feature\auth\LoginViewModel.kt
-```
-@HiltViewModel
-class LoginViewModel @Inject constructor(
-    private val auth: FirebaseAuth
-) : ViewModel() {
-
-    val authState: StateFlow<FirebaseUser?> = auth.authStateChanges().asStateFlow()
-
-    suspend fun signInWithGoogleIdToken(idToken: String): Result<FirebaseUser> {
-        return try {
-            val credential = GoogleAuthProvider.getCredential(idToken, null)
-            val result = auth.signInWithCredential(credential).await()
-            Result.success(result.user!!)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    fun signOut() {
-        auth.signOut()
-    }
-}
-
-// Extension (add to a utils/Extensions.kt if not in feature/auth/utils/)
 fun FirebaseAuth.authStateChanges(): Flow<FirebaseUser?> = callbackFlow {
     val listener = FirebaseAuth.AuthStateListener { auth ->
         trySend(auth.currentUser)
     }
     addAuthStateListener(listener)
     awaitClose { removeAuthStateListener(listener) }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\auth\LoginScreen.kt
+```
+package com.xai.dosify.feature.auth
+
+import android.content.Context
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
+import androidx.credentials.exceptions.GetCredentialException
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.auth.FirebaseUser
+import com.xai.dosify.R
+import kotlinx.coroutines.launch
+
+@Composable
+fun LoginScreen(
+    viewModel: AuthViewModel = hiltViewModel(),
+    onLoginSuccess: () -> Unit
+) {
+    val state by viewModel.state.collectAsState()
+    val user by viewModel.authUser.collectAsState()
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val credentialManager = remember { CredentialManager.create(context) }
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Auto-nav on logged-in (persistent or new)
+    LaunchedEffect(user) {
+        if (user != null) onLoginSuccess()
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
+        Surface(modifier = Modifier.padding(padding).fillMaxSize()) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (user != null) {
+                    Text("Welcome, ${user!!.displayName}")
+                    Button(onClick = { viewModel.logout() }) {
+                        Text("Logout")
+                    }
+                } else {
+                    TextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") }
+                    )
+                    TextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") }
+                    )
+                    Button(onClick = { viewModel.loginEmail(email, password) }) {
+                        Text("Login")
+                    }
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                try {
+                                    val googleIdOption = GetGoogleIdOption.Builder()
+                                        .setFilterByAuthorizedAccounts(true)
+                                        .setServerClientId(context.getString(R.string.web_client_id))
+                                        .build()
+
+                                    val request = GetCredentialRequest.Builder()
+                                        .addCredentialOption(googleIdOption)
+                                        .build()
+
+                                    val result: GetCredentialResponse = credentialManager.getCredential(
+                                        request = request,
+                                        context = context
+                                    )
+
+                                    handleCredential(result, viewModel)
+                                } catch (e: GetCredentialException) {
+                                    try {
+                                        val googleIdOptionFallback = GetGoogleIdOption.Builder()
+                                            .setFilterByAuthorizedAccounts(false)
+                                            .setServerClientId(context.getString(R.string.web_client_id))
+                                            .build()
+
+                                        val requestFallback = GetCredentialRequest.Builder()
+                                            .addCredentialOption(googleIdOptionFallback)
+                                            .build()
+
+                                        val resultFallback = credentialManager.getCredential(
+                                            request = requestFallback,
+                                            context = context
+                                        )
+                                        handleCredential(resultFallback, viewModel)
+                                    } catch (fallbackE: GetCredentialException) {
+                                        snackbarHostState.showSnackbar("Sign-in failed: ${fallbackE.message}")
+                                    }
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Google Login")
+                    }
+                    if (state.loading) Text("Loading...")
+                    state.error?.let { Text(it) }
+                    if (state.success) Text("Logged in")
+                }
+            }
+        }
+    }
+}
+
+private suspend fun handleCredential(result: GetCredentialResponse, viewModel: AuthViewModel) {
+    val credential = result.credential
+    if (credential is CustomCredential &&
+        credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+    ) {
+        val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+        viewModel.loginGoogle(googleIdTokenCredential.idToken)
+    } else {
+        // Invalid
+    }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\iap\di\IapModule.kt
+```
+package com.xai.dosify.feature.iap.di
+
+import android.content.Context
+import com.android.billingclient.api.BillingClient
+import com.android.billingclient.api.BillingResult
+import com.android.billingclient.api.Purchase
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object IapModule {
+
+    @Provides
+    @Singleton
+    fun provideBillingClient(@ApplicationContext context: Context): BillingClient =
+        BillingClient.newBuilder(context)
+            .setListener { billingResult: BillingResult, purchases: List<Purchase>? ->  // Fix: Add params
+                // Handle purchase updates
+            }
+            .enablePendingPurchases()
+            .build()
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\iap\viewmodel\IapViewModel.kt
+```
+package com.xai.dosify.feature.iap.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.android.billingclient.api.BillingClient
+import com.android.billingclient.api.BillingClientStateListener
+import com.android.billingclient.api.BillingResult
+import com.android.billingclient.api.Purchase
+import com.android.billingclient.api.QueryPurchasesParams
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
+
+@HiltViewModel
+class IapViewModel @Inject constructor(
+    private val billingClient: BillingClient
+) : ViewModel() {
+
+    val isPremium: Flow<Boolean> = callbackFlow {
+        billingClient.startConnection(object : BillingClientStateListener {
+            override fun onBillingSetupFinished(result: BillingResult) {
+                if (result.responseCode == BillingClient.BillingResponseCode.OK) {
+                    billingClient.queryPurchasesAsync(
+                        QueryPurchasesParams.newBuilder()
+                            .setProductType(BillingClient.ProductType.SUBS)
+                            .build()
+                    ) { purchasesResult: BillingResult, purchases: List<Purchase> ->
+                        if (purchasesResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                            trySend(purchases.any { it.isAutoRenewing })
+                        } else {
+                            trySend(false)
+                        }
+                    }
+                } else {
+                    trySend(false)
+                }
+            }
+            override fun onBillingServiceDisconnected() {
+                // Retry or close
+            }
+        })
+        awaitClose { billingClient.endConnection() }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\med\ui\MedFormScreen.kt
+```
+package com.xai.dosify.feature.med.ui
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.xai.dosify.core.data.models.MedType
+import com.xai.dosify.core.data.models.Medication
+import com.xai.dosify.feature.advanced.viewmodel.MedViewModel
+import kotlinx.coroutines.launch
+import timber.log.Timber
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
+    var name by remember { mutableStateOf("") }
+    var strength by remember { mutableStateOf("") }
+    var unit by remember { mutableStateOf("") }
+    var stock by remember { mutableStateOf("") }
+    var lowStockThreshold by remember { mutableStateOf("") }
+    var powder by remember { mutableStateOf("") }
+    var solvent by remember { mutableStateOf("") }
+    var type by remember { mutableStateOf(MedType.TABLET) }
+    var expanded by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
+        Column(
+            modifier = Modifier.padding(padding).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
+            TextField(value = strength, onValueChange = { strength = it }, label = { Text("Strength") })
+            TextField(value = unit, onValueChange = { unit = it }, label = { Text("Unit") })
+            TextField(value = stock, onValueChange = { stock = it }, label = { Text("Stock") })
+            TextField(value = lowStockThreshold, onValueChange = { lowStockThreshold = it }, label = { Text("Low Stock Threshold") })
+
+            // Type dropdown
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                TextField(
+                    readOnly = true,
+                    value = type.name,
+                    onValueChange = { },
+                    label = { Text("Type") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    colors = ExposedDropdownMenuDefaults.textFieldColors(),
+                    modifier = Modifier.menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    MedType.values().forEach { selectionOption ->
+                        DropdownMenuItem(
+                            text = { Text(selectionOption.name) },
+                            onClick = {
+                                type = selectionOption
+                                expanded = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
+                }
+            }
+
+            if (type == MedType.INJECTION) {
+                TextField(value = powder, onValueChange = { powder = it }, label = { Text("Powder Amount") })
+                TextField(value = solvent, onValueChange = { solvent = it }, label = { Text("Solvent Volume") })
+            }
+            Button(onClick = {
+                Timber.d("Save button clicked")
+                val med = Medication(
+                    name = name,
+                    type = type,
+                    strength = strength.toDoubleOrNull() ?: 0.0,
+                    unit = unit,
+                    stock = stock.toDoubleOrNull() ?: 0.0,
+                    lowStockThreshold = lowStockThreshold.toDoubleOrNull() ?: 0.0,
+                    reconstitution = type == MedType.INJECTION
+                )
+                coroutineScope.launch {
+                    try {
+                        if (med.reconstitution) {
+                            viewModel.saveWithReconstitution(med, powder.toDoubleOrNull() ?: 0.0, solvent.toDoubleOrNull() ?: 0.0)
+                        } else {
+                            viewModel.insert(med)
+                        }
+                        snackbarHostState.showSnackbar("Medication saved")
+                        Timber.d("Save success")
+                    } catch (e: Exception) {
+                        snackbarHostState.showSnackbar("Save failed: ${e.message}")
+                        Timber.e(e, "Save error")
+                    }
+                }
+            }) {
+                Text("Save")
+            }
+        }
+    }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\med\ui\MedListScreen.kt
+```
+package com.xai.dosify.feature.med.ui
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.xai.dosify.feature.med.viewmodel.MedListViewModel
+
+@Composable
+fun MedListScreen(viewModel: MedListViewModel = hiltViewModel()) {
+    val meds by viewModel.meds.collectAsState(emptyList())
+
+    LazyColumn {
+        items(meds) { med ->
+            Text("${med.name} - Stock: ${med.stock}")
+        }
+    }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\med\viewmodel\MedListViewModel.kt
+```
+package com.xai.dosify.feature.med.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.xai.dosify.core.data.models.Medication
+import com.xai.dosify.core.data.repository.MedicationRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
+
+@HiltViewModel
+class MedListViewModel @Inject constructor(
+    private val repo: MedicationRepository
+) : ViewModel() {
+    val meds: Flow<List<Medication>> = repo.getAll()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\med\viewmodel\MedViewModel.kt
+```
+package com.xai.dosify.feature.advanced.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.xai.dosify.core.data.models.Medication
+import com.xai.dosify.core.data.repository.MedicationRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import timber.log.Timber
+import javax.inject.Inject
+
+@HiltViewModel
+class MedViewModel @Inject constructor(
+    private val repo: MedicationRepository
+) : ViewModel() {
+
+    fun insert(med: Medication) = viewModelScope.launch {
+        Timber.d("Insert med: ${med.name}")
+        repo.insert(med)
+    }
+
+    fun saveWithReconstitution(med: Medication, powder: Double, solvent: Double) = viewModelScope.launch {
+        Timber.d("Save reconst med: ${med.name}")
+        repo.saveWithReconstitution(med, powder, solvent)
+    }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\schedule\ui\ScheduleFormScreen.kt
+```
+package com.xai.dosify.feature.schedule.ui
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.xai.dosify.core.data.models.DoseSchedule
+import com.xai.dosify.feature.iap.viewmodel.IapViewModel
+import com.xai.dosify.feature.schedule.viewmodel.ScheduleViewModel
+
+@Composable
+fun ScheduleFormScreen(viewModel: ScheduleViewModel = hiltViewModel(), iapViewModel: IapViewModel = hiltViewModel()) {
+    val isPremium by iapViewModel.isPremium.collectAsState(false)
+    var doseAmount by remember { mutableStateOf("") }
+    // Other fields: medId, unit, frequency, times, startDate, etc.
+    var cycleWeeks by remember { mutableStateOf("") }
+    // Titration steps: List add UI stub
+
+    Column {
+        TextField(value = doseAmount, onValueChange = { doseAmount = it }, label = { Text("Dose Amount") })
+        // Basic fields...
+
+        if (isPremium) {
+            TextField(value = cycleWeeks, onValueChange = { cycleWeeks = it }, label = { Text("Cycle Weeks") })
+            // Cycle off, isCycling checkbox, titration list add
+        } else {
+            Text("Premium feature - Subscribe for cycling/titration")
+            Button(onClick = { /* Launch billing flow in VM */ }) {
+                Text("Subscribe")
+            }
+        }
+
+        Button(onClick = {
+            val schedule = DoseSchedule(
+                // Fill from fields
+                doseAmount = doseAmount.toDoubleOrNull() ?: 0.0
+                // ...
+            )
+            viewModel.save(schedule)
+        }) {
+            Text("Save Schedule")
+        }
+    }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\schedule\viewmodel\ScheduleViewModel.kt
+```
+package com.xai.dosify.feature.schedule.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.xai.dosify.core.data.models.DoseSchedule
+import com.xai.dosify.core.data.repository.DoseScheduleRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class ScheduleViewModel @Inject constructor(
+    private val repo: DoseScheduleRepository
+) : ViewModel() {
+
+    fun save(schedule: DoseSchedule) = viewModelScope.launch {
+        repo.insert(schedule)
+    }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\sync\di\SyncModule.kt
+```
+package com.xai.dosify.feature.sync.di
+
+import android.content.Context
+import androidx.work.WorkManager
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object SyncModule {
+
+    @Provides
+    @Singleton
+    fun provideWorkManager(@ApplicationContext context: Context): WorkManager =
+        WorkManager.getInstance(context)
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\sync\ui\SettingsScreen.kt
+```
+package com.xai.dosify.feature.sync.ui
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Button
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.xai.dosify.feature.sync.viewmodel.SyncViewModel
+import kotlinx.coroutines.launch
+
+@Composable
+fun SettingsScreen(viewModel: SyncViewModel = hiltViewModel()) {
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    Column {
+        Button(onClick = { viewModel.testSync() }) {
+            Text("Test DB Integrity & Sync")
+        }
+        Button(onClick = {
+            coroutineScope.launch {
+                viewModel.manualSync(snackbarHostState)
+            }
+        }) {
+            Text("Manual Sync")
+        }
+    }
+    SnackbarHost(snackbarHostState)
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\sync\utils\SyncWorker.kt
+```
+package com.xai.dosify.feature.sync.utils
+
+import android.content.Context
+import androidx.hilt.work.HiltWorker
+import androidx.work.CoroutineWorker
+import androidx.work.WorkerParameters
+import com.google.firebase.auth.FirebaseAuth
+import com.xai.dosify.core.data.repository.*
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
+import timber.log.Timber
+
+@HiltWorker
+class SyncWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val medRepo: MedicationRepository,
+    private val scheduleRepo: DoseScheduleRepository,
+    private val logRepo: DoseLogRepository,
+    private val supplyRepo: SupplyRepository,
+    private val reconstRepo: ReconstitutionRepository,
+    private val profileRepo: ProfileRepository,  // Add
+    private val auth: FirebaseAuth
+) : CoroutineWorker(context, params) {
+
+    override suspend fun doWork(): Result {
+        Timber.d("SyncWorker started")
+        val userId = auth.currentUser?.uid ?: run {
+            Timber.w("No userId - sync failed")
+            return Result.failure()
+        }
+        try {
+            medRepo.syncWithFirestore(userId)
+            scheduleRepo.syncWithFirestore(userId)
+            logRepo.syncWithFirestore(userId)
+            supplyRepo.syncWithFirestore(userId)
+            reconstRepo.syncWithFirestore(userId)
+            profileRepo.syncWithFirestore(userId)  // Add
+            Timber.d("Sync success")
+            return Result.success()
+        } catch (e: Exception) {
+            Timber.e(e, "Sync error")
+            return Result.retry()
+        }
+    }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\feature\sync\viewmodel\SyncViewModel.kt
+```
+package com.xai.dosify.feature.sync.viewmodel
+
+import androidx.compose.material3.SnackbarHostState
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.xai.dosify.core.data.repository.*
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import timber.log.Timber
+import javax.inject.Inject
+
+@HiltViewModel
+class SyncViewModel @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val medRepo: MedicationRepository,
+    private val scheduleRepo: DoseScheduleRepository,
+    private val logRepo: DoseLogRepository,
+    private val supplyRepo: SupplyRepository,
+    private val reconstRepo: ReconstitutionRepository,
+    private val profileRepo: ProfileRepository  // Add
+) : ViewModel() {
+
+    fun testSync() = viewModelScope.launch {
+        val userId = auth.currentUser?.uid ?: return@launch
+        medRepo.syncWithFirestore(userId)
+        // Call others; add integrity (e.g., count match)
+    }
+
+    suspend fun manualSync(snackbarHostState: SnackbarHostState) {
+        val userId = auth.currentUser?.uid ?: run {
+            snackbarHostState.showSnackbar("No user logged in")
+            return
+        }
+        try {
+            medRepo.syncWithFirestore(userId)
+            scheduleRepo.syncWithFirestore(userId)
+            logRepo.syncWithFirestore(userId)
+            supplyRepo.syncWithFirestore(userId)
+            reconstRepo.syncWithFirestore(userId)
+            profileRepo.syncWithFirestore(userId)  // Add
+            snackbarHostState.showSnackbar("Synced successfully")
+            Timber.d("Manual sync success")
+        } catch (e: Exception) {
+            snackbarHostState.showSnackbar("Sync failed: ${e.message}")
+            Timber.e(e, "Manual sync error")
+        }
+    }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\nav\NavGraph.kt
+```
+package com.xai.dosify.nav
+
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import com.xai.dosify.feature.advanced.ui.ReportsScreen
+import com.xai.dosify.feature.auth.LoginScreen
+import com.xai.dosify.feature.med.ui.MedFormScreen
+import com.xai.dosify.feature.med.ui.MedListScreen  // Add this import
+import com.xai.dosify.feature.schedule.ui.ScheduleFormScreen
+import com.xai.dosify.feature.sync.ui.SettingsScreen
+import com.xai.dosify.ui.HomeScreen
+
+object NavRoutes {
+    const val LOGIN = "login"
+    const val HOME = "home"
+    const val MED_FORM = "med_form"
+    const val MED_LIST = "med_list"
+    const val SCHEDULE_FORM = "schedule_form"
+    const val REPORTS = "reports"
+    const val SETTINGS = "settings"
+}
+
+@Composable
+fun AppNavGraph(navController: NavHostController) {
+    NavHost(navController = navController, startDestination = NavRoutes.LOGIN) {
+        composable(NavRoutes.LOGIN) {
+            LoginScreen(onLoginSuccess = { navController.navigate(NavRoutes.HOME) })
+        }
+        composable(NavRoutes.HOME) {
+            HomeScreen(navController)
+        }
+        composable(NavRoutes.MED_FORM) {
+            MedFormScreen()
+        }
+        composable(NavRoutes.MED_LIST) {
+            MedListScreen()
+        }
+        composable(NavRoutes.SCHEDULE_FORM) {
+            ScheduleFormScreen()
+        }
+        composable(NavRoutes.REPORTS) {
+            ReportsScreen()
+        }
+        composable(NavRoutes.SETTINGS) {
+            SettingsScreen()
+        }
+    }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\ui\HomeScreen.kt
+```
+package com.xai.dosify.ui
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavController
+import com.xai.dosify.nav.NavRoutes
+
+@Composable
+fun HomeScreen(navController: NavController) {
+    Column {
+        Text("Home - Dosify Dashboard")
+        Button(onClick = { navController.navigate(NavRoutes.MED_FORM) }) {
+            Text("Add Medication")
+        }
+        Button(onClick = { navController.navigate(NavRoutes.MED_LIST) }) {
+            Text("View Medications")
+        }
+        Button(onClick = { navController.navigate(NavRoutes.SCHEDULE_FORM) }) {  // Add
+            Text("Add Schedule")
+        }
+        Button(onClick = { navController.navigate(NavRoutes.REPORTS) }) {
+            Text("View Reports")
+        }
+        Button(onClick = { navController.navigate(NavRoutes.SETTINGS) }) {
+            Text("Settings & Diagnostics")
+        }
+    }
 }
 ```
 ---
@@ -1137,7 +2148,7 @@ File: app\src\main\res\values\strings.xml
 ```
 <resources>
     <string name="app_name">Dosify</string>
-    <string name="web_client_id">YOUR_WEB_CLIENT_ID_FROM_FIREBASE</string>
+    <string name="web_client_id">442282970063-fv9d227q9imcntr9i7tbm1akirltjvml.apps.googleusercontent.com</string>  <!-- From Firebase console -->
 </resources>
 ```
 ---
@@ -1310,7 +2321,20 @@ File: app/google-services.json
           "package_name": "com.xai.dosify"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "442282970063-8odqhnhre690smvohqgjt96mn7gi76ls.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.xai.dosify",
+            "certificate_hash": "a3630aaa4a38b3a57ef21cc767051ed50f87f1e0"
+          }
+        },
+        {
+          "client_id": "442282970063-fv9d227q9imcntr9i7tbm1akirltjvml.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC_NtKClPqRQDtvSdl0iSUQL7F76eCn8K4"
@@ -1318,7 +2342,12 @@ File: app/google-services.json
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "442282970063-fv9d227q9imcntr9i7tbm1akirltjvml.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
