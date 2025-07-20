@@ -20,7 +20,7 @@ class DosifyApplication : Application(), Configuration.Provider {
         }
     }
 
-    override fun getWorkManagerConfiguration(): Configuration =
+    override val workManagerConfiguration: Configuration =
         Configuration.Builder()
             .setWorkerFactory(workerFactory)
             .build()
