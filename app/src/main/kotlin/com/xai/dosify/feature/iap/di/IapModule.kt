@@ -5,6 +5,7 @@ import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.Purchase
+import com.android.billingclient.api.PurchasesUpdatedListener
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -20,9 +21,11 @@ object IapModule {
     @Singleton
     fun provideBillingClient(@ApplicationContext context: Context): BillingClient =
         BillingClient.newBuilder(context)
-            .setListener { billingResult: BillingResult, purchases: List<Purchase>? ->
-                // Handle purchase updates
-            }
-            .enablePendingPurchases(PendingPurchasesParams.newBuilder().enablePrepaidPlans().build())  // Fix: Add param for 8.0.0
+            .setListener(object : PurchasesUpdatedListener {  // Fix: Use object expression
+                override fun onPurchasesUpdated(billingResult: BillingResult, purchases: List<Purchase>?) {
+                    // Handle purchase updates
+                }
+            })
+            .enablePendingPurchases(PendingPurchasesParams.newBuilder().enablePrepaidPlans().build())
             .build()
 }
