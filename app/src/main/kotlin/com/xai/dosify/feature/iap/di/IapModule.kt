@@ -18,7 +18,7 @@ object IapModule {
     @Singleton
     fun provideBillingClient(@ApplicationContext context: Context): BillingClient =
         BillingClient.newBuilder(context)
-            .setListener(PurchasesUpdatedListener { _, _ -> })  // Fix: Add stub listener
+            .setListener { _, _ -> }  // Fix: Stub listener
             .enablePendingPurchases()
             .build()
 }
