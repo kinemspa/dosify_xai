@@ -2,6 +2,7 @@ package com.xai.dosify.feature.iap.di
 
 import android.content.Context
 import com.android.billingclient.api.BillingClient
+import com.android.billingclient.api.PurchasesUpdatedListener
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,7 +18,7 @@ object IapModule {
     @Singleton
     fun provideBillingClient(@ApplicationContext context: Context): BillingClient =
         BillingClient.newBuilder(context)
-            .setListener { _, _ -> }  // Stub; extend for purchase updates
+            .setListener(PurchasesUpdatedListener { _, _ -> })  // Fix: Add stub listener
             .enablePendingPurchases()
             .build()
 }
