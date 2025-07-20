@@ -9,6 +9,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
+import timber.log.Timber  // Add this import
 import javax.inject.Inject
 
 class MedicationRepository @Inject constructor(
@@ -49,5 +50,6 @@ class MedicationRepository @Inject constructor(
         val conc = ReconstitutionUtils.calculateConcentration(powder, solvent)
         val reconst = Reconstitution(medId = med.id, powderAmount = powder, solventVolume = solvent, desiredConcentration = conc)
         reconstDao.insert(reconst)
+        Timber.d("Reconst inserted for med ${med.id}")
     }
 }

@@ -12,7 +12,7 @@ import com.xai.dosify.core.data.models.MedType
 import com.xai.dosify.core.data.models.Medication
 import com.xai.dosify.feature.advanced.viewmodel.MedViewModel
 import kotlinx.coroutines.launch
-import timber.log.Timber  // Add for logging
+import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,7 +78,7 @@ fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
                 TextField(value = solvent, onValueChange = { solvent = it }, label = { Text("Solvent Volume") })
             }
             Button(onClick = {
-                Timber.d("Save clicked")  // Log to confirm onClick fires
+                Timber.d("Save button clicked")
                 val med = Medication(
                     name = name,
                     type = type,
