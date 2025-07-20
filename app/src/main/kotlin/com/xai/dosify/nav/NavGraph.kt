@@ -4,9 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.xai.dosify.feature.advanced.ui.MedFormScreen  // Add this import
 import com.xai.dosify.feature.advanced.ui.ReportsScreen
 import com.xai.dosify.feature.auth.LoginScreen
+import com.xai.dosify.feature.med.ui.MedFormScreen  // Add this import
 import com.xai.dosify.feature.sync.ui.SettingsScreen
 import com.xai.dosify.ui.HomeScreen
 
