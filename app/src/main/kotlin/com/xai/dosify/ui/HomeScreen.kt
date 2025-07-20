@@ -14,6 +14,9 @@ fun HomeScreen(navController: NavController) {
         Button(onClick = { navController.navigate(NavRoutes.MED_FORM) }) {
             Text("Add Medication")
         }
+        Button(onClick = { navController.navigate("med_list") }) {  // Add route
+            Text("View Medications")
+        }
         Button(onClick = { navController.navigate(NavRoutes.REPORTS) }) {
             Text("View Reports")
         }
