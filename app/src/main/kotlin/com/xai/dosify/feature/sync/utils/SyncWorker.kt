@@ -19,6 +19,7 @@ class SyncWorker @AssistedInject constructor(
     private val logRepo: DoseLogRepository,
     private val supplyRepo: SupplyRepository,
     private val reconstRepo: ReconstitutionRepository,
+    private val profileRepo: ProfileRepository,  // Add
     private val auth: FirebaseAuth
 ) : CoroutineWorker(context, params) {
 
@@ -34,6 +35,7 @@ class SyncWorker @AssistedInject constructor(
             logRepo.syncWithFirestore(userId)
             supplyRepo.syncWithFirestore(userId)
             reconstRepo.syncWithFirestore(userId)
+            profileRepo.syncWithFirestore(userId)  // Add
             Timber.d("Sync success")
             return Result.success()
         } catch (e: Exception) {

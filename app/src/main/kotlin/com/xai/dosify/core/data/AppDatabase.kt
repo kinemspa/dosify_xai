@@ -6,7 +6,7 @@ import androidx.room.TypeConverters
 import com.xai.dosify.core.data.dao.*
 import com.xai.dosify.core.data.models.*
 
-@Database(entities = [Medication::class, DoseSchedule::class, DoseLog::class, Supply::class, Reconstitution::class], version = 1, exportSchema = true)
+@Database(entities = [Medication::class, DoseSchedule::class, DoseLog::class, Supply::class, Reconstitution::class, Profile::class], version = 2, exportSchema = true)  // Bump version, add migration if needed
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun medicationDao(): MedicationDao
@@ -14,4 +14,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun doseLogDao(): DoseLogDao
     abstract fun supplyDao(): SupplyDao
     abstract fun reconstitutionDao(): ReconstitutionDao
+    abstract fun profileDao(): ProfileDao
 }

@@ -1,0 +1,23 @@
+package com.xai.dosify.feature.iap.di
+
+import android.content.Context
+import com.android.billingclient.api.BillingClient
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object IapModule {
+
+    @Provides
+    @Singleton
+    fun provideBillingClient(@ApplicationContext context: Context): BillingClient =
+        BillingClient.newBuilder(context)
+            .setListener { _, _ -> }  // Stub; extend for purchase updates
+            .enablePendingPurchases()
+            .build()
+}

@@ -18,7 +18,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "dosify_db")
-            .fallbackToDestructiveMigration(dropAllTables = true) // Explicit param; for dev—use migrations in prod
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
 
     @Provides
@@ -31,4 +31,6 @@ object DatabaseModule {
     fun provideSupplyDao(db: AppDatabase): SupplyDao = db.supplyDao()
     @Provides
     fun provideReconstitutionDao(db: AppDatabase): ReconstitutionDao = db.reconstitutionDao()
+    @Provides
+    fun provideProfileDao(db: AppDatabase): ProfileDao = db.profileDao()
 }
