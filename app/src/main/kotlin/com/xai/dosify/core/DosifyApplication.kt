@@ -1,9 +1,9 @@
 package com.xai.dosify.core
 
 import android.app.Application
+import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
-import androidx.hilt.work.HiltWorkerFactory
 import java.util.Locale
 import javax.inject.Inject
 
