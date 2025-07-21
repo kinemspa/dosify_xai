@@ -3,6 +3,7 @@ package com.xai.feature_advanced.viewmodel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
+import androidx.lifecycle.viewModel
 import androidx.lifecycle.viewModelScope
 import com.xai.core.data.models.DoseLog
 import com.xai.core.data.repository.DoseLogRepository

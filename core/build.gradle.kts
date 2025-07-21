@@ -58,4 +58,13 @@ dependencies {
     implementation(libs.biometric)
     implementation(libs.work.runtime.ktx)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
+
+    // Feature Modules
+    implementation(project(":core"))
+    implementation(project(":feature_med"))
+    implementation(project(":feature_schedule"))
+    implementation(project(":feature_auth"))
+    implementation(project(":feature_iap"))
+    implementation(project(":feature_sync"))
+    implementation(project(":feature_advanced"))
 }

@@ -11,9 +11,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.xai.core.ui.theme.DosifyTheme
 import com.xai.dosify.nav.NavRoutes
-import com.xai.feature_med.ui.MedFormScreen
-import com.xai.feature_schedule.ui.DoseConfirmScreen
 import com.xai.core.ui.components.DosifyAppBar
+import com.xai.dosify.nav.AppNavGraph
+
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,25 +25,24 @@ class MainActivity : ComponentActivity() {
                     topBar = {
                         DosifyAppBar(
                             title = when (navController.currentDestination?.route) {
+                                NavRoutes.LOGIN -> "Login"
                                 NavRoutes.HOME -> "Dosify Home"
                                 NavRoutes.MED_FORM -> "Add Medication"
+                                NavRoutes.MED_LIST -> "Medication List"
+                                NavRoutes.SCHEDULE_FORM -> "Add Schedule"
                                 NavRoutes.DOSE_CONFIRM -> "Confirm Dose"
+                                NavRoutes.REPORTS -> "Reports"
+                                NavRoutes.SETTINGS -> "Settings"
+                                NavRoutes.CALENDAR -> "Calendar"
+                                NavRoutes.SUPPLY_FORM -> "Add Supply"
                                 else -> "Dosify"
                             },
                             navController = navController,
-                            showBackButton = navController.currentDestination?.route != NavRoutes.HOME
+                            showBackButton = navController.currentDestination?.route != NavRoutes.LOGIN
                         )
                     }
                 ) { innerPadding ->
-                    NavHost(
-                        navController = navController,
-                        startDestination = NavRoutes.HOME,
-                        modifier = Modifier.padding(innerPadding)
-                    ) {
-                        composable(NavRoutes.HOME) { HomeScreen(navController) }
-                        composable(NavRoutes.MED_FORM) { MedFormScreen() }
-                        composable(NavRoutes.DOSE_CONFIRM) { DoseConfirmScreen() }
-                    }
+                    AppNavGraph(navController = navController)
                 }
             }
         }

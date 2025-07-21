@@ -7,14 +7,14 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.xai.feature.advanced.ui.ReportsScreen
-import com.xai.feature.auth.LoginScreen
-import com.xai.feature.med.ui.MedFormScreen
-import com.xai.feature.med.ui.MedListScreen
-import com.xai.feature.schedule.ui.DoseConfirmScreen
-import com.xai.feature.schedule.ui.ScheduleFormScreen
-import com.xai.feature.sync.ui.SettingsScreen
+import com.xai.feature_auth.LoginScreen
+import com.xai.feature_med.ui.MedFormScreen
+import com.xai.feature_med.ui.MedListScreen
+import com.xai.feature_schedule.ui.DoseConfirmScreen
+import com.xai.feature_schedule.ui.ScheduleFormScreen
+import com.xai.feature_sync.ui.SettingsScreen
 import com.xai.dosify.ui.HomeScreen
-import com.xai.feature.schedule.ui.CalendarScreen
+import com.xai.feature_schedule.ui.CalendarScreen
 
 object NavRoutes {
     const val LOGIN = "login"
@@ -147,8 +147,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.xai.core.ui.theme.DosifyTheme
 import com.xai.dosify.nav.NavRoutes
-import com.xai.feature.med.ui.MedFormScreen
-import com.xai.feature.schedule.ui.DoseConfirmScreen
+import com.xai.feature_med.ui.MedFormScreen
+import com.xai.feature_schedule.ui.DoseConfirmScreen
 import com.xai.core.ui.components.DosifyAppBar
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -1072,18 +1072,6 @@ package com.xai.core.data
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.xai.core.data.dao.DoseLogDao
-import com.xai.core.data.dao.DoseScheduleDao
-import com.xai.core.data.dao.MedicationDao
-import com.xai.core.data.dao.ProfileDao
-import com.xai.core.data.dao.ReconstitutionDao
-import com.xai.core.data.dao.SupplyDao
-import com.xai.core.data.models.DoseLog
-import com.xai.core.data.models.DoseSchedule
-import com.xai.core.data.models.Medication
-import com.xai.core.data.models.Profile
-import com.xai.core.data.models.Reconstitution
-import com.xai.core.data.models.Supply
 import com.xai.core.data.dao.*
 import com.xai.core.data.models.*
 
@@ -1269,13 +1257,7 @@ File: core\src\main\kotlin\com\xai\core\di\RepositoryModule.kt
 ```
 package com.xai.core.di
 
-import com.xai.core.data.repository.AuthRepository
-import com.xai.core.data.repository.DoseLogRepository
-import com.xai.core.data.repository.DoseScheduleRepository
-import com.xai.core.data.repository.MedicationRepository
-import com.xai.core.data.repository.ProfileRepository
-import com.xai.core.data.repository.ReconstitutionRepository
-import com.xai.core.data.repository.SupplyRepository
+import com.xai.core.data.repository.*
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -1521,7 +1503,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.AlarmManagerCompat
 import com.xai.core.data.models.DoseSchedule
-import com.xai.dosify.ui.notifications.YourAlarmReceiver
+import com.xai.dosify.ui.notifications.*
 import java.time.LocalTime
 import java.time.Duration
 
@@ -1563,7 +1545,7 @@ fun setDoseAlarm(context: Context, schedule: DoseSchedule) {
 ---
 File: core\src\main\kotlin\com\xai\core\utils\ReconstitutionUtils.kt
 ```
-package com.xai.feature.advanced.utils
+package com.xai.core.utils
 
 object ReconstitutionUtils {
     fun calculateConcentration(powderAmount: Double, solventVolume: Double): Double {
@@ -1578,20 +1560,13 @@ object ReconstitutionUtils {
 ---
 File: feature_advanced\src\main\kotlin\com\xai\feature_advanced\ui\ReportsScreen.kt
 ```
-package com.xai.feature.advanced.ui
+package com.xai.feature_advanced.ui
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
-import com.xai.feature.advanced.viewmodel.ReportsViewModel
+import com.xai.feature_advanced.viewmodel.ReportsViewModel
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -1619,17 +1594,12 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
 ---
 File: feature_advanced\src\main\kotlin\com\xai\feature_advanced\viewmodel\ReportsViewModel.kt
 ```
-package com.xai.feature.advanced.viewmodel
+package com.xai.feature_advanced.viewmodel
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.xai.core.data.models.DoseLog
-import com.xai.core.data.repository.DoseLogRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
-import javax.inject.Inject
+import androidx.lifecycle.viewModel
 import androidx.lifecycle.viewModelScope
 import com.xai.core.data.models.DoseLog
 import com.xai.core.data.repository.DoseLogRepository
@@ -1647,21 +1617,15 @@ class ReportsViewModel @Inject constructor(
 ---
 File: feature_auth\src\main\kotlin\com\xai\feature_auth\di\AuthModule.kt
 ```
-package com.xai.feature.auth.di
+package com.xai.feature_auth.di
 
 import android.content.Context
-import androidx.credentials.CredentialManager
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
-import dagger.hilt.android.qualifiers.ApplicationContext
 import androidx.credentials.CredentialManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.ViewModelComponent
 
 @Module
 @InstallIn(ViewModelComponent::class)
@@ -1675,7 +1639,7 @@ object AuthModule {
 ---
 File: feature_auth\src\main\kotlin\com\xai\feature_auth\AuthViewModel.kt
 ```
-package com.xai.feature.auth
+package com.xai.feature_auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -1699,19 +1663,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import androidx.lifecycle.viewModelScope
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.xai.core.data.repository.AuthRepository
-import com.xai.feature.sync.utils.SyncWorker
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-
+import com.xai.feature_sync.utils.syncworker
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val repo: AuthRepository,
@@ -1766,13 +1721,11 @@ fun FirebaseAuth.authStateChanges(): Flow<FirebaseUser?> = callbackFlow {
 ---
 File: feature_auth\src\main\kotlin\com\xai\feature_auth\LoginScreen.kt
 ```
-package com.xai.feature.auth
+package com.xai.feature_auth
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
@@ -1783,21 +1736,8 @@ import androidx.credentials.exceptions.GetCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.google.firebase.auth.FirebaseUser
-import com.xai.dosify.R
 import kotlinx.coroutines.launch
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.credentials.CredentialManager
-import androidx.credentials.CustomCredential
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.GetCredentialResponse
-import androidx.credentials.exceptions.GetCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.xai.dosify.R
 
 
 @Composable
@@ -1822,7 +1762,7 @@ fun LoginScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Surface(modifier = Modifier.padding(padding).fillMaxSize()) {
+        Surface(modifier = padding(padding).fillMaxSize()) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -1913,7 +1853,7 @@ private suspend fun handleCredential(result: GetCredentialResponse, viewModel: A
 ---
 File: feature_iap\src\main\kotlin\com\xai\feature_iap\di\IapModule.kt
 ```
-package com.xai.feature.iap.di
+package com.xai.feature_iap.di
 
 import android.content.Context
 import com.android.billingclient.api.BillingClient
@@ -1950,7 +1890,7 @@ object IapModule {
 ---
 File: feature_iap\src\main\kotlin\com\xai\feature_iap\viewmodel\IapViewModel.kt
 ```
-package com.xai.feature.iap.viewmodel
+package com.xai.feature_iap.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -2002,7 +1942,7 @@ class IapViewModel @Inject constructor(
 ---
 File: feature_med\src\main\kotlin\com\xai\feature_med\ui\MedFormScreen.kt
 ```
-package com.xai.feature.med.ui
+package com.xai.feature_med.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -2116,9 +2056,8 @@ fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
 ---
 File: feature_med\src\main\kotlin\com\xai\feature_med\ui\MedListScreen.kt
 ```
-package com.xai.feature.med.ui
+package com.xai.feature_med.ui
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
@@ -2126,7 +2065,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.xai.feature.med.viewmodel.MedListViewModel
+import com.xai.feature_med.viewmodel.MedListViewModel
 
 @Composable
 fun MedListScreen(viewModel: MedListViewModel = hiltViewModel()) {
@@ -2217,7 +2156,7 @@ fun SupplyFormScreen(viewModel: SupplyViewModel = hiltViewModel()) {
 ---
 File: feature_med\src\main\kotlin\com\xai\feature_med\viewmodel\MedListViewModel.kt
 ```
-package com.xai.feature.med.viewmodel
+package com.xai.feature_med.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -2240,7 +2179,7 @@ class MedListViewModel @Inject constructor(
 ---
 File: feature_med\src\main\kotlin\com\xai\feature_med\viewmodel\MedViewModel.kt
 ```
-package com.xai.feature.med.viewmodel
+package com.xai.feature_med.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -2270,7 +2209,7 @@ class MedViewModel @Inject constructor(
 ---
 File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\ui\CalendarScreen.kt
 ```
-package com.xai.feature.schedule.ui
+package com.xai.feature_schedule.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -2284,14 +2223,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
-import com.xai.feature.schedule.viewmodel.CalendarViewModel
+import com.xai.feature_schedule.viewmodel.CalendarViewModel
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -2337,9 +2275,8 @@ private fun hasDoseOnDay(day: LocalDate, schedules: List<DoseSchedule>): Boolean
 ---
 File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\ui\DoseConfirmScreen.kt
 ```
-package com.xai.feature.schedule.ui
+package com.xai.feature_schedule.ui
 
-import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -2367,7 +2304,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.xai.core.data.models.DoseLog
 import com.xai.core.data.models.DoseSchedule
 import com.xai.core.utils.setDoseAlarm
-import com.xai.feature.schedule.viewmodel.DoseConfirmViewModel
+import com.xai.feature_schedule.viewmodel.DoseConfirmViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
@@ -2387,7 +2324,7 @@ fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
         modifier = Modifier.padding(16.dp)
     ) { padding ->
         Column(
-            modifier = Modifier.padding(padding),
+            modifier = padding(padding),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Schedule dropdown
@@ -2466,7 +2403,7 @@ fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
 ---
 File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\ui\ScheduleFormScreen.kt
 ```
-package com.xai.feature.schedule.ui
+package com.xai.feature_schedule.ui
 
 import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
@@ -2499,7 +2436,7 @@ import com.xai.core.data.models.Medication
 import com.xai.core.utils.setDoseAlarm
 import com.xai.feature.iap.viewmodel.IapViewModel
 import com.xai.feature.med.viewmodel.MedListViewModel
-import com.xai.feature.schedule.viewmodel.ScheduleViewModel
+import com.xai.feature_schedule.viewmodel.ScheduleViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -2530,7 +2467,7 @@ fun ScheduleFormScreen(
         modifier = Modifier.padding(16.dp)
     ) { padding ->
         Column(
-            modifier = Modifier.padding(padding),
+            modifier = padding(padding),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Medication dropdown
@@ -2673,11 +2610,10 @@ fun ScheduleFormScreen(
 ---
 File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\viewmodel\CalendarViewModel.kt
 ```
-package com.xai.feature.schedule.viewmodel
+package com.xai.feature_schedule.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xai.core.data.models.DoseSchedule
 import com.xai.core.data.repository.DoseScheduleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -2694,7 +2630,7 @@ class CalendarViewModel @Inject constructor(
 ---
 File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\viewmodel\DoseConfirmViewModel.kt
 ```
-package com.xai.feature.schedule.viewmodel
+package com.xai.feature_schedule.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -2721,7 +2657,7 @@ class DoseConfirmViewModel @Inject constructor(
 ---
 File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\viewmodel\ScheduleViewModel.kt
 ```
-package com.xai.feature.schedule.viewmodel
+package com.xai.feature_schedule.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -2738,6 +2674,175 @@ class ScheduleViewModel @Inject constructor(
 
     fun save(schedule: DoseSchedule) = viewModelScope.launch {
         repo.insert(schedule)
+    }
+}
+```
+---
+File: feature_sync\src\main\kotlin\com\xai\feature_sync\di\SyncModule.kt
+```
+package com.xai.feature_sync.di
+
+import android.content.Context
+import androidx.work.WorkManager
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object SyncModule {
+
+    @Provides
+    @Singleton
+    fun provideWorkManager(@ApplicationContext context: Context): WorkManager =
+        WorkManager.getInstance(context)
+}
+```
+---
+File: feature_sync\src\main\kotlin\com\xai\feature_sync\ui\SettingsScreen.kt
+```
+package com.xai.feature_sync.ui
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Button
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.xai.feature_sync.viewmodel.SyncViewModel
+import kotlinx.coroutines.launch
+
+@Composable
+fun SettingsScreen(viewModel: SyncViewModel = hiltViewModel()) {
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    Column {
+        Button(onClick = { viewModel.testSync() }) {
+            Text("Test DB Integrity & Sync")
+        }
+        Button(onClick = {
+            coroutineScope.launch {
+                viewModel.manualSync(snackbarHostState)
+            }
+        }) {
+            Text("Manual Sync")
+        }
+    }
+    SnackbarHost(snackbarHostState)
+}
+```
+---
+File: feature_sync\src\main\kotlin\com\xai\feature_sync\utils\SyncWorker.kt
+```
+package com.xai.feature_sync.utils
+
+import android.content.Context
+import androidx.hilt.work.HiltWorker
+import androidx.work.CoroutineWorker
+import androidx.work.WorkerParameters
+import com.google.firebase.auth.FirebaseAuth
+import com.xai.core.data.repository.*
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
+import timber.log.Timber
+import java.util.Locale
+
+@HiltWorker
+class SyncWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val medRepo: MedicationRepository,
+    private val scheduleRepo: DoseScheduleRepository,
+    private val logRepo: DoseLogRepository,
+    private val supplyRepo: SupplyRepository,
+    private val reconstRepo: ReconstitutionRepository,
+    private val profileRepo: ProfileRepository,
+    private val auth: FirebaseAuth
+) : CoroutineWorker(context, params) {
+
+    override suspend fun doWork(): Result {
+        Timber.d("SyncWorker started")
+        if (Locale.getDefault().country.equals("CN", ignoreCase = true)) {
+            Timber.w("Firebase disabled in China - local mode only")
+            return Result.success() // Local mode, no sync
+        }
+        val userId = auth.currentUser?.uid ?: run {
+            Timber.w("No userId - sync failed")
+            return Result.failure()
+        }
+        try {
+            medRepo.syncWithFirestore(userId)
+            scheduleRepo.syncWithFirestore(userId)
+            logRepo.syncWithFirestore(userId)
+            supplyRepo.syncWithFirestore(userId)
+            reconstRepo.syncWithFirestore(userId)
+            profileRepo.syncWithFirestore(userId)
+            Timber.d("Sync success")
+            return Result.success()
+        } catch (e: Exception) {
+            Timber.e(e, "Sync error")
+            return Result.retry()
+        }
+    }
+}
+```
+---
+File: feature_sync\src\main\kotlin\com\xai\feature_sync\viewmodel\SyncViewModel.kt
+```
+package com.xai.feature_sync.viewmodel
+
+import androidx.compose.material3.SnackbarHostState
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.xai.core.data.repository.*
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import timber.log.Timber
+import javax.inject.Inject
+
+@HiltViewModel
+class SyncViewModel @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val medRepo: MedicationRepository,
+    private val scheduleRepo: DoseScheduleRepository,
+    private val logRepo: DoseLogRepository,
+    private val supplyRepo: SupplyRepository,
+    private val reconstRepo: ReconstitutionRepository,
+    private val profileRepo: ProfileRepository  // Add
+) : ViewModel() {
+
+    fun testSync() = viewModelScope.launch {
+        val userId = auth.currentUser?.uid ?: return@launch
+        medRepo.syncWithFirestore(userId)
+        // Call others; add integrity (e.g., count match)
+    }
+
+    suspend fun manualSync(snackbarHostState: SnackbarHostState) {
+        val userId = auth.currentUser?.uid ?: run {
+            snackbarHostState.showSnackbar("No user logged in")
+            return
+        }
+        try {
+            medRepo.syncWithFirestore(userId)
+            scheduleRepo.syncWithFirestore(userId)
+            logRepo.syncWithFirestore(userId)
+            supplyRepo.syncWithFirestore(userId)
+            reconstRepo.syncWithFirestore(userId)
+            profileRepo.syncWithFirestore(userId)  // Add
+            snackbarHostState.showSnackbar("Synced successfully")
+            Timber.d("Manual sync success")
+        } catch (e: Exception) {
+            snackbarHostState.showSnackbar("Sync failed: ${e.message}")
+            Timber.e(e, "Manual sync error")
+        }
     }
 }
 ```
@@ -3124,6 +3229,15 @@ dependencies {
     implementation(libs.biometric)
     implementation(libs.work.runtime.ktx)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
+
+    // Feature Modules
+    implementation(project(":core"))
+    implementation(project(":feature_med"))
+    implementation(project(":feature_schedule"))
+    implementation(project(":feature_auth"))
+    implementation(project(":feature_iap"))
+    implementation(project(":feature_sync"))
+    implementation(project(":feature_advanced"))
 }
 ```
 ---
@@ -3184,6 +3298,17 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.lifecycle.viewmodel.compose)
+
+    // Feature Modules
+    implementation(project(":core"))
+    implementation(project(":feature_med"))
+    implementation(project(":feature_schedule"))
+    implementation(project(":feature_auth"))
+    implementation(project(":feature_iap"))
+    implementation(project(":feature_sync"))
+    implementation(project(":feature_advanced"))
+
 }
 ```
 ---
@@ -3249,6 +3374,15 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
+    // Feature Modules
+    implementation(project(":core"))
+    implementation(project(":feature_med"))
+    implementation(project(":feature_schedule"))
+    implementation(project(":feature_auth"))
+    implementation(project(":feature_iap"))
+    implementation(project(":feature_sync"))
+    implementation(project(":feature_advanced"))
 }
 ```
 ---
@@ -3303,6 +3437,15 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     ksp(libs.hilt.compiler)
+
+    // Feature Modules
+    implementation(project(":core"))
+    implementation(project(":feature_med"))
+    implementation(project(":feature_schedule"))
+    implementation(project(":feature_auth"))
+    implementation(project(":feature_iap"))
+    implementation(project(":feature_sync"))
+    implementation(project(":feature_advanced"))
 }
 ```
 ---
@@ -3366,6 +3509,15 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.timber)
     implementation(libs.lifecycle.viewmodel.compose)
+
+    // Feature Modules
+    implementation(project(":core"))
+    implementation(project(":feature_med"))
+    implementation(project(":feature_schedule"))
+    implementation(project(":feature_auth"))
+    implementation(project(":feature_iap"))
+    implementation(project(":feature_sync"))
+    implementation(project(":feature_advanced"))
 }
 ```
 ---
@@ -3427,6 +3579,15 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
+    // Feature Modules
+    implementation(project(":core"))
+    implementation(project(":feature_med"))
+    implementation(project(":feature_schedule"))
+    implementation(project(":feature_auth"))
+    implementation(project(":feature_iap"))
+    implementation(project(":feature_sync"))
+    implementation(project(":feature_advanced"))
 }
 ```
 ---

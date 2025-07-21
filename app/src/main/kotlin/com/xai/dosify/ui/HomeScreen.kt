@@ -32,5 +32,8 @@ fun HomeScreen(navController: NavController) {
         Button(onClick = { navController.navigate(NavRoutes.SETTINGS) }) {
             Text("Settings & Diagnostics")
         }
+        Button(onClick = { navController.navigate(NavRoutes.SUPPLY_FORM) }) {
+            Text("Add Supply")
+        }
     }
 }

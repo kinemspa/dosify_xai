@@ -56,4 +56,13 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.timber)
     implementation(libs.lifecycle.viewmodel.compose)
+
+    // Feature Modules
+    implementation(project(":core"))
+    implementation(project(":feature_med"))
+    implementation(project(":feature_schedule"))
+    implementation(project(":feature_auth"))
+    implementation(project(":feature_iap"))
+    implementation(project(":feature_sync"))
+    implementation(project(":feature_advanced"))
 }
