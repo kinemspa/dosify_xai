@@ -1,13 +1,13 @@
 package com.xai.dosify.core.data
 
 import androidx.room.TypeConverter
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import com.xai.dosify.core.data.models.TitrationStep
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import com.xai.dosify.core.data.models.TitrationStep
 
 class Converters {
     private val timeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
@@ -18,7 +18,10 @@ class Converters {
     fun fromLocalTimeList(times: List<LocalTime>): String = times.joinToString(",") { it.format(timeFormatter) }
 
     @TypeConverter
-    fun toLocalTimeList(timesStr: String): List<LocalTime> = timesStr.split(",").map { LocalTime.parse(it, timeFormatter) }
+    fun toLocalTimeList(timesStr: String): List<LocalTime> {
+        if (timesStr.isEmpty()) return emptyList() // Handle empty string
+        return timesStr.split(",").map { LocalTime.parse(it, timeFormatter) }
+    }
 
     @TypeConverter
     fun fromLocalDate(date: LocalDate): String = date.format(dateFormatter)
