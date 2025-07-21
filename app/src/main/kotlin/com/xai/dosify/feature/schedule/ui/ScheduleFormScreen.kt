@@ -1,5 +1,6 @@
 package com.xai.dosify.feature.schedule.ui
 
+import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -33,6 +34,7 @@ import com.xai.dosify.feature.med.viewmodel.MedListViewModel
 import com.xai.dosify.feature.schedule.viewmodel.ScheduleViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -141,12 +143,20 @@ fun ScheduleFormScreen(
 
             // Time picker button
             Button(onClick = {
-                // Simple stub: Add first time (replace with actual picker later)
-                times = times + LocalTime.now()
+                val now = LocalTime.now()
+                TimePickerDialog(
+                    context,
+                    { _, hour, minute ->
+                        times = times + LocalTime.of(hour, minute)
+                    },
+                    now.hour,
+                    now.minute,
+                    true // 24-hour format
+                ).show()
             }) {
                 Text("Add Dose Time")
             }
-            Text("Times: ${times.joinToString()}")
+            Text("Times: ${times.joinToString { it.format(DateTimeFormatter.ofPattern("HH:mm")) }}")
 
             if (isPremium) {
                 TextField(
@@ -179,7 +189,7 @@ fun ScheduleFormScreen(
                 coroutineScope.launch {
                     try {
                         viewModel.save(schedule)
-                        setDoseAlarm(context, schedule) // Set alarm
+                        setDoseAlarm(context, schedule)
                         snackbarHostState.showSnackbar("Schedule saved")
                     } catch (e: Exception) {
                         snackbarHostState.showSnackbar("Save failed: ${e.message}")
