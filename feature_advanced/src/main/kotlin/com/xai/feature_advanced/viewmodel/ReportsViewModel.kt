@@ -9,6 +9,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
+import androidx.lifecycle.viewModelScope
+import com.xai.dosify.core.data.models.DoseLog
+import com.xai.dosify.core.data.repository.DoseLogRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 @HiltViewModel
 class ReportsViewModel @Inject constructor(

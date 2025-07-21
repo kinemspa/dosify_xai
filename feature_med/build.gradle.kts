@@ -49,4 +49,5 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.timber)
     implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.kotlinx.coroutines.android)
 }

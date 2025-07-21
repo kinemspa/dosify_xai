@@ -23,6 +23,7 @@ import com.xai.feature.schedule.viewmodel.CalendarViewModel
 import java.time.LocalDate
 import java.time.YearMonth
 
+
 @Composable
 fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
     val schedules by viewModel.schedules.collectAsState(emptyList())
