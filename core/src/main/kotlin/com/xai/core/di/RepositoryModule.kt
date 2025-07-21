@@ -19,29 +19,29 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindAuthRepository(repo: AuthRepository): AuthRepository
+    abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
 
     @Binds
     @Singleton
-    abstract fun bindDoseLogRepository(repo: DoseLogRepository): DoseLogRepository
+    abstract fun bindDoseLogRepository(impl: DoseLogRepositoryImpl): DoseLogRepository
 
     @Binds
     @Singleton
-    abstract fun bindDoseScheduleRepository(repo: DoseScheduleRepository): DoseScheduleRepository
+    abstract fun bindDoseScheduleRepository(impl: DoseScheduleRepositoryImpl): DoseScheduleRepository
 
     @Binds
     @Singleton
-    abstract fun bindMedicationRepository(repo: MedicationRepository): MedicationRepository
+    abstract fun bindMedicationRepository(impl: MedicationRepositoryImpl): MedicationRepository
 
     @Binds
     @Singleton
-    abstract fun bindProfileRepository(repo: ProfileRepository): ProfileRepository
+    abstract fun bindProfileRepository(impl: ProfileRepositoryImpl): ProfileRepository
 
     @Binds
     @Singleton
-    abstract fun bindReconstitutionRepository(repo: ReconstitutionRepository): ReconstitutionRepository
+    abstract fun bindReconstitutionRepository(impl: ReconstitutionRepositoryImpl): ReconstitutionRepository
 
     @Binds
     @Singleton
-    abstract fun bindSupplyRepository(repo: SupplyRepository): SupplyRepository
+    abstract fun bindSupplyRepository(impl: SupplyRepositoryImpl): SupplyRepository
 }
