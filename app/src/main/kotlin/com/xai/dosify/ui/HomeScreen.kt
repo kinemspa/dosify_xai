@@ -20,6 +20,9 @@ fun HomeScreen(navController: NavController) {
         Button(onClick = { navController.navigate(NavRoutes.SCHEDULE_FORM) }) {
             Text("Add Schedule")
         }
+        Button(onClick = { navController.navigate(NavRoutes.CALENDAR) }) {
+            Text("View Calendar")
+        }
         Button(onClick = { navController.navigate(NavRoutes.DOSE_CONFIRM) }) {
             Text("Confirm Dose")
         }

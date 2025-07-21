@@ -22,3 +22,10 @@ dependencyResolutionManagement {
 
 rootProject.name = "Dosify"
 include(":app")
+include(":core")
+include(":feature_medication")
+include(":feature_schedule")
+include(":feature_auth")
+include(":feature_iap")
+include(":feature_sync")
+include(":feature_advanced")

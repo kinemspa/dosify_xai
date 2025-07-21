@@ -1,1051 +1,348 @@
-File: app\src\main\kotlin\com\xai\dosify\core\data\dao\DoseLogDao.kt
+File: app\src\main\kotlin\com\xai\dosify\nav\NavGraph.kt
 ```
-package com.xai.dosify.core.data.dao
+package com.xai.dosify.nav
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import com.xai.dosify.core.data.models.DoseLog
-import kotlinx.coroutines.flow.Flow
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import com.xai.dosify.feature.advanced.ui.ReportsScreen
+import com.xai.dosify.feature.auth.LoginScreen
+import com.xai.dosify.feature.med.ui.MedFormScreen
+import com.xai.dosify.feature.med.ui.MedListScreen
+import com.xai.dosify.feature.schedule.ui.DoseConfirmScreen
+import com.xai.dosify.feature.schedule.ui.ScheduleFormScreen
+import com.xai.dosify.feature.sync.ui.SettingsScreen
+import com.xai.dosify.ui.HomeScreen
 
-@Dao
-interface DoseLogDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(log: DoseLog)
-
-    @Query("SELECT * FROM dose_logs WHERE scheduleId = :scheduleId ORDER BY takenTime DESC")
-    fun getBySchedule(scheduleId: Long): Flow<List<DoseLog>>
-
-    @Query("SELECT * FROM dose_logs ORDER BY takenTime DESC LIMIT 10")
-    fun getRecent(): Flow<List<DoseLog>>
-
-    @Query("SELECT * FROM dose_logs")
-    fun getAll(): Flow<List<DoseLog>>
+object NavRoutes {
+    const val LOGIN = "login"
+    const val HOME = "home"
+    const val MED_FORM = "med_form"
+    const val MED_LIST = "med_list"
+    const val SCHEDULE_FORM = "schedule_form"
+    const val DOSE_CONFIRM = "dose_confirm"
+    const val REPORTS = "reports"
+    const val SETTINGS = "settings"
 }
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\dao\DoseScheduleDao.kt
-```
-package com.xai.dosify.core.data.dao
 
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.Update
-import com.xai.dosify.core.data.models.DoseSchedule
-import kotlinx.coroutines.flow.Flow
-
-@Dao
-interface DoseScheduleDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(schedule: DoseSchedule)
-
-    @Update
-    suspend fun update(schedule: DoseSchedule)
-
-    @Delete
-    suspend fun delete(schedule: DoseSchedule)
-
-    @Query("SELECT * FROM dose_schedules WHERE id = :id")
-    fun getById(id: Long): Flow<DoseSchedule?>
-
-    @Query("SELECT * FROM dose_schedules WHERE medId = :medId")
-    fun getByMedId(medId: Long): Flow<List<DoseSchedule>>
-
-    @Query("SELECT * FROM dose_schedules WHERE isActive = 1")
-    fun getActive(): Flow<List<DoseSchedule>>
-
-    @Query("SELECT * FROM dose_schedules")
-    fun getAll(): Flow<List<DoseSchedule>>
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\dao\MedicationDao.kt
-```
-package com.xai.dosify.core.data.dao
-
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.Update
-import com.xai.dosify.core.data.models.Medication
-import kotlinx.coroutines.flow.Flow
-
-@Dao
-interface MedicationDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(medication: Medication)
-
-    @Update
-    suspend fun update(medication: Medication)
-
-    @Delete
-    suspend fun delete(medication: Medication)
-
-    @Query("SELECT * FROM medications WHERE id = :id")
-    fun getById(id: Long): Flow<Medication?>
-
-    @Query("SELECT * FROM medications")
-    fun getAll(): Flow<List<Medication>>
-
-    @Query("UPDATE medications SET stock = stock - :amount WHERE id = :medId AND stock >= :amount")
-    suspend fun decrementStock(medId: Long, amount: Double): Int
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\dao\ProfileDao.kt
-```
-package com.xai.dosify.core.data.dao
-
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import com.xai.dosify.core.data.models.Profile
-import kotlinx.coroutines.flow.Flow
-
-@Dao
-interface ProfileDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(profile: Profile)
-
-    @Query("SELECT * FROM profiles")
-    fun getAll(): Flow<List<Profile>>
-
-    @Query("SELECT * FROM profiles WHERE isPremium = 1 LIMIT 1")
-    fun getPremium(): Flow<Profile?>
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\dao\ReconstitutionDao.kt
-```
-package com.xai.dosify.core.data.dao
-
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.Update
-import com.xai.dosify.core.data.models.Reconstitution
-import kotlinx.coroutines.flow.Flow
-
-@Dao
-interface ReconstitutionDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(reconst: Reconstitution)
-
-    @Update
-    suspend fun update(reconst: Reconstitution)
-
-    @Query("SELECT * FROM reconstitutions WHERE medId = :medId")
-    fun getByMedId(medId: Long): Flow<Reconstitution?>
-
-    @Query("SELECT * FROM reconstitutions")
-    fun getAll(): Flow<List<Reconstitution>>
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\dao\SupplyDao.kt
-```
-package com.xai.dosify.core.data.dao
-
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.Update
-import com.xai.dosify.core.data.models.Supply
-import kotlinx.coroutines.flow.Flow
-
-@Dao
-interface SupplyDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(supply: Supply)
-
-    @Update
-    suspend fun update(supply: Supply)
-
-    @Delete
-    suspend fun delete(supply: Supply)
-
-    @Query("SELECT * FROM supplies WHERE id = :id")
-    fun getById(id: Long): Flow<Supply?>
-
-    @Query("SELECT * FROM supplies")
-    fun getAll(): Flow<List<Supply>>
-
-    @Query("UPDATE supplies SET stock = stock - :amount WHERE id = :supplyId AND stock >= :amount")
-    suspend fun decrementStock(supplyId: Long, amount: Double): Int
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\models\DoseLog.kt
-```
-package com.xai.dosify.core.data.models
-
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import com.google.firebase.firestore.IgnoreExtraProperties
-import java.time.LocalDateTime
-
-@IgnoreExtraProperties
-@Entity(tableName = "dose_logs")
-data class DoseLog(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val scheduleId: Long = 0,
-    val takenTime: LocalDateTime = LocalDateTime.now(),
-    val amountTaken: Double = 0.0,
-    val notes: String? = null,
-    val reaction: String? = null
-)
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\models\DoseSchedule.kt
-```
-package com.xai.dosify.core.data.models
-
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import androidx.room.TypeConverters
-import com.xai.dosify.core.data.Converters
-import com.google.firebase.firestore.IgnoreExtraProperties
-import java.time.LocalDate
-import java.time.LocalTime
-
-@IgnoreExtraProperties
-@Entity(tableName = "dose_schedules")
-@TypeConverters(Converters::class)
-data class DoseSchedule(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val medId: Long = 0,
-    val doseAmount: Double = 0.0,
-    val unit: String = "",
-    val frequency: Frequency = Frequency.DAILY,
-    val times: List<LocalTime> = emptyList(),
-    val startDate: LocalDate = LocalDate.now(),
-    val endDate: LocalDate? = null,
-    val isActive: Boolean = true,
-    val cycleWeeks: Int? = null,
-    val cycleOffWeeks: Int? = null,
-    val isCycling: Boolean = false,
-    val titrationSteps: List<TitrationStep>? = null
-)
-
-data class TitrationStep(
-    val period: Int = 0,
-    val doseAmount: Double = 0.0
-)
-
-enum class Frequency {
-    DAILY, WEEKLY, CUSTOM
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\models\medication.kt
-```
-package com.xai.dosify.core.data.models
-
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import com.google.firebase.firestore.IgnoreExtraProperties
-
-@IgnoreExtraProperties
-@Entity(tableName = "medications")
-data class Medication(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val name: String = "",
-    val type: MedType = MedType.OTHER,
-    val strength: Double = 0.0,
-    val unit: String = "",
-    val stock: Double = 0.0,
-    val lowStockThreshold: Double = 0.0,
-    val reconstitution: Boolean = false
-)
-
-enum class MedType {
-    TABLET, INJECTION, DROPS, OTHER
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\models\Profile.kt
-```
-package com.xai.dosify.core.data.models
-
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import com.google.firebase.firestore.IgnoreExtraProperties
-
-@IgnoreExtraProperties
-@Entity(tableName = "profiles")
-data class Profile(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val name: String = "",
-    val isPremium: Boolean = false  // From IAP check
-)
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\models\Reconstitution.kt
-```
-package com.xai.dosify.core.data.models
-
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import com.google.firebase.firestore.IgnoreExtraProperties
-
-@IgnoreExtraProperties
-@Entity(tableName = "reconstitutions")
-data class Reconstitution(
-    @PrimaryKey val medId: Long = 0,
-    val powderAmount: Double = 0.0,
-    val solventVolume: Double = 0.0,
-    val desiredConcentration: Double? = null,
-    val calculatedVolumePerDose: Double? = null
-)
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\models\Supply.kt
-```
-package com.xai.dosify.core.data.models
-
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import com.google.firebase.firestore.IgnoreExtraProperties
-
-@IgnoreExtraProperties
-@Entity(tableName = "supplies")
-data class Supply(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val name: String = "",
-    val unit: String = "",
-    val stock: Double = 0.0,
-    val lowStockThreshold: Double = 0.0,
-    val linkedMedId: Long? = null
-)
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\repository\AuthRepository.kt
-```
-package com.xai.dosify.core.data.repository
-
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.GoogleAuthProvider
-import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
-
-class AuthRepository @Inject constructor(
-    private val auth: FirebaseAuth
-) {
-    suspend fun emailLogin(email: String, password: String): Boolean = try {
-        auth.signInWithEmailAndPassword(email, password).await() != null
-    } catch (e: Exception) { false }
-
-    suspend fun googleLogin(idToken: String): Boolean = try {
-        auth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null)).await() != null
-    } catch (e: Exception) { false }
-
-    fun logout() = auth.signOut()
-
-    fun currentUser() = auth.currentUser != null
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\repository\DoseLogRepository.kt
-```
-package com.xai.dosify.core.data.repository
-
-import com.xai.dosify.core.data.dao.DoseLogDao
-import com.xai.dosify.core.data.models.DoseLog
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
-
-class DoseLogRepository @Inject constructor(
-    private val dao: DoseLogDao,
-    private val firestore: FirebaseFirestore
-) {
-    suspend fun insert(log: DoseLog) = dao.insert(log)
-
-    fun getBySchedule(scheduleId: Long): Flow<List<DoseLog>> = dao.getBySchedule(scheduleId)
-
-    fun getRecent(): Flow<List<DoseLog>> = dao.getRecent()
-
-    suspend fun syncWithFirestore(userId: String) {
-        val localLogs = dao.getAll().first()  // Assume add getAll() to Dao
-        val remoteCollection = firestore.collection("users/$userId/logs")
-
-        localLogs.forEach { log ->
-            remoteCollection.document(log.id.toString()).set(log).await()
+@Composable
+fun AppNavGraph(navController: NavHostController) {
+    NavHost(navController = navController, startDestination = NavRoutes.LOGIN) {
+        composable(NavRoutes.LOGIN) {
+            LoginScreen(onLoginSuccess = { navController.navigate(NavRoutes.HOME) })
         }
-
-        val remoteLogs = remoteCollection.get().await().toObjects(DoseLog::class.java)
-        remoteLogs.forEach { remote ->
-            if (!localLogs.any { it.id == remote.id }) {
-                dao.insert(remote)
-            }
+        composable(NavRoutes.HOME) {
+            HomeScreen(navController)
+        }
+        composable(NavRoutes.MED_FORM) {
+            MedFormScreen()
+        }
+        composable(NavRoutes.MED_LIST) {
+            MedListScreen()
+        }
+        composable(NavRoutes.SCHEDULE_FORM) {
+            ScheduleFormScreen()
+        }
+        composable(NavRoutes.DOSE_CONFIRM) {
+            DoseConfirmScreen()
+        }
+        composable(NavRoutes.REPORTS) {
+            ReportsScreen()
+        }
+        composable(NavRoutes.SETTINGS) {
+            SettingsScreen()
         }
     }
 }
 ```
 ---
-File: app\src\main\kotlin\com\xai\dosify\core\data\repository\DoseScheduleRepository.kt
+File: app\src\main\kotlin\com\xai\dosify\ui\notifications\YourAlarmReceiver.kt
 ```
-package com.xai.dosify.core.data.repository
+package com.xai.dosify.ui.notifications
 
-import com.xai.dosify.core.data.dao.DoseScheduleDao
-import com.xai.dosify.core.data.models.DoseSchedule
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
-
-class DoseScheduleRepository @Inject constructor(
-    private val dao: DoseScheduleDao,
-    private val firestore: FirebaseFirestore
-) {
-    suspend fun insert(schedule: DoseSchedule) = dao.insert(schedule)
-
-    suspend fun update(schedule: DoseSchedule) = dao.update(schedule)
-
-    suspend fun delete(schedule: DoseSchedule) = dao.delete(schedule)
-
-    fun getById(id: Long): Flow<DoseSchedule?> = dao.getById(id)
-
-    fun getByMedId(medId: Long): Flow<List<DoseSchedule>> = dao.getByMedId(medId)
-
-    fun getActive(): Flow<List<DoseSchedule>> = dao.getActive()
-
-    suspend fun syncWithFirestore(userId: String) {
-        val localSchedules = dao.getAll().first()  // Assume add getAll() to Dao if needed
-        val remoteCollection = firestore.collection("users/$userId/schedules")
-
-        localSchedules.forEach { schedule ->
-            remoteCollection.document(schedule.id.toString()).set(schedule).await()
-        }
-
-        val remoteSchedules = remoteCollection.get().await().toObjects(DoseSchedule::class.java)
-        remoteSchedules.forEach { remote ->
-            if (!localSchedules.any { it.id == remote.id }) {
-                dao.insert(remote)
-            }
-        }
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\repository\MedicationRepository.kt
-```
-package com.xai.dosify.core.data.repository
-
-import com.xai.dosify.core.data.dao.MedicationDao
-import com.xai.dosify.core.data.dao.ReconstitutionDao
-import com.xai.dosify.core.data.models.Medication
-import com.xai.dosify.core.data.models.Reconstitution
-import com.xai.dosify.feature.advanced.utils.ReconstitutionUtils
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.tasks.await
-import timber.log.Timber  // Add this import
-import javax.inject.Inject
-
-class MedicationRepository @Inject constructor(
-    private val dao: MedicationDao,
-    private val firestore: FirebaseFirestore,
-    private val reconstDao: ReconstitutionDao
-) {
-    suspend fun insert(medication: Medication) = dao.insert(medication)
-
-    suspend fun update(medication: Medication) = dao.update(medication)
-
-    suspend fun delete(medication: Medication) = dao.delete(medication)
-
-    fun getById(id: Long): Flow<Medication?> = dao.getById(id)
-
-    fun getAll(): Flow<List<Medication>> = dao.getAll()
-
-    suspend fun decrementStock(medId: Long, amount: Double): Boolean = dao.decrementStock(medId, amount) > 0
-
-    suspend fun syncWithFirestore(userId: String) {
-        val localMeds = dao.getAll().first()
-        val remoteCollection = firestore.collection("users/$userId/meds")
-
-        localMeds.forEach { med ->
-            remoteCollection.document(med.id.toString()).set(med).await()
-        }
-
-        val remoteMeds = remoteCollection.get().await().toObjects(Medication::class.java)
-        remoteMeds.forEach { remote ->
-            if (!localMeds.any { it.id == remote.id }) {
-                dao.insert(remote)
-            }
-        }
-    }
-
-    suspend fun saveWithReconstitution(med: Medication, powder: Double, solvent: Double) {
-        dao.insert(med)
-        val conc = ReconstitutionUtils.calculateConcentration(powder, solvent)
-        val reconst = Reconstitution(medId = med.id, powderAmount = powder, solventVolume = solvent, desiredConcentration = conc)
-        reconstDao.insert(reconst)
-        Timber.d("Reconst inserted for med ${med.id}")
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\repository\ProfileRepository.kt
-```
-package com.xai.dosify.core.data.repository
-
-import com.xai.dosify.core.data.dao.ProfileDao
-import com.xai.dosify.core.data.models.Profile
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
-
-class ProfileRepository @Inject constructor(
-    private val dao: ProfileDao,
-    private val firestore: FirebaseFirestore
-) {
-    suspend fun insert(profile: Profile) = dao.insert(profile)
-
-    fun getAll(): Flow<List<Profile>> = dao.getAll()
-
-    fun getPremium(): Flow<Profile?> = dao.getPremium()
-
-    suspend fun syncWithFirestore(userId: String) {
-        val localProfiles = dao.getAll().first()
-        val remoteCollection = firestore.collection("users/$userId/profiles")
-
-        localProfiles.forEach { profile ->
-            remoteCollection.document(profile.id.toString()).set(profile).await()
-        }
-
-        val remoteProfiles = remoteCollection.get().await().toObjects(Profile::class.java)
-        remoteProfiles.forEach { remote ->
-            if (!localProfiles.any { it.id == remote.id }) {
-                dao.insert(remote)
-            }
-        }
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\repository\ReconstitutionRepository.kt
-```
-package com.xai.dosify.core.data.repository
-
-import com.xai.dosify.core.data.dao.ReconstitutionDao
-import com.xai.dosify.core.data.models.Reconstitution
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
-
-class ReconstitutionRepository @Inject constructor(
-    private val dao: ReconstitutionDao,
-    private val firestore: FirebaseFirestore
-) {
-    suspend fun insert(reconst: Reconstitution) = dao.insert(reconst)
-
-    suspend fun update(reconst: Reconstitution) = dao.update(reconst)
-
-    fun getByMedId(medId: Long): Flow<Reconstitution?> = dao.getByMedId(medId)
-
-    suspend fun syncWithFirestore(userId: String) {
-        val localReconsts = dao.getAll().first()  // Assume add getAll() to Dao
-        val remoteCollection = firestore.collection("users/$userId/reconsts")
-
-        localReconsts.forEach { reconst ->
-            remoteCollection.document(reconst.medId.toString()).set(reconst).await()
-        }
-
-        val remoteReconsts = remoteCollection.get().await().toObjects(Reconstitution::class.java)
-        remoteReconsts.forEach { remote ->
-            if (!localReconsts.any { it.medId == remote.medId }) {
-                dao.insert(remote)
-            }
-        }
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\repository\SupplyRepository.kt
-```
-package com.xai.dosify.core.data.repository
-
-import com.xai.dosify.core.data.dao.SupplyDao
-import com.xai.dosify.core.data.models.Supply
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
-
-class SupplyRepository @Inject constructor(
-    private val dao: SupplyDao,
-    private val firestore: FirebaseFirestore
-) {
-    suspend fun insert(supply: Supply) = dao.insert(supply)
-
-    suspend fun update(supply: Supply) = dao.update(supply)
-
-    suspend fun delete(supply: Supply) = dao.delete(supply)
-
-    fun getById(id: Long): Flow<Supply?> = dao.getById(id)
-
-    fun getAll(): Flow<List<Supply>> = dao.getAll()
-
-    suspend fun decrementStock(supplyId: Long, amount: Double): Boolean = dao.decrementStock(supplyId, amount) > 0
-
-    suspend fun syncWithFirestore(userId: String) {
-        val localSupplies = dao.getAll().first()
-        val remoteCollection = firestore.collection("users/$userId/supplies")
-
-        localSupplies.forEach { supply ->
-            remoteCollection.document(supply.id.toString()).set(supply).await()
-        }
-
-        val remoteSupplies = remoteCollection.get().await().toObjects(Supply::class.java)
-        remoteSupplies.forEach { remote ->
-            if (!localSupplies.any { it.id == remote.id }) {
-                dao.insert(remote)
-            }
-        }
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\AppDatabase.kt
-```
-package com.xai.dosify.core.data
-
-import androidx.room.Database
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
-import com.xai.dosify.core.data.dao.*
-import com.xai.dosify.core.data.models.*
-
-@Database(entities = [Medication::class, DoseSchedule::class, DoseLog::class, Supply::class, Reconstitution::class, Profile::class], version = 2, exportSchema = true)  // Bump version, add migration if needed
-@TypeConverters(Converters::class)
-abstract class AppDatabase : RoomDatabase() {
-    abstract fun medicationDao(): MedicationDao
-    abstract fun doseScheduleDao(): DoseScheduleDao
-    abstract fun doseLogDao(): DoseLogDao
-    abstract fun supplyDao(): SupplyDao
-    abstract fun reconstitutionDao(): ReconstitutionDao
-    abstract fun profileDao(): ProfileDao
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\data\Converters.kt
-```
-package com.xai.dosify.core.data
-
-import androidx.room.TypeConverter
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import com.xai.dosify.core.data.models.TitrationStep
-
-class Converters {
-    private val timeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
-    private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-    private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-
-    @TypeConverter
-    fun fromLocalTimeList(times: List<LocalTime>): String = times.joinToString(",") { it.format(timeFormatter) }
-
-    @TypeConverter
-    fun toLocalTimeList(timesStr: String): List<LocalTime> = timesStr.split(",").map { LocalTime.parse(it, timeFormatter) }
-
-    @TypeConverter
-    fun fromLocalDate(date: LocalDate): String = date.format(dateFormatter)
-
-    @TypeConverter
-    fun toLocalDate(dateStr: String): LocalDate = LocalDate.parse(dateStr, dateFormatter)
-
-    @TypeConverter
-    fun fromLocalDateTime(dateTime: LocalDateTime): String = dateTime.format(dateTimeFormatter)
-
-    @TypeConverter
-    fun toLocalDateTime(dateTimeStr: String): LocalDateTime = LocalDateTime.parse(dateTimeStr, dateTimeFormatter)
-
-    private val gson = Gson()
-
-    @TypeConverter
-    fun fromTitrationSteps(steps: List<TitrationStep>?): String? = gson.toJson(steps)
-
-    @TypeConverter
-    fun toTitrationSteps(stepsStr: String?): List<TitrationStep>? {
-        if (stepsStr == null) return null
-        val type = object : TypeToken<List<TitrationStep>>() {}.type
-        return gson.fromJson(stepsStr, type)
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\di\DatabaseModule.kt
-```
-package com.xai.dosify.core.di
-
+import android.content.BroadcastReceiver
 import android.content.Context
-import androidx.room.Room
-import com.xai.dosify.core.data.AppDatabase
-import com.xai.dosify.core.data.dao.*
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import android.content.Intent
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import com.xai.dosify.R
 
-@Module
-@InstallIn(SingletonComponent::class)
-object DatabaseModule {
-    @Provides
-    @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
-        Room.databaseBuilder(context, AppDatabase::class.java, "dosify_db")
-            .fallbackToDestructiveMigration(dropAllTables = true)
+class YourAlarmReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val scheduleId = intent.getLongExtra("scheduleId", -1)
+
+        val notification = NotificationCompat.Builder(context, "dose_channel")
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("Dose Reminder")
+            .setContentText("Time for your medication dose!")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
             .build()
 
-    @Provides
-    fun provideMedicationDao(db: AppDatabase): MedicationDao = db.medicationDao()
-    @Provides
-    fun provideDoseScheduleDao(db: AppDatabase): DoseScheduleDao = db.doseScheduleDao()
-    @Provides
-    fun provideDoseLogDao(db: AppDatabase): DoseLogDao = db.doseLogDao()
-    @Provides
-    fun provideSupplyDao(db: AppDatabase): SupplyDao = db.supplyDao()
-    @Provides
-    fun provideReconstitutionDao(db: AppDatabase): ReconstitutionDao = db.reconstitutionDao()
-    @Provides
-    fun provideProfileDao(db: AppDatabase): ProfileDao = db.profileDao()
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\di\FirebaseModule.kt
-```
-package com.xai.dosify.core.di
-
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
-
-@Module
-@InstallIn(SingletonComponent::class)
-object FirebaseModule {
-    @Provides
-    @Singleton
-    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
-
-    @Provides
-    @Singleton
-    fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\ui\theme\Color.kt
-```
-package com.xai.dosify.core.ui.theme
-
-import androidx.compose.ui.graphics.Color
-
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
-
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\ui\theme\Theme.kt
-```
-package com.xai.dosify.core.ui.theme
-
-import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
-)
-
-@Composable
-fun DosifyTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
-) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        val manager = NotificationManagerCompat.from(context)
+        manager.notify(scheduleId.toInt(), notification)
     }
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
 }
 ```
 ---
-File: app\src\main\kotlin\com\xai\dosify\core\ui\theme\Type.kt
+File: app\src\main\kotlin\com\xai\dosify\ui\HomeScreen.kt
 ```
-package com.xai.dosify.core.ui.theme
+package com.xai.dosify.ui
 
-import androidx.compose.material3.Typography
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
-
-// Set of Material typography styles to start with
-val Typography = Typography(
-    bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp
-    )
-    /* Other default text styles to override
-    titleLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp
-    ),
-    labelSmall = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp
-    )
-    */
-)
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\ui\MainActivity.kt
-```
-package com.xai.dosify.core.ui
-
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.systemBarsPadding  // Add this import
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.compose.rememberNavController
-import com.xai.dosify.core.ui.theme.DosifyTheme
-import com.xai.dosify.nav.AppNavGraph
-import dagger.hilt.android.AndroidEntryPoint
+import androidx.navigation.NavController
+import com.xai.dosify.nav.NavRoutes
 
-@AndroidEntryPoint
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            DosifyTheme {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .systemBarsPadding(),  // Add for top/bottom space
-                    color = MaterialTheme.colorScheme.background
+@Composable
+fun HomeScreen(navController: NavController) {
+    Column {
+        Text("Home - Dosify Dashboard")
+        Button(onClick = { navController.navigate(NavRoutes.MED_FORM) }) {
+            Text("Add Medication")
+        }
+        Button(onClick = { navController.navigate(NavRoutes.MED_LIST) }) {
+            Text("View Medications")
+        }
+        Button(onClick = { navController.navigate(NavRoutes.SCHEDULE_FORM) }) {
+            Text("Add Schedule")
+        }
+        Button(onClick = { navController.navigate(NavRoutes.DOSE_CONFIRM) }) {
+            Text("Confirm Dose")
+        }
+        Button(onClick = { navController.navigate(NavRoutes.REPORTS) }) {
+            Text("View Reports")
+        }
+        Button(onClick = { navController.navigate(NavRoutes.SETTINGS) }) {
+            Text("Settings & Diagnostics")
+        }
+    }
+}
+```
+---
+File: app\src\main\res\values\colors.xml
+```
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>
+```
+---
+File: app\src\main\res\values\strings.xml
+```
+<resources>
+    <string name="app_name">Dosify</string>
+    <string name="web_client_id">442282970063-fv9d227q9imcntr9i7tbm1akirltjvml.apps.googleusercontent.com</string>  <!-- From Firebase console -->
+</resources>
+```
+---
+File: app\src\main\res\values\themes.xml
+```
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.Dosify" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
+```
+---
+File: app\src\main\res\xml\backup_rules.xml
+```
+<?xml version="1.0" encoding="utf-8"?><!--
+   Sample backup rules file; uncomment and customize as necessary.
+   See https://developer.android.com/guide/topics/data/autobackup
+   for details.
+   Note: This file is ignored for devices older than API 31
+   See https://developer.android.com/about/versions/12/backup-restore
+-->
+<full-backup-content>
+    <!--
+   <include domain="sharedpref" path="."/>
+   <exclude domain="sharedpref" path="device.xml"/>
+-->
+</full-backup-content>
+```
+---
+File: app\src\main\res\xml\data_extraction_rules.xml
+```
+<?xml version="1.0" encoding="utf-8"?><!--
+   Sample data extraction rules file; uncomment and customize as necessary.
+   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
+   for details.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- TODO: Use <include> and <exclude> to control what is backed up.
+        <include .../>
+        <exclude .../>
+        -->
+    </cloud-backup>
+    <!--
+    <device-transfer>
+        <include .../>
+        <exclude .../>
+    </device-transfer>
+    -->
+</data-extraction-rules>
+```
+---
+Directory not found: core/src/main/kotlin/com/xai/dosify/core
+File: feature_medication\src\main\kotlin\com\xai\feature_med\ui\MedFormScreen.kt
+```
+package com.xai.dosify.feature.med.ui
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.xai.dosify.core.data.models.MedType
+import com.xai.dosify.core.data.models.Medication
+import com.xai.dosify.feature.advanced.viewmodel.MedViewModel
+import kotlinx.coroutines.launch
+import timber.log.Timber
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
+    var name by remember { mutableStateOf("") }
+    var strength by remember { mutableStateOf("") }
+    var unit by remember { mutableStateOf("") }
+    var stock by remember { mutableStateOf("") }
+    var lowStockThreshold by remember { mutableStateOf("") }
+    var powder by remember { mutableStateOf("") }
+    var solvent by remember { mutableStateOf("") }
+    var type by remember { mutableStateOf(MedType.TABLET) }
+    var expanded by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
+        Column(
+            modifier = Modifier.padding(padding).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
+            TextField(value = strength, onValueChange = { strength = it }, label = { Text("Strength") })
+            TextField(value = unit, onValueChange = { unit = it }, label = { Text("Unit") })
+            TextField(value = stock, onValueChange = { stock = it }, label = { Text("Stock") })
+            TextField(value = lowStockThreshold, onValueChange = { lowStockThreshold = it }, label = { Text("Low Stock Threshold") })
+
+            // Type dropdown
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                TextField(
+                    readOnly = true,
+                    value = type.name,
+                    onValueChange = { },
+                    label = { Text("Type") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    colors = ExposedDropdownMenuDefaults.textFieldColors(),
+                    modifier = Modifier.menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
                 ) {
-                    val navController = rememberNavController()
-                    AppNavGraph(navController)
+                    MedType.values().forEach { selectionOption ->
+                        DropdownMenuItem(
+                            text = { Text(selectionOption.name) },
+                            onClick = {
+                                type = selectionOption
+                                expanded = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
                 }
             }
-        }
-    }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    DosifyTheme {
-        Greeting("Dosify Ready")
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\utils\BiometricUtils.kt
-```
-package com.xai.dosify.core.utils
-
-import android.content.Context
-import androidx.biometric.BiometricPrompt
-import androidx.fragment.app.FragmentActivity
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-
-object BiometricUtils {
-    fun authenticate(activity: FragmentActivity): Flow<Boolean> = callbackFlow {
-        val prompt = BiometricPrompt(activity, object : BiometricPrompt.AuthenticationCallback() {
-            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                trySend(true)
+            if (type == MedType.INJECTION) {
+                TextField(value = powder, onValueChange = { powder = it }, label = { Text("Powder Amount") })
+                TextField(value = solvent, onValueChange = { solvent = it }, label = { Text("Solvent Volume") })
             }
-            override fun onAuthenticationFailed() {
-                trySend(false)
+            Button(onClick = {
+                Timber.d("Save button clicked")
+                val med = Medication(
+                    name = name,
+                    type = type,
+                    strength = strength.toDoubleOrNull() ?: 0.0,
+                    unit = unit,
+                    stock = stock.toDoubleOrNull() ?: 0.0,
+                    lowStockThreshold = lowStockThreshold.toDoubleOrNull() ?: 0.0,
+                    reconstitution = type == MedType.INJECTION
+                )
+                coroutineScope.launch {
+                    try {
+                        if (med.reconstitution) {
+                            viewModel.saveWithReconstitution(med, powder.toDoubleOrNull() ?: 0.0, solvent.toDoubleOrNull() ?: 0.0)
+                        } else {
+                            viewModel.insert(med)
+                        }
+                        snackbarHostState.showSnackbar("Medication saved")
+                        Timber.d("Save success")
+                    } catch (e: Exception) {
+                        snackbarHostState.showSnackbar("Save failed: ${e.message}")
+                        Timber.e(e, "Save error")
+                    }
+                }
+            }) {
+                Text("Save")
             }
-        })
-        prompt.authenticate(BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Biometric Login")
-            .setSubtitle("Use fingerprint/face")
-            .setNegativeButtonText("Cancel")
-            .build())
-        awaitClose { }
-    }
-
-    fun getPassphrase(context: Context): String = "secure_passphrase"  // Replace with real (e.g., KeyStore encrypted from biometrics)
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\utils\ReconstitutionUtils.kt
-```
-package com.xai.dosify.feature.advanced.utils
-
-object ReconstitutionUtils {
-    fun calculateConcentration(powderAmount: Double, solventVolume: Double): Double {
-        return powderAmount / solventVolume
-    }
-
-    fun calculateVolumePerDose(desiredDose: Double, concentration: Double): Double {
-        return desiredDose / concentration
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\core\DosifyApplication.kt
-```
-package com.xai.dosify.core
-
-import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
-import java.util.Locale
-
-@HiltAndroidApp
-class DosifyApplication : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        if (Locale.getDefault().country.equals("CN", ignoreCase = true)) {
-            // Disable Firebase (e.g., no init or mock)
         }
     }
 }
 ```
 ---
-File: app\src\main\kotlin\com\xai\dosify\feature\advanced\ui\ReportsScreen.kt
+File: feature_medication\src\main\kotlin\com\xai\feature_med\ui\MedListScreen.kt
 ```
-package com.xai.dosify.feature.advanced.ui
+package com.xai.dosify.feature.med.ui
 
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.github.mikephil.charting.charts.LineChart
-import com.github.mikephil.charting.data.Entry
-import com.github.mikephil.charting.data.LineData
-import com.github.mikephil.charting.data.LineDataSet
-import com.xai.dosify.feature.advanced.viewmodel.ReportsViewModel
+import com.xai.dosify.feature.med.viewmodel.MedListViewModel
 
 @Composable
-fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
-    val logs by viewModel.doseLogs.collectAsState(emptyList())
+fun MedListScreen(viewModel: MedListViewModel = hiltViewModel()) {
+    val meds by viewModel.meds.collectAsState(emptyList())
 
-    AndroidView(
-        factory = { LineChart(it) },
-        modifier = Modifier.fillMaxSize(),
-        update = { chart ->
-            val entries = logs.mapIndexed { i, log -> Entry(i.toFloat(), log.amountTaken.toFloat()) }
-            val dataSet = LineDataSet(entries, "Dose History")
-            chart.data = LineData(dataSet)
-            chart.invalidate()
+    LazyColumn {
+        items(meds) { med ->
+            Text("${med.name} - Stock: ${med.stock}")
         }
-    )
+    }
 }
 ```
 ---
-File: app\src\main\kotlin\com\xai\dosify\feature\advanced\viewmodel\ReportsViewModel.kt
+File: feature_medication\src\main\kotlin\com\xai\feature_med\viewmodel\MedListViewModel.kt
 ```
-package com.xai.dosify.feature.advanced.viewmodel
+package com.xai.dosify.feature.med.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xai.dosify.core.data.models.DoseLog
-import com.xai.dosify.core.data.repository.DoseLogRepository
+import com.xai.dosify.core.data.models.Medication
+import com.xai.dosify.core.data.repository.MedicationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -1053,15 +350,431 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
-class ReportsViewModel @Inject constructor(
-    private val logRepo: DoseLogRepository
+class MedListViewModel @Inject constructor(
+    private val repo: MedicationRepository
 ) : ViewModel() {
-    val doseLogs: Flow<List<DoseLog>> = logRepo.getRecent()
+    val meds: Flow<List<Medication>> = repo.getAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }
 ```
 ---
-File: app\src\main\kotlin\com\xai\dosify\feature\auth\di\AuthModule.kt
+File: feature_medication\src\main\kotlin\com\xai\feature_med\viewmodel\MedViewModel.kt
+```
+package com.xai.dosify.feature.advanced.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.xai.dosify.core.data.models.Medication
+import com.xai.dosify.core.data.repository.MedicationRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import timber.log.Timber
+import javax.inject.Inject
+
+@HiltViewModel
+class MedViewModel @Inject constructor(
+    private val repo: MedicationRepository
+) : ViewModel() {
+
+    fun insert(med: Medication) = viewModelScope.launch {
+        Timber.d("Insert med: ${med.name}")
+        repo.insert(med)
+    }
+
+    fun saveWithReconstitution(med: Medication, powder: Double, solvent: Double) = viewModelScope.launch {
+        Timber.d("Save reconst med: ${med.name}")
+        repo.saveWithReconstitution(med, powder, solvent)
+    }
+}
+```
+---
+File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\ui\DoseConfirmScreen.kt
+```
+package com.xai.dosify.feature.schedule.ui
+
+import android.app.TimePickerDialog
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.xai.dosify.core.data.models.DoseLog
+import com.xai.dosify.core.data.models.DoseSchedule
+import com.xai.dosify.core.utils.setDoseAlarm
+import com.xai.dosify.feature.schedule.viewmodel.DoseConfirmViewModel
+import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
+    val schedules by viewModel.activeSchedules.collectAsState(emptyList())
+    var selectedSchedule by remember { mutableStateOf<DoseSchedule?>(null) }
+    var notes by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        modifier = Modifier.padding(16.dp)
+    ) { padding ->
+        Column(
+            modifier = Modifier.padding(padding),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Schedule dropdown
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                TextField(
+                    readOnly = true,
+                    value = selectedSchedule?.let { "Med ${it.medId}: ${it.doseAmount} ${it.unit}" } ?: "Select Schedule",
+                    onValueChange = { },
+                    label = { Text("Schedule") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier.menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    schedules.forEach { schedule ->
+                        DropdownMenuItem(
+                            text = { Text("Med ${schedule.medId}: ${schedule.doseAmount} ${schedule.unit}") },
+                            onClick = {
+                                selectedSchedule = schedule
+                                expanded = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
+                }
+            }
+
+            // Notes field
+            TextField(
+                value = notes,
+                onValueChange = { notes = it },
+                label = { Text("Notes (optional)") }
+            )
+
+            Button(onClick = {
+                if (selectedSchedule == null) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Select a schedule")
+                    }
+                    return@Button
+                }
+                coroutineScope.launch {
+                    try {
+                        val doseLog = DoseLog(
+                            scheduleId = selectedSchedule!!.id,
+                            amountTaken = selectedSchedule!!.doseAmount,
+                            takenTime = LocalDateTime.now(),
+                            notes = notes.takeIf { it.isNotBlank() }
+                        )
+                        viewModel.doseLogRepo.insert(doseLog)
+                        // Decrement stock
+                        val success = viewModel.medRepo.decrementStock(selectedSchedule!!.medId, selectedSchedule!!.doseAmount)
+                        if (!success) {
+                            snackbarHostState.showSnackbar("Low stock")
+                        } else {
+                            // Set next alarm
+                            setDoseAlarm(context, selectedSchedule!!)
+                            snackbarHostState.showSnackbar("Dose confirmed")
+                        }
+                    } catch (e: Exception) {
+                        snackbarHostState.showSnackbar("Confirm failed: ${e.message}")
+                    }
+                }
+            }) {
+                Text("Confirm Dose")
+            }
+        }
+    }
+}
+```
+---
+File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\ui\ScheduleFormScreen.kt
+```
+package com.xai.dosify.feature.schedule.ui
+
+import android.app.TimePickerDialog
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.xai.dosify.core.data.models.DoseSchedule
+import com.xai.dosify.core.data.models.Frequency
+import com.xai.dosify.core.data.models.Medication
+import com.xai.dosify.core.utils.setDoseAlarm
+import com.xai.dosify.feature.iap.viewmodel.IapViewModel
+import com.xai.dosify.feature.med.viewmodel.MedListViewModel
+import com.xai.dosify.feature.schedule.viewmodel.ScheduleViewModel
+import kotlinx.coroutines.launch
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ScheduleFormScreen(
+    viewModel: ScheduleViewModel = hiltViewModel(),
+    iapViewModel: IapViewModel = hiltViewModel(),
+    medViewModel: MedListViewModel = hiltViewModel()
+) {
+    val isPremium by iapViewModel.isPremium.collectAsState(false)
+    val meds by medViewModel.meds.collectAsState(emptyList())
+    var doseAmount by remember { mutableStateOf("") }
+    var selectedMed by remember { mutableStateOf<Medication?>(null) }
+    var unit by remember { mutableStateOf("") }
+    var frequency by remember { mutableStateOf(Frequency.DAILY) }
+    var times by remember { mutableStateOf(emptyList<LocalTime>()) }
+    var cycleWeeks by remember { mutableStateOf("") }
+    var expandedMed by remember { mutableStateOf(false) }
+    var expandedFreq by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        modifier = Modifier.padding(16.dp)
+    ) { padding ->
+        Column(
+            modifier = Modifier.padding(padding),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Medication dropdown
+            ExposedDropdownMenuBox(
+                expanded = expandedMed,
+                onExpandedChange = { expandedMed = !expandedMed }
+            ) {
+                TextField(
+                    readOnly = true,
+                    value = selectedMed?.name ?: "Select Medication",
+                    onValueChange = { },
+                    label = { Text("Medication") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedMed) },
+                    modifier = Modifier.menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedMed,
+                    onDismissRequest = { expandedMed = false }
+                ) {
+                    meds.forEach { med ->
+                        DropdownMenuItem(
+                            text = { Text(med.name) },
+                            onClick = {
+                                selectedMed = med
+                                unit = med.unit
+                                expandedMed = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
+                }
+            }
+
+            // Dose amount
+            TextField(
+                value = doseAmount,
+                onValueChange = { doseAmount = it },
+                label = { Text("Dose Amount") }
+            )
+
+            // Unit (auto-filled from med)
+            TextField(
+                value = unit,
+                onValueChange = { unit = it },
+                label = { Text("Unit") },
+                enabled = false // Read-only from med
+            )
+
+            // Frequency dropdown
+            ExposedDropdownMenuBox(
+                expanded = expandedFreq,
+                onExpandedChange = { expandedFreq = !expandedFreq }
+            ) {
+                TextField(
+                    readOnly = true,
+                    value = frequency.name,
+                    onValueChange = { },
+                    label = { Text("Frequency") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedFreq) },
+                    modifier = Modifier.menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedFreq,
+                    onDismissRequest = { expandedFreq = false }
+                ) {
+                    Frequency.values().forEach { freq ->
+                        DropdownMenuItem(
+                            text = { Text(freq.name) },
+                            onClick = {
+                                frequency = freq
+                                expandedFreq = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
+                }
+            }
+
+            // Time picker button
+            Button(onClick = {
+                val now = LocalTime.now()
+                TimePickerDialog(
+                    context,
+                    { _, hour, minute ->
+                        times = times + LocalTime.of(hour, minute)
+                    },
+                    now.hour,
+                    now.minute,
+                    true // 24-hour format
+                ).show()
+            }) {
+                Text("Add Dose Time")
+            }
+            Text("Times: ${times.joinToString { it.format(DateTimeFormatter.ofPattern("HH:mm")) }}")
+
+            if (isPremium) {
+                TextField(
+                    value = cycleWeeks,
+                    onValueChange = { cycleWeeks = it },
+                    label = { Text("Cycle Weeks") }
+                )
+                // Add cycleOffWeeks, isCycling checkbox, titration later
+            } else {
+                Text("Premium feature - Subscribe for cycling/titration")
+                Button(onClick = { /* Launch billing flow later */ }) {
+                    Text("Subscribe")
+                }
+            }
+
+            Button(onClick = {
+                if (selectedMed == null) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Select a medication")
+                    }
+                    return@Button
+                }
+                val schedule = DoseSchedule(
+                    medId = selectedMed!!.id,
+                    doseAmount = doseAmount.toDoubleOrNull() ?: 0.0,
+                    unit = unit,
+                    frequency = frequency,
+                    times = times
+                )
+                coroutineScope.launch {
+                    try {
+                        viewModel.save(schedule)
+                        setDoseAlarm(context, schedule)
+                        snackbarHostState.showSnackbar("Schedule saved")
+                    } catch (e: Exception) {
+                        snackbarHostState.showSnackbar("Save failed: ${e.message}")
+                    }
+                }
+            }) {
+                Text("Save Schedule")
+            }
+        }
+    }
+}
+```
+---
+File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\viewmodel\DoseConfirmViewModel.kt
+```
+package com.xai.dosify.feature.schedule.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.xai.dosify.core.data.models.DoseSchedule
+import com.xai.dosify.core.data.repository.DoseLogRepository
+import com.xai.dosify.core.data.repository.DoseScheduleRepository
+import com.xai.dosify.core.data.repository.MedicationRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
+
+@HiltViewModel
+class DoseConfirmViewModel @Inject constructor(
+    val doseLogRepo: DoseLogRepository,
+    val medRepo: MedicationRepository,
+    private val scheduleRepo: DoseScheduleRepository
+) : ViewModel() {
+    val activeSchedules: Flow<List<DoseSchedule>> = scheduleRepo.getActive()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+}
+```
+---
+File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\viewmodel\ScheduleViewModel.kt
+```
+package com.xai.dosify.feature.schedule.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.xai.dosify.core.data.models.DoseSchedule
+import com.xai.dosify.core.data.repository.DoseScheduleRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class ScheduleViewModel @Inject constructor(
+    private val repo: DoseScheduleRepository
+) : ViewModel() {
+
+    fun save(schedule: DoseSchedule) = viewModelScope.launch {
+        repo.insert(schedule)
+    }
+}
+```
+---
+File: feature_auth\src\main\kotlin\com\xai\feature_auth\di\AuthModule.kt
 ```
 package com.xai.dosify.feature.auth.di
 
@@ -1083,7 +796,7 @@ object AuthModule {
 }
 ```
 ---
-File: app\src\main\kotlin\com\xai\dosify\feature\auth\AuthViewModel.kt
+File: feature_auth\src\main\kotlin\com\xai\feature_auth\AuthViewModel.kt
 ```
 package com.xai.dosify.feature.auth
 
@@ -1162,7 +875,7 @@ fun FirebaseAuth.authStateChanges(): Flow<FirebaseUser?> = callbackFlow {
 }
 ```
 ---
-File: app\src\main\kotlin\com\xai\dosify\feature\auth\LoginScreen.kt
+File: feature_auth\src\main\kotlin\com\xai\feature_auth\LoginScreen.kt
 ```
 package com.xai.dosify.feature.auth
 
@@ -1296,14 +1009,14 @@ private suspend fun handleCredential(result: GetCredentialResponse, viewModel: A
 }
 ```
 ---
-File: app\src\main\kotlin\com\xai\dosify\feature\iap\di\IapModule.kt
+File: feature_iap\src\main\kotlin\com\xai\feature_iap\di\IapModule.kt
 ```
 package com.xai.dosify.feature.iap.di
 
 import android.content.Context
 import com.android.billingclient.api.BillingClient
-import com.android.billingclient.api.BillingResult
-import com.android.billingclient.api.Purchase
+import com.android.billingclient.api.PendingPurchasesParams
+import com.android.billingclient.api.PurchasesUpdatedListener
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -1317,17 +1030,22 @@ object IapModule {
 
     @Provides
     @Singleton
-    fun provideBillingClient(@ApplicationContext context: Context): BillingClient =
-        BillingClient.newBuilder(context)
-            .setListener { billingResult: BillingResult, purchases: List<Purchase>? ->  // Fix: Add params
-                // Handle purchase updates
-            }
-            .enablePendingPurchases()
+    fun provideBillingClient(@ApplicationContext context: Context): BillingClient {
+        val pendingParams = PendingPurchasesParams.newBuilder()
+            .enableOneTimeProducts() // For one-time IAP like upgrades
             .build()
+
+        return BillingClient.newBuilder(context)
+            .enablePendingPurchases(pendingParams)
+            .setListener(PurchasesUpdatedListener { billingResult, purchases ->
+                // Handle updates; keep existing if any
+            })
+            .build()
+    }
 }
 ```
 ---
-File: app\src\main\kotlin\com\xai\dosify\feature\iap\viewmodel\IapViewModel.kt
+File: feature_iap\src\main\kotlin\com\xai\feature_iap\viewmodel\IapViewModel.kt
 ```
 package com.xai.dosify.feature.iap.viewmodel
 
@@ -1379,154 +1097,48 @@ class IapViewModel @Inject constructor(
 }
 ```
 ---
-File: app\src\main\kotlin\com\xai\dosify\feature\med\ui\MedFormScreen.kt
+File: feature_advanced\src\main\kotlin\com\xai\feature_advanced\ui\ReportsScreen.kt
 ```
-package com.xai.dosify.feature.med.ui
+package com.xai.dosify.feature.advanced.ui
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.xai.dosify.core.data.models.MedType
-import com.xai.dosify.core.data.models.Medication
-import com.xai.dosify.feature.advanced.viewmodel.MedViewModel
-import kotlinx.coroutines.launch
-import timber.log.Timber
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
-    var name by remember { mutableStateOf("") }
-    var strength by remember { mutableStateOf("") }
-    var unit by remember { mutableStateOf("") }
-    var stock by remember { mutableStateOf("") }
-    var lowStockThreshold by remember { mutableStateOf("") }
-    var powder by remember { mutableStateOf("") }
-    var solvent by remember { mutableStateOf("") }
-    var type by remember { mutableStateOf(MedType.TABLET) }
-    var expanded by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
-        Column(
-            modifier = Modifier.padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            TextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
-            TextField(value = strength, onValueChange = { strength = it }, label = { Text("Strength") })
-            TextField(value = unit, onValueChange = { unit = it }, label = { Text("Unit") })
-            TextField(value = stock, onValueChange = { stock = it }, label = { Text("Stock") })
-            TextField(value = lowStockThreshold, onValueChange = { lowStockThreshold = it }, label = { Text("Low Stock Threshold") })
-
-            // Type dropdown
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
-            ) {
-                TextField(
-                    readOnly = true,
-                    value = type.name,
-                    onValueChange = { },
-                    label = { Text("Type") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    colors = ExposedDropdownMenuDefaults.textFieldColors(),
-                    modifier = Modifier.menuAnchor()
-                )
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    MedType.values().forEach { selectionOption ->
-                        DropdownMenuItem(
-                            text = { Text(selectionOption.name) },
-                            onClick = {
-                                type = selectionOption
-                                expanded = false
-                            },
-                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                        )
-                    }
-                }
-            }
-
-            if (type == MedType.INJECTION) {
-                TextField(value = powder, onValueChange = { powder = it }, label = { Text("Powder Amount") })
-                TextField(value = solvent, onValueChange = { solvent = it }, label = { Text("Solvent Volume") })
-            }
-            Button(onClick = {
-                Timber.d("Save button clicked")
-                val med = Medication(
-                    name = name,
-                    type = type,
-                    strength = strength.toDoubleOrNull() ?: 0.0,
-                    unit = unit,
-                    stock = stock.toDoubleOrNull() ?: 0.0,
-                    lowStockThreshold = lowStockThreshold.toDoubleOrNull() ?: 0.0,
-                    reconstitution = type == MedType.INJECTION
-                )
-                coroutineScope.launch {
-                    try {
-                        if (med.reconstitution) {
-                            viewModel.saveWithReconstitution(med, powder.toDoubleOrNull() ?: 0.0, solvent.toDoubleOrNull() ?: 0.0)
-                        } else {
-                            viewModel.insert(med)
-                        }
-                        snackbarHostState.showSnackbar("Medication saved")
-                        Timber.d("Save success")
-                    } catch (e: Exception) {
-                        snackbarHostState.showSnackbar("Save failed: ${e.message}")
-                        Timber.e(e, "Save error")
-                    }
-                }
-            }) {
-                Text("Save")
-            }
-        }
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\feature\med\ui\MedListScreen.kt
-```
-package com.xai.dosify.feature.med.ui
-
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.xai.dosify.feature.med.viewmodel.MedListViewModel
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
+import com.xai.dosify.feature.advanced.viewmodel.ReportsViewModel
 
 @Composable
-fun MedListScreen(viewModel: MedListViewModel = hiltViewModel()) {
-    val meds by viewModel.meds.collectAsState(emptyList())
+fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
+    val logs by viewModel.doseLogs.collectAsState(emptyList())
 
-    LazyColumn {
-        items(meds) { med ->
-            Text("${med.name} - Stock: ${med.stock}")
+    AndroidView(
+        factory = { LineChart(it) },
+        modifier = Modifier.fillMaxSize(),
+        update = { chart ->
+            val entries = logs.mapIndexed { i, log -> Entry(i.toFloat(), log.amountTaken.toFloat()) }
+            val dataSet = LineDataSet(entries, "Dose History")
+            chart.data = LineData(dataSet)
+            chart.invalidate()
         }
-    }
+    )
 }
 ```
 ---
-File: app\src\main\kotlin\com\xai\dosify\feature\med\viewmodel\MedListViewModel.kt
+File: feature_advanced\src\main\kotlin\com\xai\feature_advanced\viewmodel\ReportsViewModel.kt
 ```
-package com.xai.dosify.feature.med.viewmodel
+package com.xai.dosify.feature.advanced.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xai.dosify.core.data.models.Medication
-import com.xai.dosify.core.data.repository.MedicationRepository
+import com.xai.dosify.core.data.models.DoseLog
+import com.xai.dosify.core.data.repository.DoseLogRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -1534,706 +1146,14 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
-class MedListViewModel @Inject constructor(
-    private val repo: MedicationRepository
+class ReportsViewModel @Inject constructor(
+    private val logRepo: DoseLogRepository
 ) : ViewModel() {
-    val meds: Flow<List<Medication>> = repo.getAll()
+    val doseLogs: Flow<List<DoseLog>> = logRepo.getRecent()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }
 ```
 ---
-File: app\src\main\kotlin\com\xai\dosify\feature\med\viewmodel\MedViewModel.kt
-```
-package com.xai.dosify.feature.advanced.viewmodel
-
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.xai.dosify.core.data.models.Medication
-import com.xai.dosify.core.data.repository.MedicationRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.launch
-import timber.log.Timber
-import javax.inject.Inject
-
-@HiltViewModel
-class MedViewModel @Inject constructor(
-    private val repo: MedicationRepository
-) : ViewModel() {
-
-    fun insert(med: Medication) = viewModelScope.launch {
-        Timber.d("Insert med: ${med.name}")
-        repo.insert(med)
-    }
-
-    fun saveWithReconstitution(med: Medication, powder: Double, solvent: Double) = viewModelScope.launch {
-        Timber.d("Save reconst med: ${med.name}")
-        repo.saveWithReconstitution(med, powder, solvent)
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\feature\schedule\ui\ScheduleFormScreen.kt
-```
-package com.xai.dosify.feature.schedule.ui
-
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.xai.dosify.core.data.models.DoseSchedule
-import com.xai.dosify.feature.iap.viewmodel.IapViewModel
-import com.xai.dosify.feature.schedule.viewmodel.ScheduleViewModel
-
-@Composable
-fun ScheduleFormScreen(viewModel: ScheduleViewModel = hiltViewModel(), iapViewModel: IapViewModel = hiltViewModel()) {
-    val isPremium by iapViewModel.isPremium.collectAsState(false)
-    var doseAmount by remember { mutableStateOf("") }
-    // Other fields: medId, unit, frequency, times, startDate, etc.
-    var cycleWeeks by remember { mutableStateOf("") }
-    // Titration steps: List add UI stub
-
-    Column {
-        TextField(value = doseAmount, onValueChange = { doseAmount = it }, label = { Text("Dose Amount") })
-        // Basic fields...
-
-        if (isPremium) {
-            TextField(value = cycleWeeks, onValueChange = { cycleWeeks = it }, label = { Text("Cycle Weeks") })
-            // Cycle off, isCycling checkbox, titration list add
-        } else {
-            Text("Premium feature - Subscribe for cycling/titration")
-            Button(onClick = { /* Launch billing flow in VM */ }) {
-                Text("Subscribe")
-            }
-        }
-
-        Button(onClick = {
-            val schedule = DoseSchedule(
-                // Fill from fields
-                doseAmount = doseAmount.toDoubleOrNull() ?: 0.0
-                // ...
-            )
-            viewModel.save(schedule)
-        }) {
-            Text("Save Schedule")
-        }
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\feature\schedule\viewmodel\ScheduleViewModel.kt
-```
-package com.xai.dosify.feature.schedule.viewmodel
-
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.xai.dosify.core.data.models.DoseSchedule
-import com.xai.dosify.core.data.repository.DoseScheduleRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.launch
-import javax.inject.Inject
-
-@HiltViewModel
-class ScheduleViewModel @Inject constructor(
-    private val repo: DoseScheduleRepository
-) : ViewModel() {
-
-    fun save(schedule: DoseSchedule) = viewModelScope.launch {
-        repo.insert(schedule)
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\feature\sync\di\SyncModule.kt
-```
-package com.xai.dosify.feature.sync.di
-
-import android.content.Context
-import androidx.work.WorkManager
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
-
-@Module
-@InstallIn(SingletonComponent::class)
-object SyncModule {
-
-    @Provides
-    @Singleton
-    fun provideWorkManager(@ApplicationContext context: Context): WorkManager =
-        WorkManager.getInstance(context)
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\feature\sync\ui\SettingsScreen.kt
-```
-package com.xai.dosify.feature.sync.ui
-
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.Button
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.xai.dosify.feature.sync.viewmodel.SyncViewModel
-import kotlinx.coroutines.launch
-
-@Composable
-fun SettingsScreen(viewModel: SyncViewModel = hiltViewModel()) {
-    val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    Column {
-        Button(onClick = { viewModel.testSync() }) {
-            Text("Test DB Integrity & Sync")
-        }
-        Button(onClick = {
-            coroutineScope.launch {
-                viewModel.manualSync(snackbarHostState)
-            }
-        }) {
-            Text("Manual Sync")
-        }
-    }
-    SnackbarHost(snackbarHostState)
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\feature\sync\utils\SyncWorker.kt
-```
-package com.xai.dosify.feature.sync.utils
-
-import android.content.Context
-import androidx.hilt.work.HiltWorker
-import androidx.work.CoroutineWorker
-import androidx.work.WorkerParameters
-import com.google.firebase.auth.FirebaseAuth
-import com.xai.dosify.core.data.repository.*
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
-import timber.log.Timber
-
-@HiltWorker
-class SyncWorker @AssistedInject constructor(
-    @Assisted context: Context,
-    @Assisted params: WorkerParameters,
-    private val medRepo: MedicationRepository,
-    private val scheduleRepo: DoseScheduleRepository,
-    private val logRepo: DoseLogRepository,
-    private val supplyRepo: SupplyRepository,
-    private val reconstRepo: ReconstitutionRepository,
-    private val profileRepo: ProfileRepository,  // Add
-    private val auth: FirebaseAuth
-) : CoroutineWorker(context, params) {
-
-    override suspend fun doWork(): Result {
-        Timber.d("SyncWorker started")
-        val userId = auth.currentUser?.uid ?: run {
-            Timber.w("No userId - sync failed")
-            return Result.failure()
-        }
-        try {
-            medRepo.syncWithFirestore(userId)
-            scheduleRepo.syncWithFirestore(userId)
-            logRepo.syncWithFirestore(userId)
-            supplyRepo.syncWithFirestore(userId)
-            reconstRepo.syncWithFirestore(userId)
-            profileRepo.syncWithFirestore(userId)  // Add
-            Timber.d("Sync success")
-            return Result.success()
-        } catch (e: Exception) {
-            Timber.e(e, "Sync error")
-            return Result.retry()
-        }
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\feature\sync\viewmodel\SyncViewModel.kt
-```
-package com.xai.dosify.feature.sync.viewmodel
-
-import androidx.compose.material3.SnackbarHostState
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
-import com.xai.dosify.core.data.repository.*
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.launch
-import timber.log.Timber
-import javax.inject.Inject
-
-@HiltViewModel
-class SyncViewModel @Inject constructor(
-    private val auth: FirebaseAuth,
-    private val medRepo: MedicationRepository,
-    private val scheduleRepo: DoseScheduleRepository,
-    private val logRepo: DoseLogRepository,
-    private val supplyRepo: SupplyRepository,
-    private val reconstRepo: ReconstitutionRepository,
-    private val profileRepo: ProfileRepository  // Add
-) : ViewModel() {
-
-    fun testSync() = viewModelScope.launch {
-        val userId = auth.currentUser?.uid ?: return@launch
-        medRepo.syncWithFirestore(userId)
-        // Call others; add integrity (e.g., count match)
-    }
-
-    suspend fun manualSync(snackbarHostState: SnackbarHostState) {
-        val userId = auth.currentUser?.uid ?: run {
-            snackbarHostState.showSnackbar("No user logged in")
-            return
-        }
-        try {
-            medRepo.syncWithFirestore(userId)
-            scheduleRepo.syncWithFirestore(userId)
-            logRepo.syncWithFirestore(userId)
-            supplyRepo.syncWithFirestore(userId)
-            reconstRepo.syncWithFirestore(userId)
-            profileRepo.syncWithFirestore(userId)  // Add
-            snackbarHostState.showSnackbar("Synced successfully")
-            Timber.d("Manual sync success")
-        } catch (e: Exception) {
-            snackbarHostState.showSnackbar("Sync failed: ${e.message}")
-            Timber.e(e, "Manual sync error")
-        }
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\nav\NavGraph.kt
-```
-package com.xai.dosify.nav
-
-import androidx.compose.runtime.Composable
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import com.xai.dosify.feature.advanced.ui.ReportsScreen
-import com.xai.dosify.feature.auth.LoginScreen
-import com.xai.dosify.feature.med.ui.MedFormScreen
-import com.xai.dosify.feature.med.ui.MedListScreen  // Add this import
-import com.xai.dosify.feature.schedule.ui.ScheduleFormScreen
-import com.xai.dosify.feature.sync.ui.SettingsScreen
-import com.xai.dosify.ui.HomeScreen
-
-object NavRoutes {
-    const val LOGIN = "login"
-    const val HOME = "home"
-    const val MED_FORM = "med_form"
-    const val MED_LIST = "med_list"
-    const val SCHEDULE_FORM = "schedule_form"
-    const val REPORTS = "reports"
-    const val SETTINGS = "settings"
-}
-
-@Composable
-fun AppNavGraph(navController: NavHostController) {
-    NavHost(navController = navController, startDestination = NavRoutes.LOGIN) {
-        composable(NavRoutes.LOGIN) {
-            LoginScreen(onLoginSuccess = { navController.navigate(NavRoutes.HOME) })
-        }
-        composable(NavRoutes.HOME) {
-            HomeScreen(navController)
-        }
-        composable(NavRoutes.MED_FORM) {
-            MedFormScreen()
-        }
-        composable(NavRoutes.MED_LIST) {
-            MedListScreen()
-        }
-        composable(NavRoutes.SCHEDULE_FORM) {
-            ScheduleFormScreen()
-        }
-        composable(NavRoutes.REPORTS) {
-            ReportsScreen()
-        }
-        composable(NavRoutes.SETTINGS) {
-            SettingsScreen()
-        }
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\ui\HomeScreen.kt
-```
-package com.xai.dosify.ui
-
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.navigation.NavController
-import com.xai.dosify.nav.NavRoutes
-
-@Composable
-fun HomeScreen(navController: NavController) {
-    Column {
-        Text("Home - Dosify Dashboard")
-        Button(onClick = { navController.navigate(NavRoutes.MED_FORM) }) {
-            Text("Add Medication")
-        }
-        Button(onClick = { navController.navigate(NavRoutes.MED_LIST) }) {
-            Text("View Medications")
-        }
-        Button(onClick = { navController.navigate(NavRoutes.SCHEDULE_FORM) }) {  // Add
-            Text("Add Schedule")
-        }
-        Button(onClick = { navController.navigate(NavRoutes.REPORTS) }) {
-            Text("View Reports")
-        }
-        Button(onClick = { navController.navigate(NavRoutes.SETTINGS) }) {
-            Text("Settings & Diagnostics")
-        }
-    }
-}
-```
----
-File: app\src\main\res\drawable\ic_launcher_background.xml
-```
-<?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <path
-        android:fillColor="#3DDC84"
-        android:pathData="M0,0h108v108h-108z" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M9,0L9,108"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M19,0L19,108"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M29,0L29,108"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M39,0L39,108"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M49,0L49,108"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M59,0L59,108"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M69,0L69,108"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M79,0L79,108"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M89,0L89,108"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M99,0L99,108"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M0,9L108,9"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M0,19L108,19"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M0,29L108,29"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M0,39L108,39"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M0,49L108,49"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M0,59L108,59"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M0,69L108,69"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M0,79L108,79"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M0,89L108,89"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M0,99L108,99"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M19,29L89,29"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M19,39L89,39"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M19,49L89,49"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M19,59L89,59"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M19,69L89,69"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M19,79L89,79"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M29,19L29,89"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M39,19L39,89"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M49,19L49,89"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M59,19L59,89"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M69,19L69,89"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M79,19L79,89"
-        android:strokeWidth="0.8"
-        android:strokeColor="#33FFFFFF" />
-</vector>
-```
----
-File: app\src\main\res\drawable\ic_launcher_foreground.xml
-```
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <path android:pathData="M31,63.928c0,0 6.4,-11 12.1,-13.1c7.2,-2.6 26,-1.4 26,-1.4l38.1,38.1L107,108.928l-32,-1L31,63.928z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:endX="85.84757"
-                android:endY="92.4963"
-                android:startX="42.9492"
-                android:startY="49.59793"
-                android:type="linear">
-                <item
-                    android:color="#44000000"
-                    android:offset="0.0" />
-                <item
-                    android:color="#00000000"
-                    android:offset="1.0" />
-            </gradient>
-        </aapt:attr>
-    </path>
-    <path
-        android:fillColor="#FFFFFF"
-        android:fillType="nonZero"
-        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
-        android:strokeWidth="1"
-        android:strokeColor="#00000000" />
-</vector>
-```
----
-File: app\src\main\res\mipmap-anydpi-v26\ic_launcher.xml
-```
-<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/ic_launcher_background" />
-    <foreground android:drawable="@drawable/ic_launcher_foreground" />
-    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
-</adaptive-icon>
-```
----
-File: app\src\main\res\mipmap-anydpi-v26\ic_launcher_round.xml
-```
-<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/ic_launcher_background" />
-    <foreground android:drawable="@drawable/ic_launcher_foreground" />
-    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
-</adaptive-icon>
-```
----
-File: app\src\main\res\values\colors.xml
-```
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-</resources>
-```
----
-File: app\src\main\res\values\strings.xml
-```
-<resources>
-    <string name="app_name">Dosify</string>
-    <string name="web_client_id">442282970063-fv9d227q9imcntr9i7tbm1akirltjvml.apps.googleusercontent.com</string>  <!-- From Firebase console -->
-</resources>
-```
----
-File: app\src\main\res\values\themes.xml
-```
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-
-    <style name="Theme.Dosify" parent="android:Theme.Material.Light.NoActionBar" />
-</resources>
-```
----
-File: app\src\main\res\xml\backup_rules.xml
-```
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
--->
-<full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
-</full-backup-content>
-```
----
-File: app\src\main\res\xml\data_extraction_rules.xml
-```
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
--->
-<data-extraction-rules>
-    <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
-    </cloud-backup>
-    <!--
-    <device-transfer>
-        <include .../>
-        <exclude .../>
-    </device-transfer>
-    -->
-</data-extraction-rules>
-```
----
-File: app\src\main\AndroidManifest.xml
-```
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-
-    <application
-        android:name=".core.DosifyApplication"
-        android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.Dosify">
-        <activity
-            android:name=".core.ui.MainActivity"
-            android:exported="true"
-            android:theme="@style/Theme.Dosify">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-    </application>
-
-</manifest>
-```
----
-Directory not found: core
-Directory not found: feature
 File: build.gradle.kts
 ```
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
@@ -2245,6 +1165,7 @@ plugins {
     alias(libs.plugins.room) apply false
     alias(libs.plugins.kotlin.ksp) apply false
     alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.android.library) apply false
 
 }
 ```
@@ -2275,6 +1196,13 @@ dependencyResolutionManagement {
 
 rootProject.name = "Dosify"
 include(":app")
+include(":core")
+include(":feature_medication")
+include(":feature_schedule")
+include(":feature_auth")
+include(":feature_iap")
+include(":feature_sync")
+include(":feature_advanced")
 ```
 ---
 File: gradle.properties
@@ -2304,9 +1232,178 @@ kotlin.code.style=official
 android.nonTransitiveRClass=true
 ```
 ---
+File: app/build.gradle.kts
+```
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.hilt.android)
+    alias(libs.plugins.room)
+    alias(libs.plugins.kotlin.ksp)
+    alias(libs.plugins.google.services)
+
+}
+
+android {
+    namespace = "com.xai.dosify"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "com.xai.dosify"
+        minSdk = 24
+        targetSdk = 36
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+        }
+    }
+    buildFeatures {
+        compose = true
+    }
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
+}
+
+dependencies {
+    // Core AndroidX
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.material.icons.extended)
+
+    // Compose (via BOM for version alignment)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.material3)
+    debugImplementation(libs.androidx.ui.tooling)
+
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
+
+    // Room
+    implementation(libs.room.runtime)
+    ksp(libs.room.compiler)
+    implementation(libs.room.ktx)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.messaging.ktx)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.work.runtime.ktx)
+
+    // Credential Manager for Google Sign-In
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.android)
+
+    // Other
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.navigation.compose)
+    implementation(libs.mpandroidchart)
+    implementation(libs.sqlcipher)
+    implementation(libs.play.services.auth)
+    implementation(libs.biometric)
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.timber)
+    implementation(libs.billing.ktx)
+    implementation(libs.gson)
+    implementation (libs.zetetic.android.database.sqlcipher)
+
+
+    // Testing
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.test.manifest)
+}
+```
+---
+File: core/build.gradle.kts
+```
+plugins {
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+}
+
+android {
+    namespace = "com.xai.core"
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 24
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+dependencies {
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+}
+```
+---
+File not found: feature-medication/build.gradle.kts
+File not found: feature-schedule/build.gradle.kts
+File not found: feature-auth/build.gradle.kts
+File not found: feature-iap/build.gradle.kts
+File not found: feature-sync/build.gradle.kts
+File not found: feature-advanced/build.gradle.kts
 File: app/google-services.json
 ```
-# Note: Redact API keys before pasting
 {
   "project_info": {
     "project_number": "442282970063",
@@ -2354,5 +1451,50 @@ File: app/google-services.json
   ],
   "configuration_version": "1"
 }
+```
+---
+File: app/src/main/AndroidManifest.xml
+```
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
+    <application
+        android:name=".core.DosifyApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Dosify">
+        <activity
+            android:name=".core.ui.MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Dosify">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+        <receiver
+            android:name=".ui.notifications.YourAlarmReceiver"
+            android:exported="false" />
+    </application>
+
+</manifest>
 ```
 ---

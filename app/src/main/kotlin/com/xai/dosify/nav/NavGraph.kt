@@ -12,6 +12,7 @@ import com.xai.dosify.feature.schedule.ui.DoseConfirmScreen
 import com.xai.dosify.feature.schedule.ui.ScheduleFormScreen
 import com.xai.dosify.feature.sync.ui.SettingsScreen
 import com.xai.dosify.ui.HomeScreen
+import com.xai.dosify.feature.schedule.ui.CalendarScreen
 
 object NavRoutes {
     const val LOGIN = "login"
@@ -22,6 +23,8 @@ object NavRoutes {
     const val DOSE_CONFIRM = "dose_confirm"
     const val REPORTS = "reports"
     const val SETTINGS = "settings"
+
+    const val CALENDAR = "calendar"
 }
 
 @Composable
@@ -50,6 +53,9 @@ fun AppNavGraph(navController: NavHostController) {
         }
         composable(NavRoutes.SETTINGS) {
             SettingsScreen()
+        }
+        composable(NavRoutes.CALENDAR) {
+            CalendarScreen()
         }
     }
 }
