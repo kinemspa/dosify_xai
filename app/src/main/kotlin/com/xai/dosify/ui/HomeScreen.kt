@@ -17,8 +17,11 @@ fun HomeScreen(navController: NavController) {
         Button(onClick = { navController.navigate(NavRoutes.MED_LIST) }) {
             Text("View Medications")
         }
-        Button(onClick = { navController.navigate(NavRoutes.SCHEDULE_FORM) }) {  // Add
+        Button(onClick = { navController.navigate(NavRoutes.SCHEDULE_FORM) }) {
             Text("Add Schedule")
+        }
+        Button(onClick = { navController.navigate(NavRoutes.DOSE_CONFIRM) }) {
+            Text("Confirm Dose")
         }
         Button(onClick = { navController.navigate(NavRoutes.REPORTS) }) {
             Text("View Reports")
