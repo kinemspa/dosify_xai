@@ -33,7 +33,7 @@ sqlcipher = "4.9.0"  # Latest as of 2025
 timber = "5.0.1"
 work-runtime = "2.10.2"
 desugarJdkLibs = "2.1.5"  # For java.time
-kizitonwose-calendar = "2.7.0"  # Latest for calendar
+kizitonwose-calendar = "2.8.0" # Latest for calendar
 
 # Testing
 androidx-junit = "1.2.1"
@@ -97,7 +97,7 @@ timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 billing-ktx = { module = "com.android.billingclient:billing-ktx", version.ref = "billing" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarJdkLibs" }
-kizitonwose-calendar = { module = "io.github.kizitonwose.calendar:compose", version.ref = "kizitonwose-calendar" }
+kizitonwose-calendar = { module = "com.kizitonwose.calendar:compose", version.ref = "kizitonwose-calendar" }
 
 # Testing
 espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
