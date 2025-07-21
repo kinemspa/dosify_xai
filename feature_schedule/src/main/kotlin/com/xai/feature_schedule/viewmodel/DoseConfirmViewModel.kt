@@ -1,4 +1,4 @@
-package com.xai.dosify.feature.schedule.viewmodel
+package com.xai.feature.schedule.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

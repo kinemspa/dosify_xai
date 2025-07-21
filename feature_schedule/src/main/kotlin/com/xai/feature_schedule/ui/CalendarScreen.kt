@@ -1,4 +1,4 @@
-package com.xai.dosify.feature.schedule.ui
+package com.xai.feature.schedule.ui
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text

@@ -1,4 +1,4 @@
-package com.xai.dosify.feature.auth.di
+package com.xai.feature.auth.di
 
 import android.content.Context
 import androidx.credentials.CredentialManager

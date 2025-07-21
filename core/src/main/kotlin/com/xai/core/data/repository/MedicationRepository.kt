@@ -4,7 +4,7 @@ import com.xai.dosify.core.com.xai.core.data.dao.MedicationDao
 import com.xai.dosify.core.com.xai.core.data.dao.ReconstitutionDao
 import com.xai.dosify.core.com.xai.core.data.models.Medication
 import com.xai.dosify.core.com.xai.core.data.models.Reconstitution
-import com.xai.dosify.feature.advanced.utils.ReconstitutionUtils
+import com.xai.feature.advanced.utils.ReconstitutionUtils
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first

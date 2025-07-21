@@ -1,4 +1,4 @@
-package com.xai.dosify.feature.sync.viewmodel
+package com.xai.feature.sync.viewmodel
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.lifecycle.ViewModel

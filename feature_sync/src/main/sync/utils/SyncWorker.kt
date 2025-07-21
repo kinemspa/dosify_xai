@@ -1,4 +1,4 @@
-package com.xai.dosify.feature.sync.utils
+package com.xai.feature.sync.utils
 
 import android.content.Context
 import androidx.hilt.work.HiltWorker

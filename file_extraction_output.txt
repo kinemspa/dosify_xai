@@ -6,13 +6,13 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.xai.dosify.feature.advanced.ui.ReportsScreen
-import com.xai.dosify.feature.auth.LoginScreen
-import com.xai.dosify.feature.med.ui.MedFormScreen
-import com.xai.dosify.feature.med.ui.MedListScreen
-import com.xai.dosify.feature.schedule.ui.DoseConfirmScreen
-import com.xai.dosify.feature.schedule.ui.ScheduleFormScreen
-import com.xai.dosify.feature.sync.ui.SettingsScreen
+import com.xai.feature.advanced.ui.ReportsScreen
+import com.xai.feature.auth.LoginScreen
+import com.xai.feature.med.ui.MedFormScreen
+import com.xai.feature.med.ui.MedListScreen
+import com.xai.feature.schedule.ui.DoseConfirmScreen
+import com.xai.feature.schedule.ui.ScheduleFormScreen
+import com.xai.feature.sync.ui.SettingsScreen
 import com.xai.dosify.ui.HomeScreen
 
 object NavRoutes {
@@ -197,7 +197,7 @@ File: app\src\main\res\xml\data_extraction_rules.xml
 Directory not found: core/src/main/kotlin/com/xai/dosify/core
 File: feature_medication\src\main\kotlin\com\xai\feature_med\ui\MedFormScreen.kt
 ```
-package com.xai.dosify.feature.med.ui
+package com.xai.feature.med.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -209,7 +209,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xai.dosify.core.data.models.MedType
 import com.xai.dosify.core.data.models.Medication
-import com.xai.dosify.feature.advanced.viewmodel.MedViewModel
+import com.xai.feature.advanced.viewmodel.MedViewModel
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -311,7 +311,7 @@ fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
 ---
 File: feature_medication\src\main\kotlin\com\xai\feature_med\ui\MedListScreen.kt
 ```
-package com.xai.dosify.feature.med.ui
+package com.xai.feature.med.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyColumn
@@ -321,7 +321,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.xai.dosify.feature.med.viewmodel.MedListViewModel
+import com.xai.feature.med.viewmodel.MedListViewModel
 
 @Composable
 fun MedListScreen(viewModel: MedListViewModel = hiltViewModel()) {
@@ -337,7 +337,7 @@ fun MedListScreen(viewModel: MedListViewModel = hiltViewModel()) {
 ---
 File: feature_medication\src\main\kotlin\com\xai\feature_med\viewmodel\MedListViewModel.kt
 ```
-package com.xai.dosify.feature.med.viewmodel
+package com.xai.feature.med.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -360,7 +360,7 @@ class MedListViewModel @Inject constructor(
 ---
 File: feature_medication\src\main\kotlin\com\xai\feature_med\viewmodel\MedViewModel.kt
 ```
-package com.xai.dosify.feature.advanced.viewmodel
+package com.xai.feature.advanced.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -390,7 +390,7 @@ class MedViewModel @Inject constructor(
 ---
 File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\ui\DoseConfirmScreen.kt
 ```
-package com.xai.dosify.feature.schedule.ui
+package com.xai.feature.schedule.ui
 
 import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
@@ -420,7 +420,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.xai.dosify.core.data.models.DoseLog
 import com.xai.dosify.core.data.models.DoseSchedule
 import com.xai.dosify.core.utils.setDoseAlarm
-import com.xai.dosify.feature.schedule.viewmodel.DoseConfirmViewModel
+import com.xai.feature.schedule.viewmodel.DoseConfirmViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
@@ -519,7 +519,7 @@ fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
 ---
 File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\ui\ScheduleFormScreen.kt
 ```
-package com.xai.dosify.feature.schedule.ui
+package com.xai.feature.schedule.ui
 
 import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
@@ -550,9 +550,9 @@ import com.xai.dosify.core.data.models.DoseSchedule
 import com.xai.dosify.core.data.models.Frequency
 import com.xai.dosify.core.data.models.Medication
 import com.xai.dosify.core.utils.setDoseAlarm
-import com.xai.dosify.feature.iap.viewmodel.IapViewModel
-import com.xai.dosify.feature.med.viewmodel.MedListViewModel
-import com.xai.dosify.feature.schedule.viewmodel.ScheduleViewModel
+import com.xai.feature.iap.viewmodel.IapViewModel
+import com.xai.feature.med.viewmodel.MedListViewModel
+import com.xai.feature.schedule.viewmodel.ScheduleViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -726,7 +726,7 @@ fun ScheduleFormScreen(
 ---
 File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\viewmodel\DoseConfirmViewModel.kt
 ```
-package com.xai.dosify.feature.schedule.viewmodel
+package com.xai.feature.schedule.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -753,7 +753,7 @@ class DoseConfirmViewModel @Inject constructor(
 ---
 File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\viewmodel\ScheduleViewModel.kt
 ```
-package com.xai.dosify.feature.schedule.viewmodel
+package com.xai.feature.schedule.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -776,7 +776,7 @@ class ScheduleViewModel @Inject constructor(
 ---
 File: feature_auth\src\main\kotlin\com\xai\feature_auth\di\AuthModule.kt
 ```
-package com.xai.dosify.feature.auth.di
+package com.xai.feature.auth.di
 
 import android.content.Context
 import androidx.credentials.CredentialManager
@@ -798,7 +798,7 @@ object AuthModule {
 ---
 File: feature_auth\src\main\kotlin\com\xai\feature_auth\AuthViewModel.kt
 ```
-package com.xai.dosify.feature.auth
+package com.xai.feature.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -810,7 +810,7 @@ import androidx.work.WorkManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.xai.dosify.core.data.repository.AuthRepository
-import com.xai.dosify.feature.sync.utils.SyncWorker
+import com.xai.feature.sync.utils.SyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -877,7 +877,7 @@ fun FirebaseAuth.authStateChanges(): Flow<FirebaseUser?> = callbackFlow {
 ---
 File: feature_auth\src\main\kotlin\com\xai\feature_auth\LoginScreen.kt
 ```
-package com.xai.dosify.feature.auth
+package com.xai.feature.auth
 
 import android.content.Context
 import androidx.compose.foundation.layout.*
@@ -1011,7 +1011,7 @@ private suspend fun handleCredential(result: GetCredentialResponse, viewModel: A
 ---
 File: feature_iap\src\main\kotlin\com\xai\feature_iap\di\IapModule.kt
 ```
-package com.xai.dosify.feature.iap.di
+package com.xai.feature.iap.di
 
 import android.content.Context
 import com.android.billingclient.api.BillingClient
@@ -1047,7 +1047,7 @@ object IapModule {
 ---
 File: feature_iap\src\main\kotlin\com\xai\feature_iap\viewmodel\IapViewModel.kt
 ```
-package com.xai.dosify.feature.iap.viewmodel
+package com.xai.feature.iap.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -1099,7 +1099,7 @@ class IapViewModel @Inject constructor(
 ---
 File: feature_advanced\src\main\kotlin\com\xai\feature_advanced\ui\ReportsScreen.kt
 ```
-package com.xai.dosify.feature.advanced.ui
+package com.xai.feature.advanced.ui
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -1112,7 +1112,7 @@ import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
-import com.xai.dosify.feature.advanced.viewmodel.ReportsViewModel
+import com.xai.feature.advanced.viewmodel.ReportsViewModel
 
 @Composable
 fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
@@ -1133,7 +1133,7 @@ fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
 ---
 File: feature_advanced\src\main\kotlin\com\xai\feature_advanced\viewmodel\ReportsViewModel.kt
 ```
-package com.xai.dosify.feature.advanced.viewmodel
+package com.xai.feature.advanced.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

@@ -1,4 +1,4 @@
-package com.xai.dosify.feature.schedule.ui
+package com.xai.feature.schedule.ui
 
 import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +28,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.xai.dosify.core.data.models.DoseLog
 import com.xai.dosify.core.data.models.DoseSchedule
 import com.xai.dosify.core.utils.setDoseAlarm
-import com.xai.dosify.feature.schedule.viewmodel.DoseConfirmViewModel
+import com.xai.feature.schedule.viewmodel.DoseConfirmViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 

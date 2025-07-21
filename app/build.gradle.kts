@@ -103,7 +103,7 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.billing.ktx)
     implementation(libs.gson)
-    implementation (libs.zetetic.android.database.sqlcipher)
+    implementation("net.zetetic:sqlcipher-android:4.6.1")
 
 
     // Testing

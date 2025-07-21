@@ -1,4 +1,4 @@
-package com.xai.dosify.feature.iap.di
+package com.xai.feature.iap.di
 
 import android.content.Context
 import com.android.billingclient.api.BillingClient

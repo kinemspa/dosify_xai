@@ -12,8 +12,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.xai.dosify.core.com.xai.core.ui.components.DosifyAppBar
 import com.xai.dosify.core.com.xai.core.ui.theme.DosifyTheme
-import com.xai.dosify.feature.med.ui.MedFormScreen
-import com.xai.dosify.feature.schedule.ui.DoseConfirmScreen
+import com.xai.feature.med.ui.MedFormScreen
+import com.xai.feature.schedule.ui.DoseConfirmScreen
 import com.xai.dosify.ui.HomeScreen
 import com.xai.dosify.nav.NavRoutes
 

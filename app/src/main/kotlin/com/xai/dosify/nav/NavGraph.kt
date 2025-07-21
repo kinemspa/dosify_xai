@@ -4,15 +4,15 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.xai.dosify.feature.advanced.ui.ReportsScreen
-import com.xai.dosify.feature.auth.LoginScreen
-import com.xai.dosify.feature.med.ui.MedFormScreen
-import com.xai.dosify.feature.med.ui.MedListScreen
-import com.xai.dosify.feature.schedule.ui.DoseConfirmScreen
-import com.xai.dosify.feature.schedule.ui.ScheduleFormScreen
-import com.xai.dosify.feature.sync.ui.SettingsScreen
+import com.xai.feature.advanced.ui.ReportsScreen
+import com.xai.feature.auth.LoginScreen
+import com.xai.feature.med.ui.MedFormScreen
+import com.xai.feature.med.ui.MedListScreen
+import com.xai.feature.schedule.ui.DoseConfirmScreen
+import com.xai.feature.schedule.ui.ScheduleFormScreen
+import com.xai.feature.sync.ui.SettingsScreen
 import com.xai.dosify.ui.HomeScreen
-import com.xai.dosify.feature.schedule.ui.CalendarScreen
+import com.xai.feature.schedule.ui.CalendarScreen
 
 object NavRoutes {
     const val LOGIN = "login"

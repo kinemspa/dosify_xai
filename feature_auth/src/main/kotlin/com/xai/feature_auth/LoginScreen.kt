@@ -1,4 +1,4 @@
-package com.xai.dosify.feature.auth
+package com.xai.feature.auth
 
 import android.content.Context
 import androidx.compose.foundation.layout.*

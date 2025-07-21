@@ -1,4 +1,4 @@
-package com.xai.dosify.feature.advanced.utils
+package com.xai.feature.advanced.utils
 
 object ReconstitutionUtils {
     fun calculateConcentration(powderAmount: Double, solventVolume: Double): Double {

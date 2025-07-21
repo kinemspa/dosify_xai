@@ -1,4 +1,4 @@
-package com.xai.dosify.feature.med.viewmodel
+package com.xai.feature.med.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

@@ -1,4 +1,4 @@
-package com.xai.dosify.feature.sync.di
+package com.xai.feature.sync.di
 
 import android.content.Context
 import androidx.work.WorkManager
