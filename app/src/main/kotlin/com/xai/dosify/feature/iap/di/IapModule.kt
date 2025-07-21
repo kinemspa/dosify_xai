@@ -19,11 +19,12 @@ object IapModule {
     @Provides
     @Singleton
     fun provideBillingClient(@ApplicationContext context: Context): BillingClient {
+        val listener = PurchasesUpdatedListener { billingResult: BillingResult, purchases: List<Purchase>? ->
+            // Handle updates; keep existing if any
+        }
         return BillingClient.newBuilder(context)
             .enablePendingPurchases() // Enables pending purchases for one-time products
-            .setListener(PurchasesUpdatedListener { billingResult: BillingResult, purchases: List<Purchase>? ->
-                // Handle updates; keep existing if any
-            })
+            .setListener(listener)
             .build()
     }
 }
