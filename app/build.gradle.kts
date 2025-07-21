@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.material.icons.extended)
 
     // Compose (via BOM for version alignment)
     implementation(platform(libs.androidx.compose.bom))
@@ -79,7 +80,6 @@ dependencies {
     implementation(libs.firebase.auth.ktx)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.messaging.ktx)
-    implementation(platform(libs.firebase.bom.v3312))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.work.runtime.ktx)
@@ -103,7 +103,7 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.billing.ktx)
     implementation(libs.gson)
-    implementation (libs.zetetic.android.database.sqlcipher)
+    //implementation (libs.zetetic.android.database.sqlcipher)
 
 
     // Testing

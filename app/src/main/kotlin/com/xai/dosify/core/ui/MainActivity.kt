@@ -3,53 +3,53 @@ package com.xai.dosify.core.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.systemBarsPadding  // Add this import
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.xai.dosify.core.ui.components.DosifyAppBar
 import com.xai.dosify.core.ui.theme.DosifyTheme
-import com.xai.dosify.nav.AppNavGraph
-import dagger.hilt.android.AndroidEntryPoint
+import com.xai.dosify.feature.med.ui.MedFormScreen
+import com.xai.dosify.feature.schedule.ui.DoseConfirmScreen
+import com.xai.dosify.feature.schedule.ui.HomeScreen
+import com.xai.dosify.nav.NavRoutes
 
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             DosifyTheme {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .systemBarsPadding(),  // Add for top/bottom space
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    val navController = rememberNavController()
-                    AppNavGraph(navController)
+                val navController = rememberNavController()
+                Scaffold(
+                    topBar = {
+                        DosifyAppBar(
+                            title = when (navController.currentDestination?.route) {
+                                NavRoutes.HOME -> "Dosify Home"
+                                NavRoutes.MED_FORM -> "Add Medication"
+                                NavRoutes.DOSE_CONFIRM -> "Confirm Dose"
+                                else -> "Dosify"
+                            },
+                            navController = navController,
+                            showBackButton = navController.currentDestination?.route != NavRoutes.HOME
+                        )
+                    }
+                ) { innerPadding ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = NavRoutes.HOME,
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable(NavRoutes.HOME) { HomeScreen(navController) }
+                        composable(NavRoutes.MED_FORM) { MedFormScreen() }
+                        composable(NavRoutes.DOSE_CONFIRM) { DoseConfirmScreen() }
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    DosifyTheme {
-        Greeting("Dosify Ready")
     }
 }
