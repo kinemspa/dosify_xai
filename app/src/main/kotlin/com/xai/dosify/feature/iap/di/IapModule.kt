@@ -2,9 +2,7 @@ package com.xai.dosify.feature.iap.di
 
 import android.content.Context
 import com.android.billingclient.api.BillingClient
-import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.PendingPurchasesParams
-import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import dagger.Module
 import dagger.Provides
@@ -19,13 +17,16 @@ object IapModule {
 
     @Provides
     @Singleton
-    fun provideBillingClient(@ApplicationContext context: Context): BillingClient =
-        BillingClient.newBuilder(context)
-            .setListener(object : PurchasesUpdatedListener {  // Fix: Use object expression
-                override fun onPurchasesUpdated(billingResult: BillingResult, purchases: List<Purchase>?) {
-                    // Handle purchase updates
-                }
+    fun provideBillingClient(@ApplicationContext context: Context): BillingClient {
+        val params = PendingPurchasesParams.newBuilder()
+            .enableOneTimeProducts() // Required for one-time IAP support
+            .build() // Add .enablePrepaidPlans() if needed for subs
+
+        return BillingClient.newBuilder(context)
+            .setPendingPurchasesParams(params)
+            .setListener(PurchasesUpdatedListener { billingResult, purchases ->
+                // Handle updates; keep existing if any
             })
-            .enablePendingPurchases(PendingPurchasesParams.newBuilder().enablePrepaidPlans().build())
             .build()
+    }
 }
