@@ -47,13 +47,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     ksp(libs.hilt.compiler)
-
-    // Feature Modules
     implementation(project(":core"))
-    implementation(project(":feature_med"))
-    implementation(project(":feature_schedule"))
-    implementation(project(":feature_auth"))
-    implementation(project(":feature_iap"))
-    implementation(project(":feature_sync"))
-    implementation(project(":feature_advanced"))
+
+
 }
