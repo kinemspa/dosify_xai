@@ -41,6 +41,7 @@ dependencies {
     implementation(project(":core"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.hilt.android)
+    implementation(libs.lifecycle.viewmodel.ktx)
     ksp(libs.hilt.compiler)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)

@@ -1,4 +1,4 @@
-package com.xai.dosify.core
+package com.xai.dosify
 
 import android.app.Application
 import android.app.NotificationChannel
@@ -23,7 +23,7 @@ class DosifyApplication : Application() {
             // Disable Firebase (e.g., no init or mock)
         }
         // Initialize WorkManager in onCreate
-        WorkManager.initialize(
+        WorkManager.Companion.initialize(
             this,
             Configuration.Builder()
                 .setWorkerFactory(workerFactory)

@@ -42,6 +42,7 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.material)
     implementation(libs.billing.ktx)
+    implementation(libs.lifecycle.viewmodel.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
