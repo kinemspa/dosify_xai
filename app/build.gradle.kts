@@ -11,6 +11,7 @@ plugins {
 android {
     namespace = "com.xai.dosify"
     compileSdk = 36
+    coreLibraryDesugaringEnabled = true
 
     defaultConfig {
         applicationId = "com.xai.dosify"
