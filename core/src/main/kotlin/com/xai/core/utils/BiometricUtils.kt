@@ -1,4 +1,4 @@
-package com.xai.dosify.core.utils
+package com.xai.core.utils
 
 import android.content.Context
 import androidx.biometric.BiometricPrompt

@@ -1,6 +1,5 @@
-package com.xai.feature.schedule.ui
+package com.xai.feature_schedule.ui
 
-import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -25,10 +24,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.xai.dosify.core.data.models.DoseLog
-import com.xai.dosify.core.data.models.DoseSchedule
-import com.xai.dosify.core.utils.setDoseAlarm
-import com.xai.feature.schedule.viewmodel.DoseConfirmViewModel
+import com.xai.core.data.models.DoseLog
+import com.xai.core.data.models.DoseSchedule
+import com.xai.core.utils.setDoseAlarm
+import com.xai.feature_schedule.viewmodel.DoseConfirmViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
@@ -48,7 +47,7 @@ fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
         modifier = Modifier.padding(16.dp)
     ) { padding ->
         Column(
-            modifier = Modifier.padding(padding),
+            modifier = padding(padding),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Schedule dropdown

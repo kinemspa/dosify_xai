@@ -1,12 +1,6 @@
 package com.xai.core.di
 
-import com.xai.dosify.core.data.repository.AuthRepository
-import com.xai.dosify.core.data.repository.DoseLogRepository
-import com.xai.dosify.core.data.repository.DoseScheduleRepository
-import com.xai.dosify.core.data.repository.MedicationRepository
-import com.xai.dosify.core.data.repository.ProfileRepository
-import com.xai.dosify.core.data.repository.ReconstitutionRepository
-import com.xai.dosify.core.data.repository.SupplyRepository
+import com.xai.core.data.repository.*
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

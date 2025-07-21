@@ -1,4 +1,4 @@
-package com.xai.dosify.core.di
+package com.xai.core.di
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore

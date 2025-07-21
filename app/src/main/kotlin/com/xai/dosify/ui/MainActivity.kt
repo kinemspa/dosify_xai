@@ -11,8 +11,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.xai.core.ui.theme.DosifyTheme
 import com.xai.dosify.nav.NavRoutes
-import com.xai.feature.med.ui.MedFormScreen
-import com.xai.feature.schedule.ui.DoseConfirmScreen
+import com.xai.feature_med.ui.MedFormScreen
+import com.xai.feature_schedule.ui.DoseConfirmScreen
 import com.xai.core.ui.components.DosifyAppBar
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)

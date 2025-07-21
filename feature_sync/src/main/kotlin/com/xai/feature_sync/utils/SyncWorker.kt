@@ -1,11 +1,11 @@
-package com.xai.feature.sync.utils
+package com.xai.feature_sync.utils
 
 import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.google.firebase.auth.FirebaseAuth
-import com.xai.dosify.core.data.repository.*
+import com.xai.core.data.repository.*
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import timber.log.Timber

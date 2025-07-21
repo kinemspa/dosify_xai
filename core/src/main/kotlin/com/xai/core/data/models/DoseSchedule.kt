@@ -1,9 +1,9 @@
-package com.xai.dosify.core.data.models
+package com.xai.core.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
-import com.xai.dosify.core.data.Converters
+import com.xai.core.data.Converters
 import com.google.firebase.firestore.IgnoreExtraProperties
 import java.time.LocalDate
 import java.time.LocalTime

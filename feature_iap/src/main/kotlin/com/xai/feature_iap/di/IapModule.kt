@@ -1,4 +1,4 @@
-package com.xai.feature.iap.di
+package com.xai.feature_iap.di
 
 import android.content.Context
 import com.android.billingclient.api.BillingClient

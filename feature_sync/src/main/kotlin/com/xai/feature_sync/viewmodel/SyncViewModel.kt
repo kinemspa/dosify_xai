@@ -1,10 +1,10 @@
-package com.xai.feature.sync.viewmodel
+package com.xai.feature_sync.viewmodel
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
-import com.xai.dosify.core.data.repository.*
+import com.xai.core.data.repository.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import timber.log.Timber

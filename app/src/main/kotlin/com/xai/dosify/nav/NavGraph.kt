@@ -5,14 +5,14 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.xai.feature.advanced.ui.ReportsScreen
-import com.xai.feature.auth.LoginScreen
-import com.xai.feature.med.ui.MedFormScreen
-import com.xai.feature.med.ui.MedListScreen
-import com.xai.feature.schedule.ui.DoseConfirmScreen
-import com.xai.feature.schedule.ui.ScheduleFormScreen
-import com.xai.feature.sync.ui.SettingsScreen
+import com.xai.feature_auth.LoginScreen
+import com.xai.feature_med.ui.MedFormScreen
+import com.xai.feature_med.ui.MedListScreen
+import com.xai.feature_schedule.ui.DoseConfirmScreen
+import com.xai.feature_schedule.ui.ScheduleFormScreen
+import com.xai.feature_sync.ui.SettingsScreen
 import com.xai.dosify.ui.HomeScreen
-import com.xai.feature.schedule.ui.CalendarScreen
+import com.xai.feature_schedule.ui.CalendarScreen
 
 object NavRoutes {
     const val LOGIN = "login"

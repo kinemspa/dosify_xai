@@ -1,9 +1,9 @@
-package com.xai.feature.med.viewmodel
+package com.xai.feature_med.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xai.dosify.core.data.models.Medication
-import com.xai.dosify.core.data.repository.MedicationRepository
+import com.xai.core.data.models.Medication
+import com.xai.core.data.repository.MedicationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted

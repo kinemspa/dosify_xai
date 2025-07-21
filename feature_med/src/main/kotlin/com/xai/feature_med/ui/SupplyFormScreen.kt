@@ -19,7 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.xai.dosify.core.data.models.Supply
+import com.xai.core.data.models.Supply
 import com.xai.feature_med.viewmodel.SupplyViewModel
 import kotlinx.coroutines.launch
 import timber.log.Timber

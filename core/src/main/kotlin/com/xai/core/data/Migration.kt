@@ -1,4 +1,4 @@
-package com.xai.dosify.core.data
+package com.xai.core.data
 
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase

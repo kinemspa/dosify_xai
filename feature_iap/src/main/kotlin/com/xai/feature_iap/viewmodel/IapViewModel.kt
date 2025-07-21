@@ -1,4 +1,4 @@
-package com.xai.feature.iap.viewmodel
+package com.xai.feature_iap.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

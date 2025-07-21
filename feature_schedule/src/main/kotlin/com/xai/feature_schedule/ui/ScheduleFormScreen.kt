@@ -1,4 +1,4 @@
-package com.xai.feature.schedule.ui
+package com.xai.feature_schedule.ui
 
 import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
@@ -25,13 +25,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.xai.dosify.core.data.models.DoseSchedule
-import com.xai.dosify.core.data.models.Frequency
-import com.xai.dosify.core.data.models.Medication
-import com.xai.dosify.core.utils.setDoseAlarm
+import com.xai.core.data.models.DoseSchedule
+import com.xai.core.data.models.Frequency
+import com.xai.core.data.models.Medication
+import com.xai.core.utils.setDoseAlarm
 import com.xai.feature.iap.viewmodel.IapViewModel
 import com.xai.feature.med.viewmodel.MedListViewModel
-import com.xai.feature.schedule.viewmodel.ScheduleViewModel
+import com.xai.feature_schedule.viewmodel.ScheduleViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -62,7 +62,7 @@ fun ScheduleFormScreen(
         modifier = Modifier.padding(16.dp)
     ) { padding ->
         Column(
-            modifier = Modifier.padding(padding),
+            modifier = padding(padding),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Medication dropdown

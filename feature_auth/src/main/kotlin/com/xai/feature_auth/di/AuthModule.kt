@@ -1,18 +1,12 @@
-package com.xai.feature.auth.di
+package com.xai.feature_auth.di
 
 import android.content.Context
-import androidx.credentials.CredentialManager
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
-import dagger.hilt.android.qualifiers.ApplicationContext
 import androidx.credentials.CredentialManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.ViewModelComponent
 
 @Module
 @InstallIn(ViewModelComponent::class)

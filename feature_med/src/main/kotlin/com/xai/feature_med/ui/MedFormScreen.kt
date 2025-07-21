@@ -1,4 +1,4 @@
-package com.xai.feature.med.ui
+package com.xai.feature_med.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,8 +8,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.xai.dosify.core.data.models.MedType
-import com.xai.dosify.core.data.models.Medication
+import com.xai.core.data.models.MedType
+import com.xai.core.data.models.Medication
 import com.xai.feature.advanced.viewmodel.MedViewModel
 import kotlinx.coroutines.launch
 import timber.log.Timber

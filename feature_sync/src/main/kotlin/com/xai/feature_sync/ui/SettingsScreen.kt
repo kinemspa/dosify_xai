@@ -1,4 +1,4 @@
-package com.xai.feature.sync.ui
+package com.xai.feature_sync.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Button
@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.xai.feature.sync.viewmodel.SyncViewModel
+import com.xai.feature_sync.viewmodel.SyncViewModel
 import kotlinx.coroutines.launch
 
 @Composable

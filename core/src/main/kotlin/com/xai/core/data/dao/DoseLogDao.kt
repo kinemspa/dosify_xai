@@ -1,10 +1,10 @@
-package com.xai.dosify.core.data.dao
+package com.xai.core.data.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.xai.dosify.core.data.models.DoseLog
+import com.xai.core.data.models.DoseLog
 import kotlinx.coroutines.flow.Flow
 
 @Dao

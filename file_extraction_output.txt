@@ -132,6 +132,111 @@ fun HomeScreen(navController: NavController) {
 }
 ```
 ---
+File: app\src\main\kotlin\com\xai\dosify\ui\MainActivity.kt
+```
+package com.xai.dosify.ui
+
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Modifier
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.xai.core.ui.theme.DosifyTheme
+import com.xai.dosify.nav.NavRoutes
+import com.xai.feature.med.ui.MedFormScreen
+import com.xai.feature.schedule.ui.DoseConfirmScreen
+import com.xai.core.ui.components.DosifyAppBar
+class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalMaterial3Api::class)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            DosifyTheme {
+                val navController = rememberNavController()
+                Scaffold(
+                    topBar = {
+                        DosifyAppBar(
+                            title = when (navController.currentDestination?.route) {
+                                NavRoutes.HOME -> "Dosify Home"
+                                NavRoutes.MED_FORM -> "Add Medication"
+                                NavRoutes.DOSE_CONFIRM -> "Confirm Dose"
+                                else -> "Dosify"
+                            },
+                            navController = navController,
+                            showBackButton = navController.currentDestination?.route != NavRoutes.HOME
+                        )
+                    }
+                ) { innerPadding ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = NavRoutes.HOME,
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable(NavRoutes.HOME) { HomeScreen(navController) }
+                        composable(NavRoutes.MED_FORM) { MedFormScreen() }
+                        composable(NavRoutes.DOSE_CONFIRM) { DoseConfirmScreen() }
+                    }
+                }
+            }
+        }
+    }
+}
+```
+---
+File: app\src\main\kotlin\com\xai\dosify\DosifyApplication.kt
+```
+package com.xai.dosify
+
+import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
+import androidx.work.WorkManager
+import dagger.hilt.android.HiltAndroidApp
+import java.util.Locale
+import javax.inject.Inject
+
+@HiltAndroidApp
+class DosifyApplication : Application() {
+
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+    override fun onCreate() {
+        super.onCreate()
+        if (Locale.getDefault().country.equals("CN", ignoreCase = true)) {
+            // Disable Firebase (e.g., no init or mock)
+        }
+        // Initialize WorkManager in onCreate
+        WorkManager.Companion.initialize(
+            this,
+            Configuration.Builder()
+                .setWorkerFactory(workerFactory)
+                .build()
+        )
+
+        // Create notification channel for dose reminders
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "dose_channel",
+                "Dose Reminders",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for medication dose reminders"
+            }
+            val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+    }
+}
+```
+---
 File: app\src\main\res\values\colors.xml
 ```
 <?xml version="1.0" encoding="utf-8"?>
@@ -205,13 +310,13 @@ File: app\src\main\res\xml\data_extraction_rules.xml
 ---
 File: core\src\main\kotlin\com\xai\core\data\dao\DoseLogDao.kt
 ```
-package com.xai.dosify.core.data.dao
+package com.xai.core.data.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.xai.dosify.core.data.models.DoseLog
+import com.xai.core.data.models.DoseLog
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -232,7 +337,7 @@ interface DoseLogDao {
 ---
 File: core\src\main\kotlin\com\xai\core\data\dao\DoseScheduleDao.kt
 ```
-package com.xai.dosify.core.data.dao
+package com.xai.core.data.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -240,7 +345,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.xai.dosify.core.data.models.DoseSchedule
+import com.xai.core.data.models.DoseSchedule
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -270,7 +375,7 @@ interface DoseScheduleDao {
 ---
 File: core\src\main\kotlin\com\xai\core\data\dao\MedicationDao.kt
 ```
-package com.xai.dosify.core.data.dao
+package com.xai.core.data.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -278,7 +383,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.xai.dosify.core.data.models.Medication
+import com.xai.core.data.models.Medication
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -305,13 +410,13 @@ interface MedicationDao {
 ---
 File: core\src\main\kotlin\com\xai\core\data\dao\ProfileDao.kt
 ```
-package com.xai.dosify.core.data.dao
+package com.xai.core.data.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.xai.dosify.core.data.models.Profile
+import com.xai.core.data.models.Profile
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -329,14 +434,14 @@ interface ProfileDao {
 ---
 File: core\src\main\kotlin\com\xai\core\data\dao\ReconstitutionDao.kt
 ```
-package com.xai.dosify.core.data.dao
+package com.xai.core.data.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.xai.dosify.core.data.models.Reconstitution
+import com.xai.core.data.models.Reconstitution
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -357,7 +462,7 @@ interface ReconstitutionDao {
 ---
 File: core\src\main\kotlin\com\xai\core\data\dao\SupplyDao.kt
 ```
-package com.xai.dosify.core.data.dao
+package com.xai.core.data.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -365,7 +470,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.xai.dosify.core.data.models.Supply
+import com.xai.core.data.models.Supply
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -392,7 +497,7 @@ interface SupplyDao {
 ---
 File: core\src\main\kotlin\com\xai\core\data\models\DoseLog.kt
 ```
-package com.xai.dosify.core.data.models
+package com.xai.core.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -413,12 +518,12 @@ data class DoseLog(
 ---
 File: core\src\main\kotlin\com\xai\core\data\models\DoseSchedule.kt
 ```
-package com.xai.dosify.core.data.models
+package com.xai.core.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
-import com.xai.dosify.core.data.Converters
+import com.xai.core.data.Converters
 import com.google.firebase.firestore.IgnoreExtraProperties
 import java.time.LocalDate
 import java.time.LocalTime
@@ -454,7 +559,7 @@ enum class Frequency {
 ---
 File: core\src\main\kotlin\com\xai\core\data\models\Medication.kt
 ```
-package com.xai.dosify.core.data.models
+package com.xai.core.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -480,7 +585,7 @@ enum class MedType {
 ---
 File: core\src\main\kotlin\com\xai\core\data\models\Profile.kt
 ```
-package com.xai.dosify.core.data.models
+package com.xai.core.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -497,7 +602,7 @@ data class Profile(
 ---
 File: core\src\main\kotlin\com\xai\core\data\models\Reconstitution.kt
 ```
-package com.xai.dosify.core.data.models
+package com.xai.core.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -516,7 +621,7 @@ data class Reconstitution(
 ---
 File: core\src\main\kotlin\com\xai\core\data\models\Supply.kt
 ```
-package com.xai.dosify.core.data.models
+package com.xai.core.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -536,54 +641,87 @@ data class Supply(
 ---
 File: core\src\main\kotlin\com\xai\core\data\repository\AuthRepository.kt
 ```
-package com.xai.dosify.core.data.repository
+package com.xai.core.data.repository
+
+import com.google.firebase.auth.FirebaseUser
+
+interface AuthRepository {
+    suspend fun emailLogin(email: String, password: String): Boolean
+    suspend fun googleLogin(idToken: String): Boolean
+    fun logout()
+    fun currentUser(): Boolean
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\repository\AuthRepositoryImpl.kt
+```
+package com.xai.core.data.repository
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-class AuthRepository @Inject constructor(
+@ViewModelScoped
+class AuthRepositoryImpl @Inject constructor(
     private val auth: FirebaseAuth
-) {
-    suspend fun emailLogin(email: String, password: String): Boolean = try {
+) : AuthRepository {
+    override suspend fun emailLogin(email: String, password: String): Boolean = try {
         auth.signInWithEmailAndPassword(email, password).await() != null
     } catch (e: Exception) { false }
 
-    suspend fun googleLogin(idToken: String): Boolean = try {
+    override suspend fun googleLogin(idToken: String): Boolean = try {
         auth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null)).await() != null
     } catch (e: Exception) { false }
 
-    fun logout() = auth.signOut()
+    override fun logout() = auth.signOut()
 
-    fun currentUser() = auth.currentUser != null
+    override fun currentUser() = auth.currentUser != null
 }
 ```
 ---
 File: core\src\main\kotlin\com\xai\core\data\repository\DoseLogRepository.kt
 ```
-package com.xai.dosify.core.data.repository
+package com.xai.core.data.repository
 
-import com.xai.dosify.core.data.dao.DoseLogDao
-import com.xai.dosify.core.data.models.DoseLog
+import com.xai.core.data.models.DoseLog
+import kotlinx.coroutines.flow.Flow
+
+interface DoseLogRepository {
+    suspend fun insert(log: DoseLog)
+    fun getBySchedule(scheduleId: Long): Flow<List<DoseLog>>
+    fun getRecent(): Flow<List<DoseLog>>
+    suspend fun syncWithFirestore(userId: String)
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\repository\DoseLogRepositoryImpl.kt
+```
+package com.xai.core.data.repository
+
+import com.xai.core.data.dao.DoseLogDao
+import com.xai.core.data.models.DoseLog
 import com.google.firebase.firestore.FirebaseFirestore
+import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-class DoseLogRepository @Inject constructor(
+@ViewModelScoped
+class DoseLogRepositoryImpl @Inject constructor(
     private val dao: DoseLogDao,
     private val firestore: FirebaseFirestore
-) {
-    suspend fun insert(log: DoseLog) = dao.insert(log)
+) : DoseLogRepository {
+    override suspend fun insert(log: DoseLog) = dao.insert(log)
 
-    fun getBySchedule(scheduleId: Long): Flow<List<DoseLog>> = dao.getBySchedule(scheduleId)
+    override fun getBySchedule(scheduleId: Long): Flow<List<DoseLog>> = dao.getBySchedule(scheduleId)
 
-    fun getRecent(): Flow<List<DoseLog>> = dao.getRecent()
+    override fun getRecent(): Flow<List<DoseLog>> = dao.getRecent()
 
-    suspend fun syncWithFirestore(userId: String) {
-        val localLogs = dao.getAll().first()  // Assume add getAll() to Dao
+    override suspend fun syncWithFirestore(userId: String) {
+        val localLogs = dao.getAll().first()  // Assume getAll() in Dao
         val remoteCollection = firestore.collection("users/$userId/logs")
 
         localLogs.forEach { log ->
@@ -602,34 +740,54 @@ class DoseLogRepository @Inject constructor(
 ---
 File: core\src\main\kotlin\com\xai\core\data\repository\DoseScheduleRepository.kt
 ```
-package com.xai.dosify.core.data.repository
+package com.xai.core.data.repository
 
-import com.xai.dosify.core.data.dao.DoseScheduleDao
-import com.xai.dosify.core.data.models.DoseSchedule
+import com.xai.core.data.models.DoseSchedule
+import kotlinx.coroutines.flow.Flow
+
+interface DoseScheduleRepository {
+    suspend fun insert(schedule: DoseSchedule)
+    suspend fun update(schedule: DoseSchedule)
+    suspend fun delete(schedule: DoseSchedule)
+    fun getById(id: Long): Flow<DoseSchedule?>
+    fun getByMedId(medId: Long): Flow<List<DoseSchedule>>
+    fun getActive(): Flow<List<DoseSchedule>>
+    suspend fun syncWithFirestore(userId: String)
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\repository\DoseScheduleRepositoryImpl.kt
+```
+package com.xai.core.data.repository
+
+import com.xai.core.data.dao.DoseScheduleDao
+import com.xai.core.data.models.DoseSchedule
 import com.google.firebase.firestore.FirebaseFirestore
+import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-class DoseScheduleRepository @Inject constructor(
+@ViewModelScoped
+class DoseScheduleRepositoryImpl @Inject constructor(
     private val dao: DoseScheduleDao,
     private val firestore: FirebaseFirestore
-) {
-    suspend fun insert(schedule: DoseSchedule) = dao.insert(schedule)
+) : DoseScheduleRepository {
+    override suspend fun insert(schedule: DoseSchedule) = dao.insert(schedule)
 
-    suspend fun update(schedule: DoseSchedule) = dao.update(schedule)
+    override suspend fun update(schedule: DoseSchedule) = dao.update(schedule)
 
-    suspend fun delete(schedule: DoseSchedule) = dao.delete(schedule)
+    override suspend fun delete(schedule: DoseSchedule) = dao.delete(schedule)
 
-    fun getById(id: Long): Flow<DoseSchedule?> = dao.getById(id)
+    override fun getById(id: Long): Flow<DoseSchedule?> = dao.getById(id)
 
-    fun getByMedId(medId: Long): Flow<List<DoseSchedule>> = dao.getByMedId(medId)
+    override fun getByMedId(medId: Long): Flow<List<DoseSchedule>> = dao.getByMedId(medId)
 
-    fun getActive(): Flow<List<DoseSchedule>> = dao.getActive()
+    override fun getActive(): Flow<List<DoseSchedule>> = dao.getActive()
 
-    suspend fun syncWithFirestore(userId: String) {
-        val localSchedules = dao.getAll().first()  // Assume add getAll() to Dao if needed
+    override suspend fun syncWithFirestore(userId: String) {
+        val localSchedules = dao.getAll().first()
         val remoteCollection = firestore.collection("users/$userId/schedules")
 
         localSchedules.forEach { schedule ->
@@ -648,38 +806,60 @@ class DoseScheduleRepository @Inject constructor(
 ---
 File: core\src\main\kotlin\com\xai\core\data\repository\MedicationRepository.kt
 ```
-package com.xai.dosify.core.data.repository
+package com.xai.core.data.repository
 
-import com.xai.dosify.core.data.dao.MedicationDao
-import com.xai.dosify.core.data.dao.ReconstitutionDao
-import com.xai.dosify.core.data.models.Medication
-import com.xai.dosify.core.data.models.Reconstitution
-import com.xai.feature.advanced.utils.ReconstitutionUtils
+import com.xai.core.data.models.Medication
+import com.xai.core.data.models.Reconstitution
+import kotlinx.coroutines.flow.Flow
+
+interface MedicationRepository {
+    suspend fun insert(medication: Medication)
+    suspend fun update(medication: Medication)
+    suspend fun delete(medication: Medication)
+    fun getById(id: Long): Flow<Medication?>
+    fun getAll(): Flow<List<Medication>>
+    suspend fun decrementStock(medId: Long, amount: Double): Boolean
+    suspend fun syncWithFirestore(userId: String)
+    suspend fun saveWithReconstitution(med: Medication, powder: Double, solvent: Double)
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\repository\MedicationRepositoryImpl.kt
+```
+package com.xai.core.data.repository
+
+import com.xai.core.data.dao.MedicationDao
+import com.xai.core.data.dao.ReconstitutionDao
+import com.xai.core.data.models.Medication
+import com.xai.core.data.models.Reconstitution
+import com.xai.core.utils.ReconstitutionUtils
 import com.google.firebase.firestore.FirebaseFirestore
+import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
-import timber.log.Timber  // Add this import
+import timber.log.Timber
 import javax.inject.Inject
 
-class MedicationRepository @Inject constructor(
+@ViewModelScoped
+class MedicationRepositoryImpl @Inject constructor(
     private val dao: MedicationDao,
     private val firestore: FirebaseFirestore,
     private val reconstDao: ReconstitutionDao
-) {
-    suspend fun insert(medication: Medication) = dao.insert(medication)
+) : MedicationRepository {
+    override suspend fun insert(medication: Medication) = dao.insert(medication)
 
-    suspend fun update(medication: Medication) = dao.update(medication)
+    override suspend fun update(medication: Medication) = dao.update(medication)
 
-    suspend fun delete(medication: Medication) = dao.delete(medication)
+    override suspend fun delete(medication: Medication) = dao.delete(medication)
 
-    fun getById(id: Long): Flow<Medication?> = dao.getById(id)
+    override fun getById(id: Long): Flow<Medication?> = dao.getById(id)
 
-    fun getAll(): Flow<List<Medication>> = dao.getAll()
+    override fun getAll(): Flow<List<Medication>> = dao.getAll()
 
-    suspend fun decrementStock(medId: Long, amount: Double): Boolean = dao.decrementStock(medId, amount) > 0
+    override suspend fun decrementStock(medId: Long, amount: Double): Boolean = dao.decrementStock(medId, amount) > 0
 
-    suspend fun syncWithFirestore(userId: String) {
+    override suspend fun syncWithFirestore(userId: String) {
         val localMeds = dao.getAll().first()
         val remoteCollection = firestore.collection("users/$userId/meds")
 
@@ -695,7 +875,7 @@ class MedicationRepository @Inject constructor(
         }
     }
 
-    suspend fun saveWithReconstitution(med: Medication, powder: Double, solvent: Double) {
+    override suspend fun saveWithReconstitution(med: Medication, powder: Double, solvent: Double) {
         dao.insert(med)
         val conc = ReconstitutionUtils.calculateConcentration(powder, solvent)
         val reconst = Reconstitution(medId = med.id, powderAmount = powder, solventVolume = solvent, desiredConcentration = conc)
@@ -707,27 +887,44 @@ class MedicationRepository @Inject constructor(
 ---
 File: core\src\main\kotlin\com\xai\core\data\repository\ProfileRepository.kt
 ```
-package com.xai.dosify.core.data.repository
+package com.xai.core.data.repository
 
-import com.xai.dosify.core.data.dao.ProfileDao
-import com.xai.dosify.core.data.models.Profile
+import com.xai.core.data.models.Profile
+import kotlinx.coroutines.flow.Flow
+
+interface ProfileRepository {
+    suspend fun insert(profile: Profile)
+    fun getAll(): Flow<List<Profile>>
+    fun getPremium(): Flow<Profile?>
+    suspend fun syncWithFirestore(userId: String)
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\repository\ProfileRepositoryImpl.kt
+```
+package com.xai.core.data.repository
+
+import com.xai.core.data.dao.ProfileDao
+import com.xai.core.data.models.Profile
 import com.google.firebase.firestore.FirebaseFirestore
+import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-class ProfileRepository @Inject constructor(
+@ViewModelScoped
+class ProfileRepositoryImpl @Inject constructor(
     private val dao: ProfileDao,
     private val firestore: FirebaseFirestore
-) {
-    suspend fun insert(profile: Profile) = dao.insert(profile)
+) : ProfileRepository {
+    override suspend fun insert(profile: Profile) = dao.insert(profile)
 
-    fun getAll(): Flow<List<Profile>> = dao.getAll()
+    override fun getAll(): Flow<List<Profile>> = dao.getAll()
 
-    fun getPremium(): Flow<Profile?> = dao.getPremium()
+    override fun getPremium(): Flow<Profile?> = dao.getPremium()
 
-    suspend fun syncWithFirestore(userId: String) {
+    override suspend fun syncWithFirestore(userId: String) {
         val localProfiles = dao.getAll().first()
         val remoteCollection = firestore.collection("users/$userId/profiles")
 
@@ -747,28 +944,45 @@ class ProfileRepository @Inject constructor(
 ---
 File: core\src\main\kotlin\com\xai\core\data\repository\ReconstitutionRepository.kt
 ```
-package com.xai.dosify.core.data.repository
+package com.xai.core.data.repository
 
-import com.xai.dosify.core.data.dao.ReconstitutionDao
-import com.xai.dosify.core.data.models.Reconstitution
+import com.xai.core.data.models.Reconstitution
+import kotlinx.coroutines.flow.Flow
+
+interface ReconstitutionRepository {
+    suspend fun insert(reconst: Reconstitution)
+    suspend fun update(reconst: Reconstitution)
+    fun getByMedId(medId: Long): Flow<Reconstitution?>
+    suspend fun syncWithFirestore(userId: String)
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\repository\ReconstitutionRepositoryImpl.kt
+```
+package com.xai.core.data.repository
+
+import com.xai.core.data.dao.ReconstitutionDao
+import com.xai.core.data.models.Reconstitution
 import com.google.firebase.firestore.FirebaseFirestore
+import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-class ReconstitutionRepository @Inject constructor(
+@ViewModelScoped
+class ReconstitutionRepositoryImpl @Inject constructor(
     private val dao: ReconstitutionDao,
     private val firestore: FirebaseFirestore
-) {
-    suspend fun insert(reconst: Reconstitution) = dao.insert(reconst)
+) : ReconstitutionRepository {
+    override suspend fun insert(reconst: Reconstitution) = dao.insert(reconst)
 
-    suspend fun update(reconst: Reconstitution) = dao.update(reconst)
+    override suspend fun update(reconst: Reconstitution) = dao.update(reconst)
 
-    fun getByMedId(medId: Long): Flow<Reconstitution?> = dao.getByMedId(medId)
+    override fun getByMedId(medId: Long): Flow<Reconstitution?> = dao.getByMedId(medId)
 
-    suspend fun syncWithFirestore(userId: String) {
-        val localReconsts = dao.getAll().first()  // Assume add getAll() to Dao
+    override suspend fun syncWithFirestore(userId: String) {
+        val localReconsts = dao.getAll().first()
         val remoteCollection = firestore.collection("users/$userId/reconsts")
 
         localReconsts.forEach { reconst ->
@@ -787,33 +1001,53 @@ class ReconstitutionRepository @Inject constructor(
 ---
 File: core\src\main\kotlin\com\xai\core\data\repository\SupplyRepository.kt
 ```
-package com.xai.dosify.core.data.repository
+package com.xai.core.data.repository
 
-import com.xai.dosify.core.data.dao.SupplyDao
-import com.xai.dosify.core.data.models.Supply
+import com.xai.core.data.models.Supply
+import kotlinx.coroutines.flow.Flow
+
+interface SupplyRepository {
+    suspend fun insert(supply: Supply)
+    suspend fun update(supply: Supply)
+    suspend fun delete(supply: Supply)
+    fun getById(id: Long): Flow<Supply?>
+    fun getAll(): Flow<List<Supply>>
+    suspend fun decrementStock(supplyId: Long, amount: Double): Boolean
+    suspend fun syncWithFirestore(userId: String)
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\repository\SupplyRepositoryImpl.kt
+```
+package com.xai.core.data.repository
+
+import com.xai.core.data.dao.SupplyDao
+import com.xai.core.data.models.Supply
 import com.google.firebase.firestore.FirebaseFirestore
+import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-class SupplyRepository @Inject constructor(
+@ViewModelScoped
+class SupplyRepositoryImpl @Inject constructor(
     private val dao: SupplyDao,
     private val firestore: FirebaseFirestore
-) {
-    suspend fun insert(supply: Supply) = dao.insert(supply)
+) : SupplyRepository {
+    override suspend fun insert(supply: Supply) = dao.insert(supply)
 
-    suspend fun update(supply: Supply) = dao.update(supply)
+    override suspend fun update(supply: Supply) = dao.update(supply)
 
-    suspend fun delete(supply: Supply) = dao.delete(supply)
+    override suspend fun delete(supply: Supply) = dao.delete(supply)
 
-    fun getById(id: Long): Flow<Supply?> = dao.getById(id)
+    override fun getById(id: Long): Flow<Supply?> = dao.getById(id)
 
-    fun getAll(): Flow<List<Supply>> = dao.getAll()
+    override fun getAll(): Flow<List<Supply>> = dao.getAll()
 
-    suspend fun decrementStock(supplyId: Long, amount: Double): Boolean = dao.decrementStock(supplyId, amount) > 0
+    override suspend fun decrementStock(supplyId: Long, amount: Double): Boolean = dao.decrementStock(supplyId, amount) > 0
 
-    suspend fun syncWithFirestore(userId: String) {
+    override suspend fun syncWithFirestore(userId: String) {
         val localSupplies = dao.getAll().first()
         val remoteCollection = firestore.collection("users/$userId/supplies")
 
@@ -833,25 +1067,25 @@ class SupplyRepository @Inject constructor(
 ---
 File: core\src\main\kotlin\com\xai\core\data\AppDatabase.kt
 ```
-package com.xai.dosify.core.data
+package com.xai.core.data
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.xai.dosify.core.data.dao.DoseLogDao
-import com.xai.dosify.core.data.dao.DoseScheduleDao
-import com.xai.dosify.core.data.dao.MedicationDao
-import com.xai.dosify.core.data.dao.ProfileDao
-import com.xai.dosify.core.data.dao.ReconstitutionDao
-import com.xai.dosify.core.data.dao.SupplyDao
-import com.xai.dosify.core.data.models.DoseLog
-import com.xai.dosify.core.data.models.DoseSchedule
-import com.xai.dosify.core.data.models.Medication
-import com.xai.dosify.core.data.models.Profile
-import com.xai.dosify.core.data.models.Reconstitution
-import com.xai.dosify.core.data.models.Supply
-import com.xai.dosify.core.data.dao.*
-import com.xai.dosify.core.data.models.*
+import com.xai.core.data.dao.DoseLogDao
+import com.xai.core.data.dao.DoseScheduleDao
+import com.xai.core.data.dao.MedicationDao
+import com.xai.core.data.dao.ProfileDao
+import com.xai.core.data.dao.ReconstitutionDao
+import com.xai.core.data.dao.SupplyDao
+import com.xai.core.data.models.DoseLog
+import com.xai.core.data.models.DoseSchedule
+import com.xai.core.data.models.Medication
+import com.xai.core.data.models.Profile
+import com.xai.core.data.models.Reconstitution
+import com.xai.core.data.models.Supply
+import com.xai.core.data.dao.*
+import com.xai.core.data.models.*
 
 @Database(entities = [Medication::class, DoseSchedule::class, DoseLog::class, Supply::class, Reconstitution::class, Profile::class], version = 2, exportSchema = true)  // Bump version, add migration if needed
 @TypeConverters(Converters::class)
@@ -867,12 +1101,12 @@ abstract class AppDatabase : RoomDatabase() {
 ---
 File: core\src\main\kotlin\com\xai\core\data\Converters.kt
 ```
-package com.xai.dosify.core.data
+package com.xai.core.data
 
 import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.xai.dosify.core.data.models.TitrationStep
+import com.xai.core.data.models.TitrationStep
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -920,7 +1154,7 @@ class Converters {
 ---
 File: core\src\main\kotlin\com\xai\core\data\Migration.kt
 ```
-package com.xai.dosify.core.data
+package com.xai.core.data
 
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -953,19 +1187,19 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
 ---
 File: core\src\main\kotlin\com\xai\core\di\DatabaseModule.kt
 ```
-package com.xai.dosify.core.di
+package com.xai.core.di
 
 import android.content.Context
 import androidx.room.Room
-import com.xai.dosify.core.data.AppDatabase
-import com.xai.dosify.core.data.dao.DoseLogDao
-import com.xai.dosify.core.data.dao.DoseScheduleDao
-import com.xai.dosify.core.data.dao.MedicationDao
-import com.xai.dosify.core.data.dao.ProfileDao
-import com.xai.dosify.core.data.dao.ReconstitutionDao
-import com.xai.dosify.core.data.dao.SupplyDao
-import com.xai.dosify.core.utils.BiometricUtils
-import com.xai.dosify.core.data.dao.*
+import com.xai.core.data.AppDatabase
+import com.xai.core.data.dao.DoseLogDao
+import com.xai.core.data.dao.DoseScheduleDao
+import com.xai.core.data.dao.MedicationDao
+import com.xai.core.data.dao.ProfileDao
+import com.xai.core.data.dao.ReconstitutionDao
+import com.xai.core.data.dao.SupplyDao
+import com.xai.core.utils.BiometricUtils
+import com.xai.core.data.dao.*
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
 import dagger.Module
@@ -974,6 +1208,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -1007,7 +1242,7 @@ object DatabaseModule {
 ---
 File: core\src\main\kotlin\com\xai\core\di\FirebaseModule.kt
 ```
-package com.xai.dosify.core.di
+package com.xai.core.di
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -1030,9 +1265,60 @@ object FirebaseModule {
 }
 ```
 ---
+File: core\src\main\kotlin\com\xai\core\di\RepositoryModule.kt
+```
+package com.xai.core.di
+
+import com.xai.core.data.repository.AuthRepository
+import com.xai.core.data.repository.DoseLogRepository
+import com.xai.core.data.repository.DoseScheduleRepository
+import com.xai.core.data.repository.MedicationRepository
+import com.xai.core.data.repository.ProfileRepository
+import com.xai.core.data.repository.ReconstitutionRepository
+import com.xai.core.data.repository.SupplyRepository
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class RepositoryModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDoseLogRepository(impl: DoseLogRepositoryImpl): DoseLogRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDoseScheduleRepository(impl: DoseScheduleRepositoryImpl): DoseScheduleRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindMedicationRepository(impl: MedicationRepositoryImpl): MedicationRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindProfileRepository(impl: ProfileRepositoryImpl): ProfileRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindReconstitutionRepository(impl: ReconstitutionRepositoryImpl): ReconstitutionRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSupplyRepository(impl: SupplyRepositoryImpl): SupplyRepository
+}
+```
+---
 File: core\src\main\kotlin\com\xai\core\ui\components\AppBar.kt
 ```
-package com.xai.dosify.core.ui.components
+package com.xai.core.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -1045,8 +1331,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
-import com.xai.dosify.core.ui.theme.PrimaryBlue
-import com.xai.dosify.core.ui.theme.TextBlack
+import com.xai.core.ui.theme.PrimaryBlue
+import com.xai.core.ui.theme.TextBlack
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1087,7 +1373,7 @@ fun DosifyAppBar(
 ---
 File: core\src\main\kotlin\com\xai\core\ui\theme\Color.kt
 ```
-package com.xai.dosify.core.ui.theme
+package com.xai.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
@@ -1101,7 +1387,7 @@ val AccentPurple = Color(0xFF9C27B0) // For premium features
 ---
 File: core\src\main\kotlin\com\xai\core\ui\theme\Theme.kt
 ```
-package com.xai.dosify.core.ui.theme
+package com.xai.core.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -1158,7 +1444,7 @@ fun DosifyTheme(
 ---
 File: core\src\main\kotlin\com\xai\core\ui\theme\Type.kt
 ```
-package com.xai.dosify.core.ui.theme
+package com.xai.core.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
@@ -1191,67 +1477,9 @@ val Typography = Typography(
 )
 ```
 ---
-File: core\src\main\kotlin\com\xai\core\ui\MainActivity.kt
-```
-package com.xai.dosify.core.ui
-
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
-import androidx.compose.ui.Modifier
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.xai.dosify.core.ui.components.DosifyAppBar
-import com.xai.dosify.core.ui.theme.DosifyTheme
-import com.xai.feature.med.ui.MedFormScreen
-import com.xai.feature.schedule.ui.DoseConfirmScreen
-import com.xai.dosify.ui.HomeScreen
-import com.xai.dosify.nav.NavRoutes
-
-class MainActivity : ComponentActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            DosifyTheme {
-                val navController = rememberNavController()
-                Scaffold(
-                    topBar = {
-                        DosifyAppBar(
-                            title = when (navController.currentDestination?.route) {
-                                NavRoutes.HOME -> "Dosify Home"
-                                NavRoutes.MED_FORM -> "Add Medication"
-                                NavRoutes.DOSE_CONFIRM -> "Confirm Dose"
-                                else -> "Dosify"
-                            },
-                            navController = navController,
-                            showBackButton = navController.currentDestination?.route != NavRoutes.HOME
-                        )
-                    }
-                ) { innerPadding ->
-                    NavHost(
-                        navController = navController,
-                        startDestination = NavRoutes.HOME,
-                        modifier = Modifier.padding(innerPadding)
-                    ) {
-                        composable(NavRoutes.HOME) { HomeScreen(navController) }
-                        composable(NavRoutes.MED_FORM) { MedFormScreen() }
-                        composable(NavRoutes.DOSE_CONFIRM) { DoseConfirmScreen() }
-                    }
-                }
-            }
-        }
-    }
-}
-```
----
 File: core\src\main\kotlin\com\xai\core\utils\BiometricUtils.kt
 ```
-package com.xai.dosify.core.utils
+package com.xai.core.utils
 
 import android.content.Context
 import androidx.biometric.BiometricPrompt
@@ -1284,7 +1512,7 @@ object BiometricUtils {
 ---
 File: core\src\main\kotlin\com\xai\core\utils\NotificationUtils.kt
 ```
-package com.xai.dosify.core.utils
+package com.xai.core.utils
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -1292,7 +1520,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.AlarmManagerCompat
-import com.xai.dosify.core.data.models.DoseSchedule
+import com.xai.core.data.models.DoseSchedule
 import com.xai.dosify.ui.notifications.YourAlarmReceiver
 import java.time.LocalTime
 import java.time.Duration
@@ -1348,56 +1576,6 @@ object ReconstitutionUtils {
 }
 ```
 ---
-File: core\src\main\kotlin\com\xai\core\DosifyApplication.kt
-```
-package com.xai.dosify.core
-
-import android.app.Application
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.os.Build
-import androidx.hilt.work.HiltWorkerFactory
-import androidx.work.Configuration
-import androidx.work.WorkManager
-import dagger.hilt.android.HiltAndroidApp
-import java.util.Locale
-import javax.inject.Inject
-
-@HiltAndroidApp
-class DosifyApplication : Application() {
-
-    @Inject
-    lateinit var workerFactory: HiltWorkerFactory
-
-    override fun onCreate() {
-        super.onCreate()
-        if (Locale.getDefault().country.equals("CN", ignoreCase = true)) {
-            // Disable Firebase (e.g., no init or mock)
-        }
-        // Initialize WorkManager in onCreate
-        WorkManager.initialize(
-            this,
-            Configuration.Builder()
-                .setWorkerFactory(workerFactory)
-                .build()
-        )
-
-        // Create notification channel for dose reminders
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                "dose_channel",
-                "Dose Reminders",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Notifications for medication dose reminders"
-            }
-            val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            manager.createNotificationChannel(channel)
-        }
-    }
-}
-```
----
 File: feature_advanced\src\main\kotlin\com\xai\feature_advanced\ui\ReportsScreen.kt
 ```
 package com.xai.feature.advanced.ui
@@ -1445,16 +1623,16 @@ package com.xai.feature.advanced.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xai.dosify.core.data.models.DoseLog
-import com.xai.dosify.core.data.repository.DoseLogRepository
+import com.xai.core.data.models.DoseLog
+import com.xai.core.data.repository.DoseLogRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
-import com.xai.dosify.core.data.models.DoseLog
-import com.xai.dosify.core.data.repository.DoseLogRepository
+import com.xai.core.data.models.DoseLog
+import com.xai.core.data.repository.DoseLogRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -1508,7 +1686,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.xai.dosify.core.data.repository.AuthRepository
+import com.xai.core.data.repository.AuthRepository
 import com.xai.feature.sync.utils.SyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.awaitClose
@@ -1529,7 +1707,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.xai.dosify.core.data.repository.AuthRepository
+import com.xai.core.data.repository.AuthRepository
 import com.xai.feature.sync.utils.SyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -1775,6 +1953,7 @@ File: feature_iap\src\main\kotlin\com\xai\feature_iap\viewmodel\IapViewModel.kt
 package com.xai.feature.iap.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -1833,8 +2012,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.xai.dosify.core.data.models.MedType
-import com.xai.dosify.core.data.models.Medication
+import com.xai.core.data.models.MedType
+import com.xai.core.data.models.Medication
 import com.xai.feature.advanced.viewmodel.MedViewModel
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -1984,7 +2163,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.xai.dosify.core.data.models.Supply
+import com.xai.core.data.models.Supply
 import com.xai.feature_med.viewmodel.SupplyViewModel
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -2042,8 +2221,8 @@ package com.xai.feature.med.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xai.dosify.core.data.models.Medication
-import com.xai.dosify.core.data.repository.MedicationRepository
+import com.xai.core.data.models.Medication
+import com.xai.core.data.repository.MedicationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -2066,7 +2245,7 @@ package com.xai.feature.med.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xai.core.data.models.Medication
-import com.xai.dosify.core.data.repository.MedicationRepository
+import com.xai.core.data.repository.MedicationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -2185,9 +2364,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.xai.dosify.core.data.models.DoseLog
-import com.xai.dosify.core.data.models.DoseSchedule
-import com.xai.dosify.core.utils.setDoseAlarm
+import com.xai.core.data.models.DoseLog
+import com.xai.core.data.models.DoseSchedule
+import com.xai.core.utils.setDoseAlarm
 import com.xai.feature.schedule.viewmodel.DoseConfirmViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -2314,10 +2493,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.xai.dosify.core.data.models.DoseSchedule
-import com.xai.dosify.core.data.models.Frequency
-import com.xai.dosify.core.data.models.Medication
-import com.xai.dosify.core.utils.setDoseAlarm
+import com.xai.core.data.models.DoseSchedule
+import com.xai.core.data.models.Frequency
+import com.xai.core.data.models.Medication
+import com.xai.core.utils.setDoseAlarm
 import com.xai.feature.iap.viewmodel.IapViewModel
 import com.xai.feature.med.viewmodel.MedListViewModel
 import com.xai.feature.schedule.viewmodel.ScheduleViewModel
@@ -2498,8 +2677,8 @@ package com.xai.feature.schedule.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xai.dosify.core.data.models.DoseSchedule
-import com.xai.dosify.core.data.repository.DoseScheduleRepository
+import com.xai.core.data.models.DoseSchedule
+import com.xai.core.data.repository.DoseScheduleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -2519,10 +2698,10 @@ package com.xai.feature.schedule.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xai.dosify.core.data.models.DoseSchedule
-import com.xai.dosify.core.data.repository.DoseLogRepository
-import com.xai.dosify.core.data.repository.DoseScheduleRepository
-import com.xai.dosify.core.data.repository.MedicationRepository
+import com.xai.core.data.models.DoseSchedule
+import com.xai.core.data.repository.DoseLogRepository
+import com.xai.core.data.repository.DoseScheduleRepository
+import com.xai.core.data.repository.MedicationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -2546,8 +2725,8 @@ package com.xai.feature.schedule.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xai.dosify.core.data.models.DoseSchedule
-import com.xai.dosify.core.data.repository.DoseScheduleRepository
+import com.xai.core.data.models.DoseSchedule
+import com.xai.core.data.repository.DoseScheduleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -2567,6 +2746,7 @@ File: gradle/libs.versions.toml
 ```
 [versions]
 activityCompose = "1.10.1"
+androidxCore = "1.16.0"
 agp = "8.11.1"
 billing = "8.0.0"
 biometric = "1.2.0-alpha05"
@@ -2579,12 +2759,10 @@ coreKtx = "1.16.0"
 coroutines = "1.10.2"
 credentialsPlayServicesAuth = "1.5.0"
 espressoCore = "3.6.1"
-firebaseBom = "32.8.1"
+firebaseBom = "33.16.0"
 googleid = "1.1.1"
 gson = "2.13.1"
 google-services = "4.4.3"
-hiltAndroid = "2.51.1"
-hiltCompiler = "2.51.1"
 hiltWork = "1.2.0"
 hilt = "2.57"
 junit = "4.13.2"
@@ -2612,14 +2790,12 @@ appcompat = "1.7.1"
 material = "1.12.0"
 
 [libraries]
-androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidxCore" }
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentialsPlayServicesAuth" }
 androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
-hilt-android-v2511 = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
-hilt-compiler-v2511 = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltCompiler" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -2657,6 +2833,8 @@ firebase-messaging-ktx = { module = "com.google.firebase:firebase-messaging-ktx"
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 
 # Other
+
+lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 mpandroidchart = { module = "com.github.PhilJay:MPAndroidChart", version.ref = "mpandroidchart" }
@@ -2774,7 +2952,6 @@ plugins {
     alias(libs.plugins.room)
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.google.services)
-    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
@@ -2868,8 +3045,6 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.billing.ktx)
     implementation(libs.gson)
-    implementation(libs.hilt.android.v2511)
-    ksp(libs.hilt.compiler.v2511)
 
     // Feature Modules
     implementation(project(":core"))
@@ -2895,6 +3070,8 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.ksp)
+    alias(libs.plugins.hilt.android)
+    alias(libs.plugins.room)
 }
 
 android {
@@ -2923,6 +3100,9 @@ android {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
         }
     }
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
 }
 
 dependencies {
@@ -2935,6 +3115,7 @@ dependencies {
     implementation(libs.firebase.auth.ktx)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    ksp(libs.room.compiler)
     implementation(libs.hilt.work)
     ksp(libs.hilt.work.compiler)
     implementation(libs.kotlinx.coroutines.android)
@@ -2954,6 +3135,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.ksp)
+    alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -2990,6 +3172,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.mpandroidchart)
+    implementation(libs.lifecycle.viewmodel.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -3012,6 +3195,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.ksp)
+    alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -3047,6 +3231,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    implementation(libs.lifecycle.viewmodel.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -3075,6 +3260,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.ksp)
+    alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -3112,6 +3298,7 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.material)
     implementation(libs.billing.ktx)
+    implementation(libs.lifecycle.viewmodel.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -3127,6 +3314,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.ksp)
+    alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -3161,6 +3349,7 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
+    implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -3188,6 +3377,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.ksp)
+    alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -3222,6 +3412,7 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
+    implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -3299,7 +3490,7 @@ File: app/src/main/AndroidManifest.xml
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
-        android:name=".core.DosifyApplication"
+        android:name=".DosifyApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -3309,7 +3500,7 @@ File: app/src/main/AndroidManifest.xml
         android:supportsRtl="true"
         android:theme="@style/Theme.Dosify">
         <activity
-            android:name=".core.ui.MainActivity"
+            android:name=".ui.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Dosify">
             <intent-filter>
