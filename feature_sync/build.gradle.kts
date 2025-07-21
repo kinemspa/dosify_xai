@@ -44,7 +44,7 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
-    implementation(libs.firebase.firestore.ktx)
+    releaseImplementation(libs.firebase.firestore.ktx)
     implementation(libs.work.runtime.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(platform(libs.androidx.compose.bom))
