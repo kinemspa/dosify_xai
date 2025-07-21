@@ -11,7 +11,7 @@ plugins {
 android {
     namespace = "com.xai.dosify"
     compileSdk = 36
-    coreLibraryDesugaringEnabled = true
+    coreLibraryDesugaringEnabled = true  // Added here to enable java.time desugaring
 
     defaultConfig {
         applicationId = "com.xai.dosify"
@@ -37,15 +37,16 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()  // Fixed reference here
     }
     room {
         schemaDirectory("$projectDir/schemas")
     }
-    coreLibraryDesugaring(libs.desugar.jdk.libs)
 }
 
 dependencies {
+    coreLibraryDesugaring(libs.desugar.jdk.libs)  // Moved here as dependency addition
+
     // Core AndroidX
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
