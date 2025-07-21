@@ -1,4 +1,4 @@
-package com.xai.dosify.core.com.xai.core.ui.components
+package com.xai.dosify.core.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -11,8 +11,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
-import com.xai.dosify.core.com.xai.core.ui.theme.PrimaryBlue
-import com.xai.dosify.core.com.xai.core.ui.theme.TextBlack
+import com.xai.dosify.core.ui.theme.PrimaryBlue
+import com.xai.dosify.core.ui.theme.TextBlack
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

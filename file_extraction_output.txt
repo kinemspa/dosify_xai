@@ -14,6 +14,7 @@ import com.xai.feature.schedule.ui.DoseConfirmScreen
 import com.xai.feature.schedule.ui.ScheduleFormScreen
 import com.xai.feature.sync.ui.SettingsScreen
 import com.xai.dosify.ui.HomeScreen
+import com.xai.feature.schedule.ui.CalendarScreen
 
 object NavRoutes {
     const val LOGIN = "login"
@@ -24,6 +25,8 @@ object NavRoutes {
     const val DOSE_CONFIRM = "dose_confirm"
     const val REPORTS = "reports"
     const val SETTINGS = "settings"
+
+    const val CALENDAR = "calendar"
 }
 
 @Composable
@@ -52,6 +55,9 @@ fun AppNavGraph(navController: NavHostController) {
         }
         composable(NavRoutes.SETTINGS) {
             SettingsScreen()
+        }
+        composable(NavRoutes.CALENDAR) {
+            CalendarScreen()
         }
     }
 }
@@ -109,6 +115,9 @@ fun HomeScreen(navController: NavController) {
         }
         Button(onClick = { navController.navigate(NavRoutes.SCHEDULE_FORM) }) {
             Text("Add Schedule")
+        }
+        Button(onClick = { navController.navigate(NavRoutes.CALENDAR) }) {
+            Text("View Calendar")
         }
         Button(onClick = { navController.navigate(NavRoutes.DOSE_CONFIRM) }) {
             Text("Confirm Dose")
@@ -194,8 +203,1581 @@ File: app\src\main\res\xml\data_extraction_rules.xml
 </data-extraction-rules>
 ```
 ---
-Directory not found: core/src/main/kotlin/com/xai/dosify/core
-File: feature_medication\src\main\kotlin\com\xai\feature_med\ui\MedFormScreen.kt
+File: core\src\main\kotlin\com\xai\core\data\dao\DoseLogDao.kt
+```
+package com.xai.dosify.core.data.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import com.xai.dosify.core.data.models.DoseLog
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface DoseLogDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(log: DoseLog)
+
+    @Query("SELECT * FROM dose_logs WHERE scheduleId = :scheduleId ORDER BY takenTime DESC")
+    fun getBySchedule(scheduleId: Long): Flow<List<DoseLog>>
+
+    @Query("SELECT * FROM dose_logs ORDER BY takenTime DESC LIMIT 10")
+    fun getRecent(): Flow<List<DoseLog>>
+
+    @Query("SELECT * FROM dose_logs")
+    fun getAll(): Flow<List<DoseLog>>
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\dao\DoseScheduleDao.kt
+```
+package com.xai.dosify.core.data.dao
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import com.xai.dosify.core.data.models.DoseSchedule
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface DoseScheduleDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(schedule: DoseSchedule)
+
+    @Update
+    suspend fun update(schedule: DoseSchedule)
+
+    @Delete
+    suspend fun delete(schedule: DoseSchedule)
+
+    @Query("SELECT * FROM dose_schedules WHERE id = :id")
+    fun getById(id: Long): Flow<DoseSchedule?>
+
+    @Query("SELECT * FROM dose_schedules WHERE medId = :medId")
+    fun getByMedId(medId: Long): Flow<List<DoseSchedule>>
+
+    @Query("SELECT * FROM dose_schedules WHERE isActive = 1")
+    fun getActive(): Flow<List<DoseSchedule>>
+
+    @Query("SELECT * FROM dose_schedules")
+    fun getAll(): Flow<List<DoseSchedule>>
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\dao\MedicationDao.kt
+```
+package com.xai.dosify.core.data.dao
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import com.xai.dosify.core.data.models.Medication
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface MedicationDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(medication: Medication)
+
+    @Update
+    suspend fun update(medication: Medication)
+
+    @Delete
+    suspend fun delete(medication: Medication)
+
+    @Query("SELECT * FROM medications WHERE id = :id")
+    fun getById(id: Long): Flow<Medication?>
+
+    @Query("SELECT * FROM medications")
+    fun getAll(): Flow<List<Medication>>
+
+    @Query("UPDATE medications SET stock = stock - :amount WHERE id = :medId AND stock >= :amount")
+    suspend fun decrementStock(medId: Long, amount: Double): Int
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\dao\ProfileDao.kt
+```
+package com.xai.dosify.core.data.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import com.xai.dosify.core.data.models.Profile
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface ProfileDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(profile: Profile)
+
+    @Query("SELECT * FROM profiles")
+    fun getAll(): Flow<List<Profile>>
+
+    @Query("SELECT * FROM profiles WHERE isPremium = 1 LIMIT 1")
+    fun getPremium(): Flow<Profile?>
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\dao\ReconstitutionDao.kt
+```
+package com.xai.dosify.core.data.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import com.xai.dosify.core.data.models.Reconstitution
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface ReconstitutionDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(reconst: Reconstitution)
+
+    @Update
+    suspend fun update(reconst: Reconstitution)
+
+    @Query("SELECT * FROM reconstitutions WHERE medId = :medId")
+    fun getByMedId(medId: Long): Flow<Reconstitution?>
+
+    @Query("SELECT * FROM reconstitutions")
+    fun getAll(): Flow<List<Reconstitution>>
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\dao\SupplyDao.kt
+```
+package com.xai.dosify.core.data.dao
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import com.xai.dosify.core.data.models.Supply
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface SupplyDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(supply: Supply)
+
+    @Update
+    suspend fun update(supply: Supply)
+
+    @Delete
+    suspend fun delete(supply: Supply)
+
+    @Query("SELECT * FROM supplies WHERE id = :id")
+    fun getById(id: Long): Flow<Supply?>
+
+    @Query("SELECT * FROM supplies")
+    fun getAll(): Flow<List<Supply>>
+
+    @Query("UPDATE supplies SET stock = stock - :amount WHERE id = :supplyId AND stock >= :amount")
+    suspend fun decrementStock(supplyId: Long, amount: Double): Int
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\models\DoseLog.kt
+```
+package com.xai.dosify.core.data.models
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import com.google.firebase.firestore.IgnoreExtraProperties
+import java.time.LocalDateTime
+
+@IgnoreExtraProperties
+@Entity(tableName = "dose_logs")
+data class DoseLog(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val scheduleId: Long = 0,
+    val takenTime: LocalDateTime = LocalDateTime.now(),
+    val amountTaken: Double = 0.0,
+    val notes: String? = null,
+    val reaction: String? = null
+)
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\models\DoseSchedule.kt
+```
+package com.xai.dosify.core.data.models
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverters
+import com.xai.dosify.core.data.Converters
+import com.google.firebase.firestore.IgnoreExtraProperties
+import java.time.LocalDate
+import java.time.LocalTime
+
+@IgnoreExtraProperties
+@Entity(tableName = "dose_schedules")
+@TypeConverters(Converters::class)
+data class DoseSchedule(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val medId: Long = 0,
+    val doseAmount: Double = 0.0,
+    val unit: String = "",
+    val frequency: Frequency = Frequency.DAILY,
+    val times: List<LocalTime> = emptyList(),
+    val startDate: LocalDate = LocalDate.now(),
+    val endDate: LocalDate? = null,
+    val isActive: Boolean = true,
+    val cycleWeeks: Int? = null,
+    val cycleOffWeeks: Int? = null,
+    val isCycling: Boolean = false,
+    val titrationSteps: List<TitrationStep>? = null
+)
+
+data class TitrationStep(
+    val period: Int = 0,
+    val doseAmount: Double = 0.0
+)
+
+enum class Frequency {
+    DAILY, WEEKLY, CUSTOM
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\models\Medication.kt
+```
+package com.xai.dosify.core.data.models
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import com.google.firebase.firestore.IgnoreExtraProperties
+
+@IgnoreExtraProperties
+@Entity(tableName = "medications")
+data class Medication(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String = "",
+    val type: MedType = MedType.OTHER,
+    val strength: Double = 0.0,
+    val unit: String = "",
+    val stock: Int = 0,
+    val lowStockThreshold: Int = 0,
+    val reconstitution: Boolean = false
+)
+
+enum class MedType {
+    TABLET, INJECTION, DROPS, OTHER
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\models\Profile.kt
+```
+package com.xai.dosify.core.data.models
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import com.google.firebase.firestore.IgnoreExtraProperties
+
+@IgnoreExtraProperties
+@Entity(tableName = "profiles")
+data class Profile(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String = "",
+    val isPremium: Boolean = false  // From IAP check
+)
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\models\Reconstitution.kt
+```
+package com.xai.dosify.core.data.models
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import com.google.firebase.firestore.IgnoreExtraProperties
+
+@IgnoreExtraProperties
+@Entity(tableName = "reconstitutions")
+data class Reconstitution(
+    @PrimaryKey val medId: Long = 0,
+    val powderAmount: Double = 0.0,
+    val solventVolume: Double = 0.0,
+    val desiredConcentration: Double? = null,
+    val calculatedVolumePerDose: Double? = null
+)
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\models\Supply.kt
+```
+package com.xai.dosify.core.data.models
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import com.google.firebase.firestore.IgnoreExtraProperties
+
+@IgnoreExtraProperties
+@Entity(tableName = "supplies")
+data class Supply(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String = "",
+    val unit: String = "",
+    val stock: Double = 0.0,
+    val lowStockThreshold: Double = 0.0,
+    val linkedMedId: Long? = null
+)
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\repository\AuthRepository.kt
+```
+package com.xai.dosify.core.data.repository
+
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
+import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+
+class AuthRepository @Inject constructor(
+    private val auth: FirebaseAuth
+) {
+    suspend fun emailLogin(email: String, password: String): Boolean = try {
+        auth.signInWithEmailAndPassword(email, password).await() != null
+    } catch (e: Exception) { false }
+
+    suspend fun googleLogin(idToken: String): Boolean = try {
+        auth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null)).await() != null
+    } catch (e: Exception) { false }
+
+    fun logout() = auth.signOut()
+
+    fun currentUser() = auth.currentUser != null
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\repository\DoseLogRepository.kt
+```
+package com.xai.dosify.core.data.repository
+
+import com.xai.dosify.core.data.dao.DoseLogDao
+import com.xai.dosify.core.data.models.DoseLog
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+
+class DoseLogRepository @Inject constructor(
+    private val dao: DoseLogDao,
+    private val firestore: FirebaseFirestore
+) {
+    suspend fun insert(log: DoseLog) = dao.insert(log)
+
+    fun getBySchedule(scheduleId: Long): Flow<List<DoseLog>> = dao.getBySchedule(scheduleId)
+
+    fun getRecent(): Flow<List<DoseLog>> = dao.getRecent()
+
+    suspend fun syncWithFirestore(userId: String) {
+        val localLogs = dao.getAll().first()  // Assume add getAll() to Dao
+        val remoteCollection = firestore.collection("users/$userId/logs")
+
+        localLogs.forEach { log ->
+            remoteCollection.document(log.id.toString()).set(log).await()
+        }
+
+        val remoteLogs = remoteCollection.get().await().toObjects(DoseLog::class.java)
+        remoteLogs.forEach { remote ->
+            if (!localLogs.any { it.id == remote.id }) {
+                dao.insert(remote)
+            }
+        }
+    }
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\repository\DoseScheduleRepository.kt
+```
+package com.xai.dosify.core.data.repository
+
+import com.xai.dosify.core.data.dao.DoseScheduleDao
+import com.xai.dosify.core.data.models.DoseSchedule
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+
+class DoseScheduleRepository @Inject constructor(
+    private val dao: DoseScheduleDao,
+    private val firestore: FirebaseFirestore
+) {
+    suspend fun insert(schedule: DoseSchedule) = dao.insert(schedule)
+
+    suspend fun update(schedule: DoseSchedule) = dao.update(schedule)
+
+    suspend fun delete(schedule: DoseSchedule) = dao.delete(schedule)
+
+    fun getById(id: Long): Flow<DoseSchedule?> = dao.getById(id)
+
+    fun getByMedId(medId: Long): Flow<List<DoseSchedule>> = dao.getByMedId(medId)
+
+    fun getActive(): Flow<List<DoseSchedule>> = dao.getActive()
+
+    suspend fun syncWithFirestore(userId: String) {
+        val localSchedules = dao.getAll().first()  // Assume add getAll() to Dao if needed
+        val remoteCollection = firestore.collection("users/$userId/schedules")
+
+        localSchedules.forEach { schedule ->
+            remoteCollection.document(schedule.id.toString()).set(schedule).await()
+        }
+
+        val remoteSchedules = remoteCollection.get().await().toObjects(DoseSchedule::class.java)
+        remoteSchedules.forEach { remote ->
+            if (!localSchedules.any { it.id == remote.id }) {
+                dao.insert(remote)
+            }
+        }
+    }
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\repository\MedicationRepository.kt
+```
+package com.xai.dosify.core.data.repository
+
+import com.xai.dosify.core.data.dao.MedicationDao
+import com.xai.dosify.core.data.dao.ReconstitutionDao
+import com.xai.dosify.core.data.models.Medication
+import com.xai.dosify.core.data.models.Reconstitution
+import com.xai.feature.advanced.utils.ReconstitutionUtils
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
+import timber.log.Timber  // Add this import
+import javax.inject.Inject
+
+class MedicationRepository @Inject constructor(
+    private val dao: MedicationDao,
+    private val firestore: FirebaseFirestore,
+    private val reconstDao: ReconstitutionDao
+) {
+    suspend fun insert(medication: Medication) = dao.insert(medication)
+
+    suspend fun update(medication: Medication) = dao.update(medication)
+
+    suspend fun delete(medication: Medication) = dao.delete(medication)
+
+    fun getById(id: Long): Flow<Medication?> = dao.getById(id)
+
+    fun getAll(): Flow<List<Medication>> = dao.getAll()
+
+    suspend fun decrementStock(medId: Long, amount: Double): Boolean = dao.decrementStock(medId, amount) > 0
+
+    suspend fun syncWithFirestore(userId: String) {
+        val localMeds = dao.getAll().first()
+        val remoteCollection = firestore.collection("users/$userId/meds")
+
+        localMeds.forEach { med ->
+            remoteCollection.document(med.id.toString()).set(med).await()
+        }
+
+        val remoteMeds = remoteCollection.get().await().toObjects(Medication::class.java)
+        remoteMeds.forEach { remote ->
+            if (!localMeds.any { it.id == remote.id }) {
+                dao.insert(remote)
+            }
+        }
+    }
+
+    suspend fun saveWithReconstitution(med: Medication, powder: Double, solvent: Double) {
+        dao.insert(med)
+        val conc = ReconstitutionUtils.calculateConcentration(powder, solvent)
+        val reconst = Reconstitution(medId = med.id, powderAmount = powder, solventVolume = solvent, desiredConcentration = conc)
+        reconstDao.insert(reconst)
+        Timber.d("Reconst inserted for med ${med.id}")
+    }
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\repository\ProfileRepository.kt
+```
+package com.xai.dosify.core.data.repository
+
+import com.xai.dosify.core.data.dao.ProfileDao
+import com.xai.dosify.core.data.models.Profile
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+
+class ProfileRepository @Inject constructor(
+    private val dao: ProfileDao,
+    private val firestore: FirebaseFirestore
+) {
+    suspend fun insert(profile: Profile) = dao.insert(profile)
+
+    fun getAll(): Flow<List<Profile>> = dao.getAll()
+
+    fun getPremium(): Flow<Profile?> = dao.getPremium()
+
+    suspend fun syncWithFirestore(userId: String) {
+        val localProfiles = dao.getAll().first()
+        val remoteCollection = firestore.collection("users/$userId/profiles")
+
+        localProfiles.forEach { profile ->
+            remoteCollection.document(profile.id.toString()).set(profile).await()
+        }
+
+        val remoteProfiles = remoteCollection.get().await().toObjects(Profile::class.java)
+        remoteProfiles.forEach { remote ->
+            if (!localProfiles.any { it.id == remote.id }) {
+                dao.insert(remote)
+            }
+        }
+    }
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\repository\ReconstitutionRepository.kt
+```
+package com.xai.dosify.core.data.repository
+
+import com.xai.dosify.core.data.dao.ReconstitutionDao
+import com.xai.dosify.core.data.models.Reconstitution
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+
+class ReconstitutionRepository @Inject constructor(
+    private val dao: ReconstitutionDao,
+    private val firestore: FirebaseFirestore
+) {
+    suspend fun insert(reconst: Reconstitution) = dao.insert(reconst)
+
+    suspend fun update(reconst: Reconstitution) = dao.update(reconst)
+
+    fun getByMedId(medId: Long): Flow<Reconstitution?> = dao.getByMedId(medId)
+
+    suspend fun syncWithFirestore(userId: String) {
+        val localReconsts = dao.getAll().first()  // Assume add getAll() to Dao
+        val remoteCollection = firestore.collection("users/$userId/reconsts")
+
+        localReconsts.forEach { reconst ->
+            remoteCollection.document(reconst.medId.toString()).set(reconst).await()
+        }
+
+        val remoteReconsts = remoteCollection.get().await().toObjects(Reconstitution::class.java)
+        remoteReconsts.forEach { remote ->
+            if (!localReconsts.any { it.medId == remote.medId }) {
+                dao.insert(remote)
+            }
+        }
+    }
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\repository\SupplyRepository.kt
+```
+package com.xai.dosify.core.data.repository
+
+import com.xai.dosify.core.data.dao.SupplyDao
+import com.xai.dosify.core.data.models.Supply
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+
+class SupplyRepository @Inject constructor(
+    private val dao: SupplyDao,
+    private val firestore: FirebaseFirestore
+) {
+    suspend fun insert(supply: Supply) = dao.insert(supply)
+
+    suspend fun update(supply: Supply) = dao.update(supply)
+
+    suspend fun delete(supply: Supply) = dao.delete(supply)
+
+    fun getById(id: Long): Flow<Supply?> = dao.getById(id)
+
+    fun getAll(): Flow<List<Supply>> = dao.getAll()
+
+    suspend fun decrementStock(supplyId: Long, amount: Double): Boolean = dao.decrementStock(supplyId, amount) > 0
+
+    suspend fun syncWithFirestore(userId: String) {
+        val localSupplies = dao.getAll().first()
+        val remoteCollection = firestore.collection("users/$userId/supplies")
+
+        localSupplies.forEach { supply ->
+            remoteCollection.document(supply.id.toString()).set(supply).await()
+        }
+
+        val remoteSupplies = remoteCollection.get().await().toObjects(Supply::class.java)
+        remoteSupplies.forEach { remote ->
+            if (!localSupplies.any { it.id == remote.id }) {
+                dao.insert(remote)
+            }
+        }
+    }
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\AppDatabase.kt
+```
+package com.xai.dosify.core.data
+
+import androidx.room.Database
+import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import com.xai.dosify.core.data.dao.DoseLogDao
+import com.xai.dosify.core.data.dao.DoseScheduleDao
+import com.xai.dosify.core.data.dao.MedicationDao
+import com.xai.dosify.core.data.dao.ProfileDao
+import com.xai.dosify.core.data.dao.ReconstitutionDao
+import com.xai.dosify.core.data.dao.SupplyDao
+import com.xai.dosify.core.data.models.DoseLog
+import com.xai.dosify.core.data.models.DoseSchedule
+import com.xai.dosify.core.data.models.Medication
+import com.xai.dosify.core.data.models.Profile
+import com.xai.dosify.core.data.models.Reconstitution
+import com.xai.dosify.core.data.models.Supply
+import com.xai.dosify.core.data.dao.*
+import com.xai.dosify.core.data.models.*
+
+@Database(entities = [Medication::class, DoseSchedule::class, DoseLog::class, Supply::class, Reconstitution::class, Profile::class], version = 2, exportSchema = true)  // Bump version, add migration if needed
+@TypeConverters(Converters::class)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun medicationDao(): MedicationDao
+    abstract fun doseScheduleDao(): DoseScheduleDao
+    abstract fun doseLogDao(): DoseLogDao
+    abstract fun supplyDao(): SupplyDao
+    abstract fun reconstitutionDao(): ReconstitutionDao
+    abstract fun profileDao(): ProfileDao
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\Converters.kt
+```
+package com.xai.dosify.core.data
+
+import androidx.room.TypeConverter
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import com.xai.dosify.core.data.models.TitrationStep
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+
+class Converters {
+    private val timeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
+    private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+    private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
+    @TypeConverter
+    fun fromLocalTimeList(times: List<LocalTime>): String = times.joinToString(",") { it.format(timeFormatter) }
+
+    @TypeConverter
+    fun toLocalTimeList(timesStr: String): List<LocalTime> {
+        if (timesStr.isEmpty()) return emptyList() // Handle empty string
+        return timesStr.split(",").map { LocalTime.parse(it, timeFormatter) }
+    }
+
+    @TypeConverter
+    fun fromLocalDate(date: LocalDate): String = date.format(dateFormatter)
+
+    @TypeConverter
+    fun toLocalDate(dateStr: String): LocalDate = LocalDate.parse(dateStr, dateFormatter)
+
+    @TypeConverter
+    fun fromLocalDateTime(dateTime: LocalDateTime): String = dateTime.format(dateTimeFormatter)
+
+    @TypeConverter
+    fun toLocalDateTime(dateTimeStr: String): LocalDateTime = LocalDateTime.parse(dateTimeStr, dateTimeFormatter)
+
+    private val gson = Gson()
+
+    @TypeConverter
+    fun fromTitrationSteps(steps: List<TitrationStep>?): String? = gson.toJson(steps)
+
+    @TypeConverter
+    fun toTitrationSteps(stepsStr: String?): List<TitrationStep>? {
+        if (stepsStr == null) return null
+        val type = object : TypeToken<List<TitrationStep>>() {}.type
+        return gson.fromJson(stepsStr, type)
+    }
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\data\Migration.kt
+```
+package com.xai.dosify.core.data
+
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Add supplies table
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS supplies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                name TEXT NOT NULL,
+                unit TEXT NOT NULL,
+                stock REAL NOT NULL,
+                lowStockThreshold REAL NOT NULL,
+                linkedMedId INTEGER
+            )
+        """.trimIndent())
+
+        // Add profiles table
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS profiles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                name TEXT NOT NULL,
+                isPremium INTEGER NOT NULL
+            )
+        """.trimIndent())
+    }
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\di\DatabaseModule.kt
+```
+package com.xai.dosify.core.di
+
+import android.content.Context
+import androidx.room.Room
+import com.xai.dosify.core.data.AppDatabase
+import com.xai.dosify.core.data.dao.DoseLogDao
+import com.xai.dosify.core.data.dao.DoseScheduleDao
+import com.xai.dosify.core.data.dao.MedicationDao
+import com.xai.dosify.core.data.dao.ProfileDao
+import com.xai.dosify.core.data.dao.ReconstitutionDao
+import com.xai.dosify.core.data.dao.SupplyDao
+import com.xai.dosify.core.utils.BiometricUtils
+import com.xai.dosify.core.data.dao.*
+import net.sqlcipher.database.SQLiteDatabase
+import net.sqlcipher.database.SupportFactory
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule {
+    @Provides
+    @Singleton
+    fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
+        val passphrase = BiometricUtils.getPassphrase(context)
+        val factory = SupportFactory(SQLiteDatabase.getBytes(passphrase.toCharArray()))
+        return Room.databaseBuilder(context, AppDatabase::class.java, "dosify_db")
+            .openHelperFactory(factory)
+            .fallbackToDestructiveMigration(true)
+            .build()
+    }
+
+    @Provides
+    fun provideMedicationDao(db: AppDatabase): MedicationDao = db.medicationDao()
+    @Provides
+    fun provideDoseScheduleDao(db: AppDatabase): DoseScheduleDao = db.doseScheduleDao()
+    @Provides
+    fun provideDoseLogDao(db: AppDatabase): DoseLogDao = db.doseLogDao()
+    @Provides
+    fun provideSupplyDao(db: AppDatabase): SupplyDao = db.supplyDao()
+    @Provides
+    fun provideReconstitutionDao(db: AppDatabase): ReconstitutionDao = db.reconstitutionDao()
+    @Provides
+    fun provideProfileDao(db: AppDatabase): ProfileDao = db.profileDao()
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\di\FirebaseModule.kt
+```
+package com.xai.dosify.core.di
+
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object FirebaseModule {
+    @Provides
+    @Singleton
+    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\ui\components\AppBar.kt
+```
+package com.xai.dosify.core.ui.components
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavController
+import com.xai.dosify.core.ui.theme.PrimaryBlue
+import com.xai.dosify.core.ui.theme.TextBlack
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DosifyAppBar(
+    title: String,
+    navController: NavController,
+    showBackButton: Boolean = true
+) {
+    TopAppBar(
+        title = { Text(text = title, color = TextBlack) },
+        navigationIcon = {
+            if (showBackButton && navController.previousBackStackEntry != null) {
+                IconButton(onClick = { navController.navigateUp() }) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = "Back"
+                    )
+                }
+            }
+        },
+        actions = {
+            IconButton(onClick = { navController.navigate("home") { popUpTo("home") { inclusive = true } } }) {
+                Icon(
+                    imageVector = Icons.Filled.Home,
+                    contentDescription = "Home"
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = PrimaryBlue,
+            titleContentColor = TextBlack,
+            navigationIconContentColor = TextBlack,
+            actionIconContentColor = TextBlack
+        )
+    )
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\ui\theme\Color.kt
+```
+package com.xai.dosify.core.ui.theme
+
+import androidx.compose.ui.graphics.Color
+
+val PrimaryBlue = Color(0xFF2196F3) // For buttons/forms
+val SecondaryGreen = Color(0xFF4CAF50) // For success/low stock ok
+val ErrorRed = Color(0xFFF44336) // For low stock warnings
+val BackgroundWhite = Color(0xFFFFFFFF)
+val TextBlack = Color(0xFF000000)
+val AccentPurple = Color(0xFF9C27B0) // For premium features
+```
+---
+File: core\src\main\kotlin\com\xai\core\ui\theme\Theme.kt
+```
+package com.xai.dosify.core.ui.theme
+
+import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+
+private val LightColorScheme = lightColorScheme(
+    primary = PrimaryBlue,
+    secondary = SecondaryGreen,
+    tertiary = AccentPurple,
+    background = BackgroundWhite,
+    onPrimary = TextBlack,
+    onSecondary = TextBlack,
+    error = ErrorRed
+)
+
+private val DarkColorScheme = darkColorScheme(
+    primary = PrimaryBlue,
+    secondary = SecondaryGreen,
+    tertiary = AccentPurple,
+    background = TextBlack,
+    onPrimary = BackgroundWhite,
+    onSecondary = BackgroundWhite,
+    error = ErrorRed
+)
+
+@Composable
+fun DosifyTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography,
+        content = content
+    )
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\ui\theme\Type.kt
+```
+package com.xai.dosify.core.ui.theme
+
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+
+val Typography = Typography(
+    bodyLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp
+    ),
+    titleLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Bold,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
+        letterSpacing = 0.sp
+    ),
+    labelSmall = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp
+    )
+)
+```
+---
+File: core\src\main\kotlin\com\xai\core\ui\MainActivity.kt
+```
+package com.xai.dosify.core.ui
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Modifier
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.xai.dosify.core.ui.components.DosifyAppBar
+import com.xai.dosify.core.ui.theme.DosifyTheme
+import com.xai.feature.med.ui.MedFormScreen
+import com.xai.feature.schedule.ui.DoseConfirmScreen
+import com.xai.dosify.ui.HomeScreen
+import com.xai.dosify.nav.NavRoutes
+
+class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalMaterial3Api::class)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            DosifyTheme {
+                val navController = rememberNavController()
+                Scaffold(
+                    topBar = {
+                        DosifyAppBar(
+                            title = when (navController.currentDestination?.route) {
+                                NavRoutes.HOME -> "Dosify Home"
+                                NavRoutes.MED_FORM -> "Add Medication"
+                                NavRoutes.DOSE_CONFIRM -> "Confirm Dose"
+                                else -> "Dosify"
+                            },
+                            navController = navController,
+                            showBackButton = navController.currentDestination?.route != NavRoutes.HOME
+                        )
+                    }
+                ) { innerPadding ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = NavRoutes.HOME,
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable(NavRoutes.HOME) { HomeScreen(navController) }
+                        composable(NavRoutes.MED_FORM) { MedFormScreen() }
+                        composable(NavRoutes.DOSE_CONFIRM) { DoseConfirmScreen() }
+                    }
+                }
+            }
+        }
+    }
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\utils\BiometricUtils.kt
+```
+package com.xai.dosify.core.utils
+
+import android.content.Context
+import androidx.biometric.BiometricPrompt
+import androidx.fragment.app.FragmentActivity
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+
+object BiometricUtils {
+    fun authenticate(activity: FragmentActivity): Flow<Boolean> = callbackFlow {
+        val prompt = BiometricPrompt(activity, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                trySend(true)
+            }
+            override fun onAuthenticationFailed() {
+                trySend(false)
+            }
+        })
+        prompt.authenticate(BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Biometric Login")
+            .setSubtitle("Use fingerprint/face")
+            .setNegativeButtonText("Cancel")
+            .build())
+        awaitClose { }
+    }
+
+    fun getPassphrase(context: Context): String = "secure_passphrase"  // Replace with real (e.g., KeyStore encrypted from biometrics)
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\utils\NotificationUtils.kt
+```
+package com.xai.dosify.core.utils
+
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import androidx.core.app.AlarmManagerCompat
+import com.xai.dosify.core.data.models.DoseSchedule
+import com.xai.dosify.ui.notifications.YourAlarmReceiver
+import java.time.LocalTime
+import java.time.Duration
+
+fun setDoseAlarm(context: Context, schedule: DoseSchedule) {
+    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    val intent = Intent(context, YourAlarmReceiver::class.java).apply {
+        putExtra("scheduleId", schedule.id)
+    }
+    val pendingIntent = PendingIntent.getBroadcast(
+        context,
+        schedule.id.toInt(),
+        intent,
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
+    )
+
+    // Calculate trigger time (first time in schedule)
+    val now = LocalTime.now()
+    val firstTime = schedule.times.firstOrNull() ?: return
+    val triggerTime = System.currentTimeMillis() + Duration.between(now, firstTime).toMillis()
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+        // Fallback: Use inexact alarm if permission denied
+        alarmManager.setInexactRepeating(
+            AlarmManager.RTC_WAKEUP,
+            triggerTime,
+            AlarmManager.INTERVAL_DAY,
+            pendingIntent
+        )
+    } else {
+        AlarmManagerCompat.setExactAndAllowWhileIdle(
+            alarmManager,
+            AlarmManager.RTC_WAKEUP,
+            triggerTime,
+            pendingIntent
+        )
+    }
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\utils\ReconstitutionUtils.kt
+```
+package com.xai.feature.advanced.utils
+
+object ReconstitutionUtils {
+    fun calculateConcentration(powderAmount: Double, solventVolume: Double): Double {
+        return powderAmount / solventVolume
+    }
+
+    fun calculateVolumePerDose(desiredDose: Double, concentration: Double): Double {
+        return desiredDose / concentration
+    }
+}
+```
+---
+File: core\src\main\kotlin\com\xai\core\DosifyApplication.kt
+```
+package com.xai.dosify.core
+
+import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
+import androidx.work.WorkManager
+import dagger.hilt.android.HiltAndroidApp
+import java.util.Locale
+import javax.inject.Inject
+
+@HiltAndroidApp
+class DosifyApplication : Application() {
+
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+    override fun onCreate() {
+        super.onCreate()
+        if (Locale.getDefault().country.equals("CN", ignoreCase = true)) {
+            // Disable Firebase (e.g., no init or mock)
+        }
+        // Initialize WorkManager in onCreate
+        WorkManager.initialize(
+            this,
+            Configuration.Builder()
+                .setWorkerFactory(workerFactory)
+                .build()
+        )
+
+        // Create notification channel for dose reminders
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "dose_channel",
+                "Dose Reminders",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for medication dose reminders"
+            }
+            val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+    }
+}
+```
+---
+File: feature_advanced\src\main\kotlin\com\xai\feature_advanced\ui\ReportsScreen.kt
+```
+package com.xai.feature.advanced.ui
+
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
+import com.xai.feature.advanced.viewmodel.ReportsViewModel
+
+@Composable
+fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
+    val logs by viewModel.doseLogs.collectAsState(emptyList())
+
+    AndroidView(
+        factory = { LineChart(it) },
+        modifier = Modifier.fillMaxSize(),
+        update = { chart ->
+            val entries = logs.mapIndexed { i, log -> Entry(i.toFloat(), log.amountTaken.toFloat()) }
+            val dataSet = LineDataSet(entries, "Dose History")
+            chart.data = LineData(dataSet)
+            chart.invalidate()
+        }
+    )
+}
+```
+---
+File: feature_advanced\src\main\kotlin\com\xai\feature_advanced\viewmodel\ReportsViewModel.kt
+```
+package com.xai.feature.advanced.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.xai.dosify.core.data.models.DoseLog
+import com.xai.dosify.core.data.repository.DoseLogRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
+
+@HiltViewModel
+class ReportsViewModel @Inject constructor(
+    private val logRepo: DoseLogRepository
+) : ViewModel() {
+    val doseLogs: Flow<List<DoseLog>> = logRepo.getRecent()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+}
+```
+---
+File: feature_auth\src\main\kotlin\com\xai\feature_auth\di\AuthModule.kt
+```
+package com.xai.feature.auth.di
+
+import android.content.Context
+import androidx.credentials.CredentialManager
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ViewModelComponent
+import dagger.hilt.android.qualifiers.ApplicationContext
+
+@Module
+@InstallIn(ViewModelComponent::class)
+object AuthModule {
+
+    @Provides
+    fun provideCredentialManager(@ApplicationContext context: Context): CredentialManager =
+        CredentialManager.create(context)
+}
+```
+---
+File: feature_auth\src\main\kotlin\com\xai\feature_auth\AuthViewModel.kt
+```
+package com.xai.feature.auth
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import com.xai.dosify.core.data.repository.AuthRepository
+import com.xai.feature.sync.utils.SyncWorker
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val repo: AuthRepository,
+    private val auth: FirebaseAuth,
+    private val workManager: WorkManager  // Inject
+) : ViewModel() {
+    private val _state = MutableStateFlow(AuthState())
+    val state: StateFlow<AuthState> = _state
+
+    val authUser: StateFlow<FirebaseUser?> = auth.authStateChanges()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    fun loginEmail(email: String, password: String) = viewModelScope.launch {
+        _state.value = _state.value.copy(loading = true)
+        val success = repo.emailLogin(email, password)
+        _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Login failed" else null)
+        if (success) enqueueSync()
+    }
+
+    fun loginGoogle(idToken: String) = viewModelScope.launch {
+        _state.value = _state.value.copy(loading = true)
+        val success = repo.googleLogin(idToken)
+        _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Google login failed" else null)
+        if (success) enqueueSync()
+    }
+
+    fun logout() = repo.logout()
+
+    private fun enqueueSync() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val periodicRequest = PeriodicWorkRequestBuilder<SyncWorker>(1, TimeUnit.HOURS)
+            .setConstraints(constraints)
+            .build()
+
+        workManager.enqueueUniquePeriodicWork("sync", ExistingPeriodicWorkPolicy.KEEP, periodicRequest)
+    }
+}
+
+data class AuthState(val loading: Boolean = false, val success: Boolean = false, val error: String? = null)
+
+fun FirebaseAuth.authStateChanges(): Flow<FirebaseUser?> = callbackFlow {
+    val listener = FirebaseAuth.AuthStateListener { auth ->
+        trySend(auth.currentUser)
+    }
+    addAuthStateListener(listener)
+    awaitClose { removeAuthStateListener(listener) }
+}
+```
+---
+File: feature_auth\src\main\kotlin\com\xai\feature_auth\LoginScreen.kt
+```
+package com.xai.feature.auth
+
+import android.content.Context
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
+import androidx.credentials.exceptions.GetCredentialException
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.auth.FirebaseUser
+import com.xai.dosify.R
+import kotlinx.coroutines.launch
+
+@Composable
+fun LoginScreen(
+    viewModel: AuthViewModel = hiltViewModel(),
+    onLoginSuccess: () -> Unit
+) {
+    val state by viewModel.state.collectAsState()
+    val user by viewModel.authUser.collectAsState()
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val credentialManager = remember { CredentialManager.create(context) }
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Auto-nav on logged-in (persistent or new)
+    LaunchedEffect(user) {
+        if (user != null) onLoginSuccess()
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
+        Surface(modifier = Modifier.padding(padding).fillMaxSize()) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (user != null) {
+                    Text("Welcome, ${user!!.displayName}")
+                    Button(onClick = { viewModel.logout() }) {
+                        Text("Logout")
+                    }
+                } else {
+                    TextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") }
+                    )
+                    TextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") }
+                    )
+                    Button(onClick = { viewModel.loginEmail(email, password) }) {
+                        Text("Login")
+                    }
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                try {
+                                    val googleIdOption = GetGoogleIdOption.Builder()
+                                        .setFilterByAuthorizedAccounts(true)
+                                        .setServerClientId(context.getString(R.string.web_client_id))
+                                        .build()
+
+                                    val request = GetCredentialRequest.Builder()
+                                        .addCredentialOption(googleIdOption)
+                                        .build()
+
+                                    val result: GetCredentialResponse = credentialManager.getCredential(
+                                        request = request,
+                                        context = context
+                                    )
+
+                                    handleCredential(result, viewModel)
+                                } catch (e: GetCredentialException) {
+                                    try {
+                                        val googleIdOptionFallback = GetGoogleIdOption.Builder()
+                                            .setFilterByAuthorizedAccounts(false)
+                                            .setServerClientId(context.getString(R.string.web_client_id))
+                                            .build()
+
+                                        val requestFallback = GetCredentialRequest.Builder()
+                                            .addCredentialOption(googleIdOptionFallback)
+                                            .build()
+
+                                        val resultFallback = credentialManager.getCredential(
+                                            request = requestFallback,
+                                            context = context
+                                        )
+                                        handleCredential(resultFallback, viewModel)
+                                    } catch (fallbackE: GetCredentialException) {
+                                        snackbarHostState.showSnackbar("Sign-in failed: ${fallbackE.message}")
+                                    }
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Google Login")
+                    }
+                    if (state.loading) Text("Loading...")
+                    state.error?.let { Text(it) }
+                    if (state.success) Text("Logged in")
+                }
+            }
+        }
+    }
+}
+
+private suspend fun handleCredential(result: GetCredentialResponse, viewModel: AuthViewModel) {
+    val credential = result.credential
+    if (credential is CustomCredential &&
+        credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+    ) {
+        val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+        viewModel.loginGoogle(googleIdTokenCredential.idToken)
+    } else {
+        // Invalid
+    }
+}
+```
+---
+File: feature_iap\src\main\kotlin\com\xai\feature_iap\di\IapModule.kt
+```
+package com.xai.feature.iap.di
+
+import android.content.Context
+import com.android.billingclient.api.BillingClient
+import com.android.billingclient.api.PendingPurchasesParams
+import com.android.billingclient.api.PurchasesUpdatedListener
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object IapModule {
+
+    @Provides
+    @Singleton
+    fun provideBillingClient(@ApplicationContext context: Context): BillingClient {
+        val pendingParams = PendingPurchasesParams.newBuilder()
+            .enableOneTimeProducts() // For one-time IAP like upgrades
+            .build()
+
+        return BillingClient.newBuilder(context)
+            .enablePendingPurchases(pendingParams)
+            .setListener(PurchasesUpdatedListener { billingResult, purchases ->
+                // Handle updates; keep existing if any
+            })
+            .build()
+    }
+}
+```
+---
+File: feature_iap\src\main\kotlin\com\xai\feature_iap\viewmodel\IapViewModel.kt
+```
+package com.xai.feature.iap.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.android.billingclient.api.BillingClient
+import com.android.billingclient.api.BillingClientStateListener
+import com.android.billingclient.api.BillingResult
+import com.android.billingclient.api.Purchase
+import com.android.billingclient.api.QueryPurchasesParams
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
+
+@HiltViewModel
+class IapViewModel @Inject constructor(
+    private val billingClient: BillingClient
+) : ViewModel() {
+
+    val isPremium: Flow<Boolean> = callbackFlow {
+        billingClient.startConnection(object : BillingClientStateListener {
+            override fun onBillingSetupFinished(result: BillingResult) {
+                if (result.responseCode == BillingClient.BillingResponseCode.OK) {
+                    billingClient.queryPurchasesAsync(
+                        QueryPurchasesParams.newBuilder()
+                            .setProductType(BillingClient.ProductType.SUBS)
+                            .build()
+                    ) { purchasesResult: BillingResult, purchases: List<Purchase> ->
+                        if (purchasesResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                            trySend(purchases.any { it.isAutoRenewing })
+                        } else {
+                            trySend(false)
+                        }
+                    }
+                } else {
+                    trySend(false)
+                }
+            }
+            override fun onBillingServiceDisconnected() {
+                // Retry or close
+            }
+        })
+        awaitClose { billingClient.endConnection() }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+}
+```
+---
+File: feature_med\src\main\kotlin\com\xai\feature_med\ui\MedFormScreen.kt
 ```
 package com.xai.feature.med.ui
 
@@ -309,7 +1891,7 @@ fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
 }
 ```
 ---
-File: feature_medication\src\main\kotlin\com\xai\feature_med\ui\MedListScreen.kt
+File: feature_med\src\main\kotlin\com\xai\feature_med\ui\MedListScreen.kt
 ```
 package com.xai.feature.med.ui
 
@@ -335,7 +1917,15 @@ fun MedListScreen(viewModel: MedListViewModel = hiltViewModel()) {
 }
 ```
 ---
-File: feature_medication\src\main\kotlin\com\xai\feature_med\viewmodel\MedListViewModel.kt
+File: feature_med\src\main\kotlin\com\xai\feature_med\ui\SupplyFormScreen.kt
+```
+package com.xai.feature_med.ui
+
+class SupplyFormScreen {
+}
+```
+---
+File: feature_med\src\main\kotlin\com\xai\feature_med\viewmodel\MedListViewModel.kt
 ```
 package com.xai.feature.med.viewmodel
 
@@ -358,13 +1948,13 @@ class MedListViewModel @Inject constructor(
 }
 ```
 ---
-File: feature_medication\src\main\kotlin\com\xai\feature_med\viewmodel\MedViewModel.kt
+File: feature_med\src\main\kotlin\com\xai\feature_med\viewmodel\MedViewModel.kt
 ```
-package com.xai.feature.advanced.viewmodel
+package com.xai.feature.med.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xai.dosify.core.data.models.Medication
+import com.xai.core.data.models.Medication
 import com.xai.dosify.core.data.repository.MedicationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -385,6 +1975,42 @@ class MedViewModel @Inject constructor(
         Timber.d("Save reconst med: ${med.name}")
         repo.saveWithReconstitution(med, powder, solvent)
     }
+}
+```
+---
+File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\ui\CalendarScreen.kt
+```
+package com.xai.feature.schedule.ui
+
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import com.kizitonwose.calendar.compose.WeekCalendar
+import com.kizitonwose.calendar.compose.rememberCalendarState
+import com.kizitonwose.calendar.core.CalendarDay
+import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
+import java.time.YearMonth
+
+@Composable
+fun CalendarScreen() {
+    val currentMonth = YearMonth.now()
+    val startMonth = currentMonth.minusMonths(12)
+    val endMonth = currentMonth.plusMonths(12)
+    val state = rememberCalendarState(
+        startMonth = startMonth,
+        endMonth = endMonth,
+        firstVisibleMonth = currentMonth,
+        firstDayOfWeek = firstDayOfWeekFromLocale()
+    )
+
+    WeekCalendar(
+        modifier = Modifier.fillMaxSize(),
+        state = state,
+        dayContent = { day: CalendarDay ->
+            Text(day.date.dayOfMonth.toString())  // Add dose dots later
+        }
+    )
 }
 ```
 ---
@@ -774,384 +2400,121 @@ class ScheduleViewModel @Inject constructor(
 }
 ```
 ---
-File: feature_auth\src\main\kotlin\com\xai\feature_auth\di\AuthModule.kt
+File: gradle/libs.versions.toml
 ```
-package com.xai.feature.auth.di
+[versions]
+activityCompose = "1.10.1"
+agp = "8.11.1"
+androidDatabaseSqlcipherVersion = "4.6.1"
+billing = "8.0.0"
+biometric = "1.2.0-alpha05"  # Biometrics (updated)
+composeBom = "2025.07.00"
+compose = "1.6.1"  # Compose UI
+compose-material3 = "1.2.1"  # Material3
+compose-material-icons = "1.7.8"
+compose-compiler = "2.2.0"  # Matches Kotlin
+coreKtx = "1.16.0"
+coroutines = "1.10.2"  # Coroutines
+credentialsPlayServicesAuth = "1.5.0"
+espressoCore = "3.6.1"
+firebaseBom = "33.16.0"
+googleid = "1.1.1"
+gson = "2.13.1"  # Latest as of 2025, for JSON serialization
+google-services = "4.4.3"  # Latest as of July 2025
+hiltWork = "1.2.0"  # New
+hilt = "2.57"  # Hilt (updated)
+junit = "4.13.2"
+junitVersion = "1.2.1"
+kotlin = "2.2.0"
+ksp = "2.2.0-2.0.2"  # Latest for Kotlin 2.0.0 as of 2025; adjust if needed
+lifecycle = "2.9.2"  # Lifecycle
+lifecycleRuntimeKtx = "2.9.2"
+materialIconsExtended = "1.7.8"
+mpandroidchart = "v3.1.0"  # Graphs (stable)
+navigation-compose = "2.9.2"  # Nav
+play-services-auth = "21.3.0"  # Google Sign-in
+room = "2.7.2"  # Room (minor update)
+sqlcipher = "4.9.0"  # Encrypted DB (updated)
+timber = "5.0.1"  # Logging
+work-runtime = "2.10.2"  # WorkManager
 
-import android.content.Context
-import androidx.credentials.CredentialManager
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
-import dagger.hilt.android.qualifiers.ApplicationContext
+# Testing
+androidx-junit = "1.2.1"
+espresso = "3.6.1"
+compose-junit = "1.6.1"
+appcompat = "1.6.1"
+material = "1.10.0"
 
-@Module
-@InstallIn(ViewModelComponent::class)
-object AuthModule {
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentialsPlayServicesAuth" }
+androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
+androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
+firebase-auth = { module = "com.google.firebase:firebase-auth" }
+googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "compose-material-icons" }
 
-    @Provides
-    fun provideCredentialManager(@ApplicationContext context: Context): CredentialManager =
-        CredentialManager.create(context)
-}
-```
----
-File: feature_auth\src\main\kotlin\com\xai\feature_auth\AuthViewModel.kt
-```
-package com.xai.feature.auth
+# Hilt
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version = "1.2.0" }
+hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
+hilt-work-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltWork" }
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.xai.dosify.core.data.repository.AuthRepository
-import com.xai.feature.sync.utils.SyncWorker
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-import java.util.concurrent.TimeUnit
-import javax.inject.Inject
+# Room
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 
-@HiltViewModel
-class AuthViewModel @Inject constructor(
-    private val repo: AuthRepository,
-    private val auth: FirebaseAuth,
-    private val workManager: WorkManager  // Inject
-) : ViewModel() {
-    private val _state = MutableStateFlow(AuthState())
-    val state: StateFlow<AuthState> = _state
+# Firebase
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-auth-ktx = { module = "com.google.firebase:firebase-auth-ktx" }
+firebase-firestore-ktx = { module = "com.google.firebase:firebase-firestore-ktx" }
+firebase-messaging-ktx = { module = "com.google.firebase:firebase-messaging-ktx" }
 
-    val authUser: StateFlow<FirebaseUser?> = auth.authStateChanges()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+# Coroutines
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 
-    fun loginEmail(email: String, password: String) = viewModelScope.launch {
-        _state.value = _state.value.copy(loading = true)
-        val success = repo.emailLogin(email, password)
-        _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Login failed" else null)
-        if (success) enqueueSync()
-    }
+# Other
+lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
+mpandroidchart = { module = "com.github.PhilJay:MPAndroidChart", version.ref = "mpandroidchart" }
+sqlcipher = { module = "net.zetetic:sqlcipher-android", version.ref = "sqlcipher" }  # Correct group: net.zetetic
+play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "play-services-auth" }
+biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
+work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work-runtime" }
+timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+billing-ktx = { module = "com.android.billingclient:billing-ktx", version.ref = "billing" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 
-    fun loginGoogle(idToken: String) = viewModelScope.launch {
-        _state.value = _state.value.copy(loading = true)
-        val success = repo.googleLogin(idToken)
-        _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Google login failed" else null)
-        if (success) enqueueSync()
-    }
+# Testing
+espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
+zetetic-android-database-sqlcipher = { module = "net.zetetic:android-database-sqlcipher", version.ref ="androidDatabaseSqlcipherVersion" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
-    fun logout() = repo.logout()
-
-    private fun enqueueSync() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-
-        val periodicRequest = PeriodicWorkRequestBuilder<SyncWorker>(1, TimeUnit.HOURS)
-            .setConstraints(constraints)
-            .build()
-
-        workManager.enqueueUniquePeriodicWork("sync", ExistingPeriodicWorkPolicy.KEEP, periodicRequest)
-    }
-}
-
-data class AuthState(val loading: Boolean = false, val success: Boolean = false, val error: String? = null)
-
-fun FirebaseAuth.authStateChanges(): Flow<FirebaseUser?> = callbackFlow {
-    val listener = FirebaseAuth.AuthStateListener { auth ->
-        trySend(auth.currentUser)
-    }
-    addAuthStateListener(listener)
-    awaitClose { removeAuthStateListener(listener) }
-}
-```
----
-File: feature_auth\src\main\kotlin\com\xai\feature_auth\LoginScreen.kt
-```
-package com.xai.feature.auth
-
-import android.content.Context
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.credentials.CredentialManager
-import androidx.credentials.CustomCredential
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.GetCredentialResponse
-import androidx.credentials.exceptions.GetCredentialException
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.google.firebase.auth.FirebaseUser
-import com.xai.dosify.R
-import kotlinx.coroutines.launch
-
-@Composable
-fun LoginScreen(
-    viewModel: AuthViewModel = hiltViewModel(),
-    onLoginSuccess: () -> Unit
-) {
-    val state by viewModel.state.collectAsState()
-    val user by viewModel.authUser.collectAsState()
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    val context = LocalContext.current
-    val credentialManager = remember { CredentialManager.create(context) }
-    val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    // Auto-nav on logged-in (persistent or new)
-    LaunchedEffect(user) {
-        if (user != null) onLoginSuccess()
-    }
-
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
-        Surface(modifier = Modifier.padding(padding).fillMaxSize()) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (user != null) {
-                    Text("Welcome, ${user!!.displayName}")
-                    Button(onClick = { viewModel.logout() }) {
-                        Text("Logout")
-                    }
-                } else {
-                    TextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email") }
-                    )
-                    TextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Password") }
-                    )
-                    Button(onClick = { viewModel.loginEmail(email, password) }) {
-                        Text("Login")
-                    }
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                try {
-                                    val googleIdOption = GetGoogleIdOption.Builder()
-                                        .setFilterByAuthorizedAccounts(true)
-                                        .setServerClientId(context.getString(R.string.web_client_id))
-                                        .build()
-
-                                    val request = GetCredentialRequest.Builder()
-                                        .addCredentialOption(googleIdOption)
-                                        .build()
-
-                                    val result: GetCredentialResponse = credentialManager.getCredential(
-                                        request = request,
-                                        context = context
-                                    )
-
-                                    handleCredential(result, viewModel)
-                                } catch (e: GetCredentialException) {
-                                    try {
-                                        val googleIdOptionFallback = GetGoogleIdOption.Builder()
-                                            .setFilterByAuthorizedAccounts(false)
-                                            .setServerClientId(context.getString(R.string.web_client_id))
-                                            .build()
-
-                                        val requestFallback = GetCredentialRequest.Builder()
-                                            .addCredentialOption(googleIdOptionFallback)
-                                            .build()
-
-                                        val resultFallback = credentialManager.getCredential(
-                                            request = requestFallback,
-                                            context = context
-                                        )
-                                        handleCredential(resultFallback, viewModel)
-                                    } catch (fallbackE: GetCredentialException) {
-                                        snackbarHostState.showSnackbar("Sign-in failed: ${fallbackE.message}")
-                                    }
-                                }
-                            }
-                        }
-                    ) {
-                        Text("Google Login")
-                    }
-                    if (state.loading) Text("Loading...")
-                    state.error?.let { Text(it) }
-                    if (state.success) Text("Logged in")
-                }
-            }
-        }
-    }
-}
-
-private suspend fun handleCredential(result: GetCredentialResponse, viewModel: AuthViewModel) {
-    val credential = result.credential
-    if (credential is CustomCredential &&
-        credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-    ) {
-        val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-        viewModel.loginGoogle(googleIdTokenCredential.idToken)
-    } else {
-        // Invalid
-    }
-}
-```
----
-File: feature_iap\src\main\kotlin\com\xai\feature_iap\di\IapModule.kt
-```
-package com.xai.feature.iap.di
-
-import android.content.Context
-import com.android.billingclient.api.BillingClient
-import com.android.billingclient.api.PendingPurchasesParams
-import com.android.billingclient.api.PurchasesUpdatedListener
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
-
-@Module
-@InstallIn(SingletonComponent::class)
-object IapModule {
-
-    @Provides
-    @Singleton
-    fun provideBillingClient(@ApplicationContext context: Context): BillingClient {
-        val pendingParams = PendingPurchasesParams.newBuilder()
-            .enableOneTimeProducts() // For one-time IAP like upgrades
-            .build()
-
-        return BillingClient.newBuilder(context)
-            .enablePendingPurchases(pendingParams)
-            .setListener(PurchasesUpdatedListener { billingResult, purchases ->
-                // Handle updates; keep existing if any
-            })
-            .build()
-    }
-}
-```
----
-File: feature_iap\src\main\kotlin\com\xai\feature_iap\viewmodel\IapViewModel.kt
-```
-package com.xai.feature.iap.viewmodel
-
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.android.billingclient.api.BillingClient
-import com.android.billingclient.api.BillingClientStateListener
-import com.android.billingclient.api.BillingResult
-import com.android.billingclient.api.Purchase
-import com.android.billingclient.api.QueryPurchasesParams
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.stateIn
-import javax.inject.Inject
-
-@HiltViewModel
-class IapViewModel @Inject constructor(
-    private val billingClient: BillingClient
-) : ViewModel() {
-
-    val isPremium: Flow<Boolean> = callbackFlow {
-        billingClient.startConnection(object : BillingClientStateListener {
-            override fun onBillingSetupFinished(result: BillingResult) {
-                if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                    billingClient.queryPurchasesAsync(
-                        QueryPurchasesParams.newBuilder()
-                            .setProductType(BillingClient.ProductType.SUBS)
-                            .build()
-                    ) { purchasesResult: BillingResult, purchases: List<Purchase> ->
-                        if (purchasesResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                            trySend(purchases.any { it.isAutoRenewing })
-                        } else {
-                            trySend(false)
-                        }
-                    }
-                } else {
-                    trySend(false)
-                }
-            }
-            override fun onBillingServiceDisconnected() {
-                // Retry or close
-            }
-        })
-        awaitClose { billingClient.endConnection() }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-}
-```
----
-File: feature_advanced\src\main\kotlin\com\xai\feature_advanced\ui\ReportsScreen.kt
-```
-package com.xai.feature.advanced.ui
-
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.github.mikephil.charting.charts.LineChart
-import com.github.mikephil.charting.data.Entry
-import com.github.mikephil.charting.data.LineData
-import com.github.mikephil.charting.data.LineDataSet
-import com.xai.feature.advanced.viewmodel.ReportsViewModel
-
-@Composable
-fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
-    val logs by viewModel.doseLogs.collectAsState(emptyList())
-
-    AndroidView(
-        factory = { LineChart(it) },
-        modifier = Modifier.fillMaxSize(),
-        update = { chart ->
-            val entries = logs.mapIndexed { i, log -> Entry(i.toFloat(), log.amountTaken.toFloat()) }
-            val dataSet = LineDataSet(entries, "Dose History")
-            chart.data = LineData(dataSet)
-            chart.invalidate()
-        }
-    )
-}
-```
----
-File: feature_advanced\src\main\kotlin\com\xai\feature_advanced\viewmodel\ReportsViewModel.kt
-```
-package com.xai.feature.advanced.viewmodel
-
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.xai.dosify.core.data.models.DoseLog
-import com.xai.dosify.core.data.repository.DoseLogRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.stateIn
-import javax.inject.Inject
-
-@HiltViewModel
-class ReportsViewModel @Inject constructor(
-    private val logRepo: DoseLogRepository
-) : ViewModel() {
-    val doseLogs: Flow<List<DoseLog>> = logRepo.getRecent()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-}
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+room = { id = "androidx.room", version.ref = "room" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 ```
 ---
 File: build.gradle.kts
@@ -1197,7 +2560,7 @@ dependencyResolutionManagement {
 rootProject.name = "Dosify"
 include(":app")
 include(":core")
-include(":feature_medication")
+include(":feature_med")
 include(":feature_schedule")
 include(":feature_auth")
 include(":feature_iap")
@@ -1234,8 +2597,6 @@ android.nonTransitiveRClass=true
 ---
 File: app/build.gradle.kts
 ```
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -1244,7 +2605,6 @@ plugins {
     alias(libs.plugins.room)
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.google.services)
-
 }
 
 android {
@@ -1271,17 +2631,16 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
-        }
-    }
     buildFeatures {
         compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
     room {
         schemaDirectory("$projectDir/schemas")
     }
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 }
 
 dependencies {
@@ -1339,8 +2698,15 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.billing.ktx)
     implementation(libs.gson)
-    implementation (libs.zetetic.android.database.sqlcipher)
 
+    // Feature Modules
+    implementation(project(":core"))
+    implementation(project(":feature_med"))
+    implementation(project(":feature_schedule"))
+    implementation(project(":feature_auth"))
+    implementation(project(":feature_iap"))
+    implementation(project(":feature_sync"))
+    implementation(project(":feature_advanced"))
 
     // Testing
     testImplementation(libs.junit)
@@ -1396,12 +2762,227 @@ dependencies {
 }
 ```
 ---
-File not found: feature-medication/build.gradle.kts
-File not found: feature-schedule/build.gradle.kts
-File not found: feature-auth/build.gradle.kts
-File not found: feature-iap/build.gradle.kts
-File not found: feature-sync/build.gradle.kts
-File not found: feature-advanced/build.gradle.kts
+File: feature_advanced/build.gradle.kts
+```
+plugins {
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+}
+
+android {
+    namespace = "com.xai.feature_advanced"
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 24
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+dependencies {
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+}
+```
+---
+File: feature_auth/build.gradle.kts
+```
+plugins {
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+}
+
+android {
+    namespace = "com.xai.feature_auth"
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 24
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+dependencies {
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+}
+```
+---
+File: feature_iap/build.gradle.kts
+```
+plugins {
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+}
+
+android {
+    namespace = "com.xai.feature_iap"
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 24
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+dependencies {
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+}
+```
+---
+File: feature_schedule/build.gradle.kts
+```
+plugins {
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+}
+
+android {
+    namespace = "com.xai.feature_schedule"
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 24
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+dependencies {
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    implementation("io.github.kizitonwose.calendar:compose:2.5.0")
+}
+```
+---
+File: feature_sync/build.gradle.kts
+```
+plugins {
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+}
+
+android {
+    namespace = "com.xai.feature_sync"
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 24
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+dependencies {
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+}
+```
+---
 File: app/google-services.json
 ```
 {

@@ -1,11 +1,11 @@
-package com.xai.dosify.core.com.xai.core.data.dao
+package com.xai.dosify.core.data.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.xai.dosify.core.com.xai.core.data.models.Reconstitution
+import com.xai.dosify.core.data.models.Reconstitution
 import kotlinx.coroutines.flow.Flow
 
 @Dao

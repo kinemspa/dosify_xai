@@ -1,9 +1,9 @@
-package com.xai.dosify.core.com.xai.core.data
+package com.xai.dosify.core.data
 
 import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.xai.dosify.core.com.xai.core.data.models.TitrationStep
+import com.xai.dosify.core.data.models.TitrationStep
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime

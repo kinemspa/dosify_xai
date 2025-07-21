@@ -1,7 +1,7 @@
-package com.xai.dosify.core.com.xai.core.data.repository
+package com.xai.dosify.core.data.repository
 
-import com.xai.dosify.core.com.xai.core.data.dao.SupplyDao
-import com.xai.dosify.core.com.xai.core.data.models.Supply
+import com.xai.dosify.core.data.dao.SupplyDao
+import com.xai.dosify.core.data.models.Supply
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first

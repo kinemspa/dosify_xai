@@ -1,4 +1,4 @@
-package com.xai.dosify.core.com.xai.core.ui
+package com.xai.dosify.core.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -10,8 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.xai.dosify.core.com.xai.core.ui.components.DosifyAppBar
-import com.xai.dosify.core.com.xai.core.ui.theme.DosifyTheme
+import com.xai.dosify.core.ui.components.DosifyAppBar
+import com.xai.dosify.core.ui.theme.DosifyTheme
 import com.xai.feature.med.ui.MedFormScreen
 import com.xai.feature.schedule.ui.DoseConfirmScreen
 import com.xai.dosify.ui.HomeScreen

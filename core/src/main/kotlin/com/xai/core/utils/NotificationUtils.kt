@@ -1,4 +1,4 @@
-package com.xai.dosify.core.com.xai.core.utils
+package com.xai.dosify.core.utils
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -6,7 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.AlarmManagerCompat
-import com.xai.dosify.core.com.xai.core.data.models.DoseSchedule
+import com.xai.dosify.core.data.models.DoseSchedule
 import com.xai.dosify.ui.notifications.YourAlarmReceiver
 import java.time.LocalTime
 import java.time.Duration

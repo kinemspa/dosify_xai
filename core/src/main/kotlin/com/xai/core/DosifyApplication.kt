@@ -1,4 +1,4 @@
-package com.xai.dosify.core.com.xai.core
+package com.xai.dosify.core
 
 import android.app.Application
 import android.app.NotificationChannel

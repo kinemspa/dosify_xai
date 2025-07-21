@@ -1,4 +1,4 @@
-package com.xai.dosify.core.com.xai.core.data.models
+package com.xai.dosify.core.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

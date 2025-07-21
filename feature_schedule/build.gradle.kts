@@ -37,5 +37,5 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    implementation("io.github.kizitonwose.calendar:compose:2.5.0")
+    implementation(libs.kizitonwose.calendar)
 }

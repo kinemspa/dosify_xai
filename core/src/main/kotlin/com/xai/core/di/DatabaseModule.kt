@@ -1,15 +1,15 @@
-package com.xai.dosify.core.com.xai.core.di
+package com.xai.dosify.core.di
 
 import android.content.Context
 import androidx.room.Room
-import com.xai.dosify.core.com.xai.core.data.AppDatabase
-import com.xai.dosify.core.com.xai.core.data.dao.DoseLogDao
-import com.xai.dosify.core.com.xai.core.data.dao.DoseScheduleDao
-import com.xai.dosify.core.com.xai.core.data.dao.MedicationDao
-import com.xai.dosify.core.com.xai.core.data.dao.ProfileDao
-import com.xai.dosify.core.com.xai.core.data.dao.ReconstitutionDao
-import com.xai.dosify.core.com.xai.core.data.dao.SupplyDao
-import com.xai.dosify.core.com.xai.core.utils.BiometricUtils
+import com.xai.dosify.core.data.AppDatabase
+import com.xai.dosify.core.data.dao.DoseLogDao
+import com.xai.dosify.core.data.dao.DoseScheduleDao
+import com.xai.dosify.core.data.dao.MedicationDao
+import com.xai.dosify.core.data.dao.ProfileDao
+import com.xai.dosify.core.data.dao.ReconstitutionDao
+import com.xai.dosify.core.data.dao.SupplyDao
+import com.xai.dosify.core.utils.BiometricUtils
 import com.xai.dosify.core.data.dao.*
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
@@ -31,6 +31,7 @@ object DatabaseModule {
         return Room.databaseBuilder(context, AppDatabase::class.java, "dosify_db")
             .openHelperFactory(factory)
             .fallbackToDestructiveMigration(true)
+            .addMigrations(MIGRATION_1_2)
             .build()
     }
 

@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -8,7 +6,6 @@ plugins {
     alias(libs.plugins.room)
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.google.services)
-
 }
 
 android {
@@ -35,17 +32,16 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
-        }
-    }
     buildFeatures {
         compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
     room {
         schemaDirectory("$projectDir/schemas")
     }
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 }
 
 dependencies {
@@ -103,8 +99,15 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.billing.ktx)
     implementation(libs.gson)
-    implementation("net.zetetic:sqlcipher-android:4.6.1")
 
+    // Feature Modules
+    implementation(project(":core"))
+    implementation(project(":feature_med"))
+    implementation(project(":feature_schedule"))
+    implementation(project(":feature_auth"))
+    implementation(project(":feature_iap"))
+    implementation(project(":feature_sync"))
+    implementation(project(":feature_advanced"))
 
     // Testing
     testImplementation(libs.junit)

@@ -1,4 +1,4 @@
-package com.xai.dosify.core.com.xai.core.ui.theme
+package com.xai.dosify.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
