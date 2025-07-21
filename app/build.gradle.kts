@@ -11,7 +11,7 @@ plugins {
 android {
     namespace = "com.xai.dosify"
     compileSdk = 36
-    isCoreLibraryDesugaringEnabled = true  // Updated syntax for AGP 4.1+
+
 
     defaultConfig {
         applicationId = "com.xai.dosify"
@@ -32,6 +32,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true  // Updated syntax for AGP 4.1+
     }
     buildFeatures {
         compose = true
