@@ -29,18 +29,18 @@ mpandroidchart = "v3.1.0"
 navigation-compose = "2.9.2"
 play-services-auth = "21.3.0"
 room = "2.7.2"
-sqlcipher = "4.6.0"  # Latest as of 2025
+sqlcipher = "4.9.0"  # Latest as of 2025
 timber = "5.0.1"
 work-runtime = "2.10.2"
-desugarJdkLibs = "2.1.2"  # For java.time
+desugarJdkLibs = "2.1.5"  # For java.time
 kizitonwose-calendar = "2.7.0"  # Latest for calendar
 
 # Testing
 androidx-junit = "1.2.1"
 espresso = "3.6.1"
 compose-junit = "1.6.1"
-appcompat = "1.6.1"
-material = "1.10.0"
+appcompat = "1.7.1"
+material = "1.12.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

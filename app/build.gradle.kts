@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)  // Separate plugin for Compose compiler in Kotlin 2.0+
+    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.room)
     alias(libs.plugins.kotlin.ksp)
@@ -11,7 +11,7 @@ plugins {
 android {
     namespace = "com.xai.dosify"
     compileSdk = 36
-    coreLibraryDesugaringEnabled = true  // Enables java.time desugaring
+    isCoreLibraryDesugaringEnabled = true  // Updated syntax for AGP 4.1+
 
     defaultConfig {
         applicationId = "com.xai.dosify"
@@ -42,7 +42,7 @@ android {
 }
 
 dependencies {
-    coreLibraryDesugaring(libs.desugar.jdk.libs)  // Required for desugaring to work
+    coreLibraryDesugaring(libs.desugar.jdk.libs)  // Desugaring dependency
 
     // Core AndroidX
     implementation(libs.androidx.core.ktx)
@@ -112,7 +112,4 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.test.manifest)
 }
