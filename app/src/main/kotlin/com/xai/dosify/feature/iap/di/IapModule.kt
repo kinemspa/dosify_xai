@@ -19,10 +19,9 @@ object IapModule {
     fun provideBillingClient(@ApplicationContext context: Context): BillingClient {
         return BillingClient.newBuilder(context)
             .enablePendingPurchases() // Enables pending purchases for one-time products
-            .enableAutoServiceReconnection() // Recommended for v8+; auto-reconnects if disconnected
-            .setListener(PurchasesUpdatedListener { billingResult, purchases ->
+            .setListener { billingResult, purchases ->
                 // Handle updates; keep existing if any
-            })
+            }
             .build()
     }
 }
