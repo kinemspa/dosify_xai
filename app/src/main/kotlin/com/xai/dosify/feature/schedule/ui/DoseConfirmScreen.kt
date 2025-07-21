@@ -1,5 +1,6 @@
 package com.xai.dosify.feature.schedule.ui
 
+import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -26,21 +27,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xai.dosify.core.data.models.DoseLog
 import com.xai.dosify.core.data.models.DoseSchedule
-import com.xai.dosify.core.data.repository.DoseLogRepository
-import com.xai.dosify.core.data.repository.MedicationRepository
 import com.xai.dosify.core.utils.setDoseAlarm
-import com.xai.dosify.feature.schedule.viewmodel.ScheduleViewModel
+import com.xai.dosify.feature.schedule.viewmodel.DoseConfirmViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DoseConfirmScreen(
-    viewModel: ScheduleViewModel = hiltViewModel(),
-    doseLogRepo: DoseLogRepository = hiltViewModel<DoseConfirmViewModel>().doseLogRepo,
-    medRepo: MedicationRepository = hiltViewModel<DoseConfirmViewModel>().medRepo
-) {
-    val schedules by viewModel.getActive().collectAsState(emptyList())
+fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
+    val schedules by viewModel.activeSchedules.collectAsState(emptyList())
     var selectedSchedule by remember { mutableStateOf<DoseSchedule?>(null) }
     var notes by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
@@ -108,9 +103,9 @@ fun DoseConfirmScreen(
                             takenTime = LocalDateTime.now(),
                             notes = notes.takeIf { it.isNotBlank() }
                         )
-                        doseLogRepo.insert(doseLog)
+                        viewModel.doseLogRepo.insert(doseLog)
                         // Decrement stock
-                        val success = medRepo.decrementStock(selectedSchedule!!.medId, selectedSchedule!!.doseAmount)
+                        val success = viewModel.medRepo.decrementStock(selectedSchedule!!.medId, selectedSchedule!!.doseAmount)
                         if (!success) {
                             snackbarHostState.showSnackbar("Low stock")
                         } else {
