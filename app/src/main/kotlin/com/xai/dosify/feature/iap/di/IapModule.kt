@@ -2,8 +2,7 @@ package com.xai.dosify.feature.iap.di
 
 import android.content.Context
 import com.android.billingclient.api.BillingClient
-import com.android.billingclient.api.BillingResult
-import com.android.billingclient.api.Purchase
+import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.PurchasesUpdatedListener
 import dagger.Module
 import dagger.Provides
@@ -19,13 +18,15 @@ object IapModule {
     @Provides
     @Singleton
     fun provideBillingClient(@ApplicationContext context: Context): BillingClient {
-        val purchasesUpdatedListener = PurchasesUpdatedListener { billingResult, purchases ->
-            // Handle updates; keep existing if any
-        }
+        val pendingParams = PendingPurchasesParams.newBuilder()
+            .enableOneTimeProducts() // For one-time IAP like upgrades
+            .build()
 
         return BillingClient.newBuilder(context)
-            .setListener(purchasesUpdatedListener)
-            .enablePendingPurchases() // Enables pending purchases for one-time products
+            .enablePendingPurchases(pendingParams)
+            .setListener(PurchasesUpdatedListener { billingResult, purchases ->
+                // Handle updates; keep existing if any
+            })
             .build()
     }
 }
