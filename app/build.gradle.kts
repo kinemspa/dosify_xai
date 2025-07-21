@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.compose)  // Separate plugin for Compose compiler in Kotlin 2.0+
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.room)
     alias(libs.plugins.kotlin.ksp)
@@ -11,7 +11,7 @@ plugins {
 android {
     namespace = "com.xai.dosify"
     compileSdk = 36
-    coreLibraryDesugaringEnabled = true  // Added here to enable java.time desugaring
+    coreLibraryDesugaringEnabled = true  // Enables java.time desugaring
 
     defaultConfig {
         applicationId = "com.xai.dosify"
@@ -36,16 +36,13 @@ android {
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()  // Fixed reference here
-    }
     room {
         schemaDirectory("$projectDir/schemas")
     }
 }
 
 dependencies {
-    coreLibraryDesugaring(libs.desugar.jdk.libs)  // Moved here as dependency addition
+    coreLibraryDesugaring(libs.desugar.jdk.libs)  // Required for desugaring to work
 
     // Core AndroidX
     implementation(libs.androidx.core.ktx)
