@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(project(":core"))
+    implementation(project(":feature_sync"))
     implementation(libs.hilt.work)
     ksp(libs.hilt.work.compiler)
 
