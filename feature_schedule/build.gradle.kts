@@ -36,7 +36,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.lifecycle.viewmodel.ktx)
@@ -47,7 +46,6 @@ dependencies {
     implementation(libs.kizitonwose.calendar)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
-    implementation(libs.kizitonwose.calendar)
     implementation(libs.kotlinx.coroutines.android)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -57,7 +55,6 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.lifecycle.viewmodel.compose)
 
-    // Feature Modules
     implementation(project(":core"))
     implementation(project(":feature_iap"))
     implementation(project(":feature_med"))
