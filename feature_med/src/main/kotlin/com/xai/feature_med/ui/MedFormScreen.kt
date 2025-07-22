@@ -7,7 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import dagger.hilt.android.lifecycle.HiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.xai.core.data.models.MedType
 import com.xai.core.data.models.Medication
 import com.xai.feature_med.viewmodel.MedViewModel

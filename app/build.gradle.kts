@@ -12,7 +12,6 @@ android {
     namespace = "com.xai.dosify"
     compileSdk = 36
 
-
     defaultConfig {
         applicationId = "com.xai.dosify"
         minSdk = 24
@@ -32,7 +31,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-        isCoreLibraryDesugaringEnabled = true  // Updated syntax for AGP 4.1+
+        isCoreLibraryDesugaringEnabled = true
     }
     buildFeatures {
         compose = true
@@ -43,7 +42,7 @@ android {
 }
 
 dependencies {
-    coreLibraryDesugaring(libs.desugar.jdk.libs)  // Desugaring dependency
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     // Core AndroidX
     implementation(libs.androidx.core.ktx)
@@ -76,8 +75,6 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
-    implementation(libs.firebase.auth)
-    implementation(libs.work.runtime.ktx)
 
     // Credential Manager for Google Sign-In
     implementation(libs.androidx.credentials)

@@ -2,6 +2,7 @@ package com.xai.feature_sync.viewmodel
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.xai.core.data.repository.*
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +18,7 @@ class SyncViewModel @Inject constructor(
     private val logRepo: DoseLogRepository,
     private val supplyRepo: SupplyRepository,
     private val reconstRepo: ReconstitutionRepository,
-    private val profileRepo: ProfileRepository  // Add
+    private val profileRepo: ProfileRepository
 ) : ViewModel() {
 
     fun testSync() = viewModelScope.launch {
@@ -37,7 +38,7 @@ class SyncViewModel @Inject constructor(
             logRepo.syncWithFirestore(userId)
             supplyRepo.syncWithFirestore(userId)
             reconstRepo.syncWithFirestore(userId)
-            profileRepo.syncWithFirestore(userId)  // Add
+            profileRepo.syncWithFirestore(userId)
             snackbarHostState.showSnackbar("Synced successfully")
             Timber.d("Manual sync success")
         } catch (e: Exception) {

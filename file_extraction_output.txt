@@ -116,19 +116,19 @@ File: app\src\main\kotlin\com\xai\dosify\ui\MainActivity.kt
 ```
 package com.xai.dosify.ui
 
+import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.xai.core.ui.theme.DosifyTheme
-import com.xai.dosify.nav.NavRoutes
 import com.xai.core.ui.components.DosifyAppBar
 import com.xai.dosify.nav.AppNavGraph
+import com.xai.dosify.nav.NavRoutes
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -1608,7 +1608,7 @@ package com.xai.feature_advanced.viewmodel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
-import androidx.lifecycle.viewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xai.core.data.models.DoseLog
 import com.xai.core.data.repository.DoseLogRepository
@@ -1660,27 +1660,23 @@ import androidx.work.WorkManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.xai.core.data.repository.AuthRepository
-import com.xai.feature.sync.utils.SyncWorker
+import com.xai.feature_sync.utils.SyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.xai.core.data.repository.AuthRepository
-import com.xai.feature_sync.utils.syncworker
+
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val repo: AuthRepository,
     private val auth: FirebaseAuth,
-    private val workManager: WorkManager  // Inject
+    private val workManager: WorkManager
 ) : ViewModel() {
     private val _state = MutableStateFlow(AuthState())
     val state: StateFlow<AuthState> = _state
@@ -1735,6 +1731,7 @@ package com.xai.feature_auth
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
@@ -1746,8 +1743,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
-import androidx.hilt.navigation.compose.hiltViewModel
-
+import com.xai.dosify.R
 
 @Composable
 fun LoginScreen(
@@ -1771,8 +1767,9 @@ fun LoginScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Surface(modifier = padding(padding).fillMaxSize()) {
+        Surface(modifier = Modifier.padding(padding).fillMaxSize()) {
             Column(
+                modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (user != null) {
@@ -1807,7 +1804,7 @@ fun LoginScreen(
                                         .addCredentialOption(googleIdOption)
                                         .build()
 
-                                    val result: GetCredentialResponse = credentialManager.getCredential(
+                                    val result = credentialManager.getCredential(
                                         request = request,
                                         context = context
                                     )
@@ -1960,10 +1957,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import com.xai.core.data.models.MedType
 import com.xai.core.data.models.Medication
-import com.xai.feature.advanced.viewmodel.MedViewModel
+import com.xai.feature_med.viewmodel.MedViewModel
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -2037,8 +2034,8 @@ fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
                     type = type,
                     strength = strength.toDoubleOrNull() ?: 0.0,
                     unit = unit,
-                    stock = stock.toDoubleOrNull() ?: 0.0,
-                    lowStockThreshold = lowStockThreshold.toDoubleOrNull() ?: 0.0,
+                    stock = stock.toIntOrNull() ?: 0,
+                    lowStockThreshold = lowStockThreshold.toIntOrNull() ?: 0,
                     reconstitution = type == MedType.INJECTION
                 )
                 coroutineScope.launch {
@@ -2213,6 +2210,26 @@ class MedViewModel @Inject constructor(
         Timber.d("Save reconst med: ${med.name}")
         repo.saveWithReconstitution(med, powder, solvent)
     }
+}
+```
+---
+File: feature_med\src\main\kotlin\com\xai\feature_med\viewmodel\SupplyViewModel.kt
+```
+package com.xai.feature_med.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.xai.core.data.models.Supply
+import com.xai.core.data.repository.SupplyRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class SupplyViewModel @Inject constructor(
+    private val repo: SupplyRepository
+) : ViewModel() {
+    fun insert(supply: Supply) = viewModelScope.launch { repo.insert(supply) }
 }
 ```
 ---
@@ -2809,7 +2826,6 @@ package com.xai.feature_sync.viewmodel
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.xai.core.data.repository.*
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -2874,7 +2890,7 @@ coroutines = "1.10.2"
 credentialsPlayServicesAuth = "1.5.0"
 espressoCore = "3.6.1"
 firebase-auth = "22.3.1"
-firebaseBom = "33.16.0"
+firebaseBom = "34.0.0"
 googleid = "1.1.1"
 gson = "2.13.1"
 google-services = "4.4.3"
@@ -2891,14 +2907,12 @@ mpandroidchart = "v3.1.0"
 navigation-compose = "2.9.2"
 play-services-auth = "21.3.0"
 room = "2.7.2"
-sqlcipher = "4.5.4"  # Latest as of 2025
+sqlcipher = "4.5.4"
 sqlite = "2.5.2"
 timber = "5.0.1"
 work-runtime = "2.10.2"
-desugarJdkLibs = "2.1.5"  # For java.time
-kizitonwose-calendar = "2.8.0" # Latest for calendar
-
-# Testing
+desugarJdkLibs = "2.1.5"
+kizitonwose-calendar = "2.8.0"
 androidx-junit = "1.2.1"
 espresso = "3.6.1"
 compose-junit = "1.6.1"
@@ -2911,6 +2925,8 @@ androidx-credentials = { module = "androidx.credentials:credentials", version.re
 androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
+firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -2932,7 +2948,6 @@ hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt"
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version = "1.2.0" }
 hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
-hilt-work-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltWork" }
 
 # Room
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
@@ -2941,22 +2956,16 @@ room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 
 # Firebase
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
-firebase-auth-ktx = { module = "com.google.firebase:firebase-auth-ktx" }
-firebase-firestore-ktx = { module = "com.google.firebase:firebase-firestore-ktx" }
-firebase-messaging-ktx = { module = "com.google.firebase:firebase-messaging-ktx" }
-# firebase-auth = { module = "com.google.firebase:firebase-auth-ktx", version.ref = "firebase-auth" }
 
 # Coroutines
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 
 # Other
-
 lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 mpandroidchart = { module = "com.github.PhilJay:MPAndroidChart", version.ref = "mpandroidchart" }
 sqlcipher = { module = "net.zetetic:android-database-sqlcipher", version.ref = "sqlcipher" }
-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "sqlite" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "play-services-auth" }
 biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work-runtime" }
@@ -3137,11 +3146,10 @@ dependencies {
 
     // Firebase
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth.ktx)
-    implementation(libs.firebase.firestore.ktx)
-    implementation(libs.firebase.messaging.ktx)
     implementation(libs.firebase.auth)
-    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
+    implementation(libs.firebase.auth)
     implementation(libs.work.runtime.ktx)
 
     // Credential Manager for Google Sign-In
@@ -3232,8 +3240,8 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.firestore.ktx)
-    implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.auth)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     ksp(libs.room.compiler)
@@ -3315,7 +3323,8 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.lifecycle.viewmodel.compose)
-
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work)
 }
 ```
 ---
@@ -3368,9 +3377,10 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.hilt.android)
+    implementation(libs.hilt.work)
     ksp(libs.hilt.compiler)
-    releaseImplementation(libs.firebase.auth.ktx)
-    releaseImplementation(libs.firebase.auth)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
@@ -3382,9 +3392,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(project(":core"))
-    implementation(libs.firebase.auth)
-    implementation(libs.hilt.work)
-    ksp(libs.hilt.compiler)
+    ksp(libs.hilt.work)
 
 }
 ```
@@ -3441,6 +3449,8 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     ksp(libs.hilt.compiler)
     implementation(project(":core"))
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work)
 
 
 }
@@ -3561,7 +3571,8 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
-    releaseImplementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
     implementation(libs.work.runtime.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(platform(libs.androidx.compose.bom))
@@ -3569,6 +3580,8 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
 
     // Feature Modules
     implementation(project(":core"))
