@@ -28,7 +28,7 @@ class DoseScheduleRepositoryImpl @Inject constructor(
 
     override fun getActive(): Flow<List<DoseSchedule>> = dao.getActive()
 
-    fun getAll(): Flow<List<DoseSchedule>> = dao.getAll()
+    override fun getAll(): Flow<List<DoseSchedule>> = dao.getAll()
 
     override suspend fun syncWithFirestore(userId: String) {
         val localSchedules = dao.getAll().first()
