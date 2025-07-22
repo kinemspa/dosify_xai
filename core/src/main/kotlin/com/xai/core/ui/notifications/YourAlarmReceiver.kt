@@ -1,4 +1,4 @@
-package com.xai.dosify.ui.notifications
+package com.xai.core.ui.notifications
 
 import android.content.BroadcastReceiver
 import android.content.Context

@@ -7,7 +7,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.AlarmManagerCompat
 import com.xai.core.data.models.DoseSchedule
-import com.xai.dosify.ui.notifications.YourAlarmReceiver
+import com.xai.core.ui.notifications.YourAlarmReceiver
 import java.time.LocalTime
 import java.time.Duration
 

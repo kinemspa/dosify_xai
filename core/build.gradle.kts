@@ -69,6 +69,4 @@ dependencies {
     implementation(libs.navigation.compose)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
-    implementation(project(":app"))
-
 }
