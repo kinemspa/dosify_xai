@@ -8,6 +8,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Arrangement
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xai.feature_sync.viewmodel.SyncViewModel
 import kotlinx.coroutines.launch
@@ -17,7 +20,11 @@ fun SettingsScreen(viewModel: SyncViewModel) {
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    Column {
+    Column (
+        modifier = Modifier,
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start
+    ) {
         Button(onClick = { viewModel.testSync() }) {
             Text("Test DB Integrity & Sync")
         }
@@ -29,5 +36,9 @@ fun SettingsScreen(viewModel: SyncViewModel) {
             Text("Manual Sync")
         }
     }
-    SnackbarHost(snackbarHostState)
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier,
+        snackbar = null
+    )
 }
