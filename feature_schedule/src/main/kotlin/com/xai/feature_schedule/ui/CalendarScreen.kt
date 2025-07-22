@@ -24,8 +24,7 @@ import java.time.YearMonth
 import com.xai.core.data.models.DoseSchedule
 
 
-@Composable
-fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
+@Composable fun CalendarScreen(viewModel: CalendarViewModel) {
     val schedules by viewModel.schedules.collectAsState(emptyList<DoseSchedule>())
     val currentMonth = YearMonth.now()
     val startMonth = currentMonth.minusMonths(12)

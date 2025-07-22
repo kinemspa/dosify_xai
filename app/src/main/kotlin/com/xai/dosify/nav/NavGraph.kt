@@ -59,7 +59,7 @@ fun AppNavGraph(navController: NavHostController) {
             SettingsScreen(hiltViewModel())
         }
         composable(NavRoutes.CALENDAR) {
-            CalendarScreen()
+            CalendarScreen(hiltViewModel())
         }
         composable(NavRoutes.SUPPLY_FORM) {
             SupplyFormScreen()
