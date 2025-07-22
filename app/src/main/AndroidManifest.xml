@@ -34,7 +34,7 @@
                 tools:node="remove" />
         </provider>
         <receiver
-            android:name="com.xai.core.ui.notifications.YourAlarmReceiver"
+            android:name=".ui.notifications.YourAlarmReceiver"
             android:exported="false" />
     </application>
 
