@@ -12,5 +12,5 @@ import javax.inject.Inject
 class CalendarViewModel @Inject constructor(
     private val repo: DoseScheduleRepository
 ) : ViewModel() {
-    val schedules = repo.getAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val schedules = repo.getAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<DoseSchedule>())
 }

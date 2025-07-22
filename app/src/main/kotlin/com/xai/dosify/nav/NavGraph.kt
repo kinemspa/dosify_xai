@@ -1,6 +1,7 @@
 package com.xai.dosify.nav
 
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -52,10 +53,10 @@ fun AppNavGraph(navController: NavHostController) {
             DoseConfirmScreen()
         }
         composable(NavRoutes.REPORTS) {
-            ReportsScreen()
+            ReportsScreen(hiltViewModel())
         }
         composable(NavRoutes.SETTINGS) {
-            SettingsScreen()
+            SettingsScreen(hiltViewModel())
         }
         composable(NavRoutes.CALENDAR) {
             CalendarScreen()

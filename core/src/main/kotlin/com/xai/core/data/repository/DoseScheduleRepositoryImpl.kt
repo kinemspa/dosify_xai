@@ -13,7 +13,9 @@ import javax.inject.Inject
 class DoseScheduleRepositoryImpl @Inject constructor(
     private val dao: DoseScheduleDao,
     private val firestore: FirebaseFirestore
+
 ) : DoseScheduleRepository {
+
     override suspend fun insert(schedule: DoseSchedule) = dao.insert(schedule)
 
     override suspend fun update(schedule: DoseSchedule) = dao.update(schedule)
@@ -25,6 +27,7 @@ class DoseScheduleRepositoryImpl @Inject constructor(
     override fun getByMedId(medId: Long): Flow<List<DoseSchedule>> = dao.getByMedId(medId)
 
     override fun getActive(): Flow<List<DoseSchedule>> = dao.getActive()
+
 
     override suspend fun syncWithFirestore(userId: String) {
         val localSchedules = dao.getAll().first()
@@ -41,4 +44,5 @@ class DoseScheduleRepositoryImpl @Inject constructor(
             }
         }
     }
+    override fun getAll(): Flow<List<DoseSchedule>> = dao.getAll()
 }

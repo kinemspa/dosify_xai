@@ -14,7 +14,7 @@ import com.github.mikephil.charting.data.LineDataSet
 import com.xai.feature_advanced.viewmodel.ReportsViewModel
 
 @Composable
-fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
+fun ReportsScreen(viewModel: ReportsViewModel) {
     val logs by viewModel.doseLogs.collectAsState(emptyList())
 
     AndroidView(

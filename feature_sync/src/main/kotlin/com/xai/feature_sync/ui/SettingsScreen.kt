@@ -13,7 +13,7 @@ import com.xai.feature_sync.viewmodel.SyncViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(viewModel: SyncViewModel = hiltViewModel()) {
+fun SettingsScreen(viewModel: SyncViewModel) {
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
