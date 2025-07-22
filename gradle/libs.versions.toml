@@ -24,7 +24,7 @@ hilt = "2.57"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 kotlin = "1.9.24"
-ksp = "1.9.24-1.0.24"
+ksp = "1.9.24-1.0.20"
 lifecycle = "2.9.2"
 lifecycleRuntimeKtx = "2.9.2"
 materialIconsExtended = "1.7.8"
@@ -110,7 +110,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 android-application = { id = "com.android.application", version.ref = "agp" }
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-kotlin-compose = { id = "org.jetbrains.kotlin.compose.compiler", version.ref = "kotlin" }
+# kotlin-compose = { id = "org.jetbrains.kotlin.compose.compiler", version.ref = "kotlin" }
 kotlin-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 room = { id = "androidx.room", version.ref = "room" }
