@@ -11,8 +11,6 @@ import com.xai.core.data.dao.ReconstitutionDao
 import com.xai.core.data.dao.SupplyDao
 import com.xai.core.utils.BiometricUtils
 import com.xai.core.data.dao.*
-import net.sqlcipher.database.SQLiteDatabase
-import net.sqlcipher.database.SupportFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

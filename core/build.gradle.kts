@@ -44,10 +44,9 @@ android {
 }
 
 dependencies {
-
+    implementation(libs.sqlcipher)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    implementation(libs.sqlcipher)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.auth.ktx)

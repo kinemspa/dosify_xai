@@ -3,6 +3,9 @@ package com.xai.core.ui.notifications
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import com.xai.dosify.R  // App's R for ic_notification
 
 class YourAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
