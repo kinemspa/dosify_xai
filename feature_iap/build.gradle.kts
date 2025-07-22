@@ -48,6 +48,8 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     ksp(libs.hilt.compiler)
     implementation(project(":core"))
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work)
 
 
 }

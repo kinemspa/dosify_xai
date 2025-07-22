@@ -51,6 +51,8 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work)
 
     // Feature Modules
     implementation(project(":core"))

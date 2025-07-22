@@ -3,6 +3,7 @@ package com.xai.feature_auth
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
@@ -14,8 +15,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
-import androidx.hilt.navigation.compose.hiltViewModel
-
+import com.xai.dosify.R
 
 @Composable
 fun LoginScreen(
@@ -39,8 +39,9 @@ fun LoginScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Surface(modifier = padding(padding).fillMaxSize()) {
+        Surface(modifier = Modifier.padding(padding).fillMaxSize()) {
             Column(
+                modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (user != null) {
@@ -75,7 +76,7 @@ fun LoginScreen(
                                         .addCredentialOption(googleIdOption)
                                         .build()
 
-                                    val result: GetCredentialResponse = credentialManager.getCredential(
+                                    val result = credentialManager.getCredential(
                                         request = request,
                                         context = context
                                     )

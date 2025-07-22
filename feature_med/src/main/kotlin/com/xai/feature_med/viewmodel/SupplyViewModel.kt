@@ -12,8 +12,5 @@ import javax.inject.Inject
 class SupplyViewModel @Inject constructor(
     private val repo: SupplyRepository
 ) : ViewModel() {
-
-    fun insert(supply: Supply) = viewModelScope.launch {
-        repo.insert(supply)
-    }
+    fun insert(supply: Supply) = viewModelScope.launch { repo.insert(supply) }
 }

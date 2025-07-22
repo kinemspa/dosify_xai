@@ -13,6 +13,7 @@ coreKtx = "1.16.0"
 coroutines = "1.10.2"
 credentialsPlayServicesAuth = "1.5.0"
 espressoCore = "3.6.1"
+firebase-auth = "22.3.1"
 firebaseBom = "34.0.0"
 googleid = "1.1.1"
 gson = "2.13.1"
@@ -30,14 +31,12 @@ mpandroidchart = "v3.1.0"
 navigation-compose = "2.9.2"
 play-services-auth = "21.3.0"
 room = "2.7.2"
-sqlcipher = "4.5.4"  # Latest as of 2025
+sqlcipher = "4.5.4"
 sqlite = "2.5.2"
 timber = "5.0.1"
 work-runtime = "2.10.2"
-desugarJdkLibs = "2.1.5"  # For java.time
-kizitonwose-calendar = "2.8.0" # Latest for calendar
-
-# Testing
+desugarJdkLibs = "2.1.5"
+kizitonwose-calendar = "2.8.0"
 androidx-junit = "1.2.1"
 espresso = "3.6.1"
 compose-junit = "1.6.1"
@@ -49,6 +48,9 @@ androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = 
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentialsPlayServicesAuth" }
 androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
+firebase-auth = { module = "com.google.firebase:firebase-auth" }
+firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -70,7 +72,6 @@ hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt"
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version = "1.2.0" }
 hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
-hilt-work-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltWork" }
 
 # Room
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
@@ -79,21 +80,16 @@ room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 
 # Firebase
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
-firebase-auth = { module = "com.google.firebase:firebase-auth" }  # Non-KTX
-firebase-messaging-ktx = { module = "com.google.firebase:firebase-messaging-ktx" }
-firebase-firestore = { module = "com.google.firebase:firebase-firestore" }  # Non-KTX
 
 # Coroutines
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 
 # Other
-
 lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 mpandroidchart = { module = "com.github.PhilJay:MPAndroidChart", version.ref = "mpandroidchart" }
 sqlcipher = { module = "net.zetetic:android-database-sqlcipher", version.ref = "sqlcipher" }
-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "sqlite" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "play-services-auth" }
 biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work-runtime" }

@@ -7,10 +7,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import com.xai.core.data.models.MedType
 import com.xai.core.data.models.Medication
-import com.xai.feature.advanced.viewmodel.MedViewModel
+import com.xai.feature_med.viewmodel.MedViewModel
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
