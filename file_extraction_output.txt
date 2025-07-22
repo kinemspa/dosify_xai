@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.xai.feature.advanced.ui.ReportsScreen
+import com.xai.feature_advanced.ui.ReportsScreen
 import com.xai.feature_auth.LoginScreen
 import com.xai.feature_med.ui.MedFormScreen
 import com.xai.feature_med.ui.MedListScreen
@@ -15,6 +15,7 @@ import com.xai.feature_schedule.ui.ScheduleFormScreen
 import com.xai.feature_sync.ui.SettingsScreen
 import com.xai.dosify.ui.HomeScreen
 import com.xai.feature_schedule.ui.CalendarScreen
+import com.xai.feature_med.ui.SupplyFormScreen
 
 object NavRoutes {
     const val LOGIN = "login"
@@ -27,6 +28,8 @@ object NavRoutes {
     const val SETTINGS = "settings"
 
     const val CALENDAR = "calendar"
+
+    const val SUPPLY_FORM = "supply_form"
 }
 
 @Composable
@@ -59,35 +62,9 @@ fun AppNavGraph(navController: NavHostController) {
         composable(NavRoutes.CALENDAR) {
             CalendarScreen()
         }
-    }
-}
-```
----
-File: app\src\main\kotlin\com\xai\dosify\ui\notifications\YourAlarmReceiver.kt
-```
-package com.xai.dosify.ui.notifications
-
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import com.xai.dosify.R
-
-class YourAlarmReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
-        val scheduleId = intent.getLongExtra("scheduleId", -1)
-
-        val notification = NotificationCompat.Builder(context, "dose_channel")
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("Dose Reminder")
-            .setContentText("Time for your medication dose!")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .build()
-
-        val manager = NotificationManagerCompat.from(context)
-        manager.notify(scheduleId.toInt(), notification)
+        composable(NavRoutes.SUPPLY_FORM) {
+            SupplyFormScreen()
+        }
     }
 }
 ```
@@ -128,6 +105,9 @@ fun HomeScreen(navController: NavController) {
         Button(onClick = { navController.navigate(NavRoutes.SETTINGS) }) {
             Text("Settings & Diagnostics")
         }
+        Button(onClick = { navController.navigate(NavRoutes.SUPPLY_FORM) }) {
+            Text("Add Supply")
+        }
     }
 }
 ```
@@ -147,9 +127,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.xai.core.ui.theme.DosifyTheme
 import com.xai.dosify.nav.NavRoutes
-import com.xai.feature_med.ui.MedFormScreen
-import com.xai.feature_schedule.ui.DoseConfirmScreen
 import com.xai.core.ui.components.DosifyAppBar
+import com.xai.dosify.nav.AppNavGraph
+
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -161,25 +141,24 @@ class MainActivity : ComponentActivity() {
                     topBar = {
                         DosifyAppBar(
                             title = when (navController.currentDestination?.route) {
+                                NavRoutes.LOGIN -> "Login"
                                 NavRoutes.HOME -> "Dosify Home"
                                 NavRoutes.MED_FORM -> "Add Medication"
+                                NavRoutes.MED_LIST -> "Medication List"
+                                NavRoutes.SCHEDULE_FORM -> "Add Schedule"
                                 NavRoutes.DOSE_CONFIRM -> "Confirm Dose"
+                                NavRoutes.REPORTS -> "Reports"
+                                NavRoutes.SETTINGS -> "Settings"
+                                NavRoutes.CALENDAR -> "Calendar"
+                                NavRoutes.SUPPLY_FORM -> "Add Supply"
                                 else -> "Dosify"
                             },
                             navController = navController,
-                            showBackButton = navController.currentDestination?.route != NavRoutes.HOME
+                            showBackButton = navController.currentDestination?.route != NavRoutes.LOGIN
                         )
                     }
                 ) { innerPadding ->
-                    NavHost(
-                        navController = navController,
-                        startDestination = NavRoutes.HOME,
-                        modifier = Modifier.padding(innerPadding)
-                    ) {
-                        composable(NavRoutes.HOME) { HomeScreen(navController) }
-                        composable(NavRoutes.MED_FORM) { MedFormScreen() }
-                        composable(NavRoutes.DOSE_CONFIRM) { DoseConfirmScreen() }
-                    }
+                    AppNavGraph(navController = navController)
                 }
             }
         }
@@ -1188,14 +1167,15 @@ import com.xai.core.data.dao.ReconstitutionDao
 import com.xai.core.data.dao.SupplyDao
 import com.xai.core.utils.BiometricUtils
 import com.xai.core.data.dao.*
-import net.sqlcipher.database.SQLiteDatabase
-import net.sqlcipher.database.SupportFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import net.sqlcipher.database.SQLiteDatabase
+import net.sqlcipher.database.SupportFactory
+import com.xai.core.data.MIGRATION_1_2
 
 
 @Module
@@ -1353,6 +1333,35 @@ fun DosifyAppBar(
 }
 ```
 ---
+File: core\src\main\kotlin\com\xai\core\ui\notifications\YourAlarmReceiver.kt
+```
+package com.xai.core.ui.notifications
+
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import com.xai.core.R
+
+class YourAlarmReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val scheduleId = intent.getLongExtra("scheduleId", -1)
+
+        val notification = NotificationCompat.Builder(context, "dose_channel")
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("Dose Reminder")
+            .setContentText("Time for your medication dose!")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
+
+        val manager = NotificationManagerCompat.from(context)
+        manager.notify(scheduleId.toInt(), notification)
+    }
+}
+```
+---
 File: core\src\main\kotlin\com\xai\core\ui\theme\Color.kt
 ```
 package com.xai.core.ui.theme
@@ -1503,7 +1512,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.AlarmManagerCompat
 import com.xai.core.data.models.DoseSchedule
-import com.xai.dosify.ui.notifications.*
+import com.xai.core.ui.notifications.YourAlarmReceiver
 import java.time.LocalTime
 import java.time.Duration
 
@@ -2864,6 +2873,7 @@ coreKtx = "1.16.0"
 coroutines = "1.10.2"
 credentialsPlayServicesAuth = "1.5.0"
 espressoCore = "3.6.1"
+firebase-auth = "22.3.1"
 firebaseBom = "33.16.0"
 googleid = "1.1.1"
 gson = "2.13.1"
@@ -2881,7 +2891,8 @@ mpandroidchart = "v3.1.0"
 navigation-compose = "2.9.2"
 play-services-auth = "21.3.0"
 room = "2.7.2"
-sqlcipher = "4.9.0"  # Latest as of 2025
+sqlcipher = "4.5.4"  # Latest as of 2025
+sqlite = "2.5.2"
 timber = "5.0.1"
 work-runtime = "2.10.2"
 desugarJdkLibs = "2.1.5"  # For java.time
@@ -2933,6 +2944,7 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-auth-ktx = { module = "com.google.firebase:firebase-auth-ktx" }
 firebase-firestore-ktx = { module = "com.google.firebase:firebase-firestore-ktx" }
 firebase-messaging-ktx = { module = "com.google.firebase:firebase-messaging-ktx" }
+# firebase-auth = { module = "com.google.firebase:firebase-auth-ktx", version.ref = "firebase-auth" }
 
 # Coroutines
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
@@ -2943,7 +2955,8 @@ lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-view
 lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 mpandroidchart = { module = "com.github.PhilJay:MPAndroidChart", version.ref = "mpandroidchart" }
-sqlcipher = { module = "net.zetetic:sqlcipher-android", version.ref = "sqlcipher" }
+sqlcipher = { module = "net.zetetic:android-database-sqlcipher", version.ref = "sqlcipher" }
+sqlite = { module = "androidx.sqlite:sqlite", version.ref = "sqlite" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "play-services-auth" }
 biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work-runtime" }
@@ -3177,6 +3190,7 @@ plugins {
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.room)
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
@@ -3200,6 +3214,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    buildFeatures {
+        compose = true
+    }
     kotlin {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
@@ -3211,10 +3228,9 @@ android {
 }
 
 dependencies {
-
+    implementation(libs.sqlcipher)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    implementation(libs.sqlcipher)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.auth.ktx)
@@ -3228,16 +3244,15 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.biometric)
     implementation(libs.work.runtime.ktx)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.navigation.compose)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
-    // Feature Modules
-    implementation(project(":core"))
-    implementation(project(":feature_med"))
-    implementation(project(":feature_schedule"))
-    implementation(project(":feature_auth"))
-    implementation(project(":feature_iap"))
-    implementation(project(":feature_sync"))
-    implementation(project(":feature_advanced"))
 }
 ```
 ---
@@ -3287,6 +3302,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.mpandroidchart)
     implementation(libs.lifecycle.viewmodel.ktx)
+    implementation(project(":core"))
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -3299,15 +3315,6 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.lifecycle.viewmodel.compose)
-
-    // Feature Modules
-    implementation(project(":core"))
-    implementation(project(":feature_med"))
-    implementation(project(":feature_schedule"))
-    implementation(project(":feature_auth"))
-    implementation(project(":feature_iap"))
-    implementation(project(":feature_sync"))
-    implementation(project(":feature_advanced"))
 
 }
 ```
@@ -3374,15 +3381,11 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-
-    // Feature Modules
     implementation(project(":core"))
-    implementation(project(":feature_med"))
-    implementation(project(":feature_schedule"))
-    implementation(project(":feature_auth"))
-    implementation(project(":feature_iap"))
-    implementation(project(":feature_sync"))
-    implementation(project(":feature_advanced"))
+    implementation(libs.firebase.auth)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.compiler)
+
 }
 ```
 ---
@@ -3437,15 +3440,9 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     ksp(libs.hilt.compiler)
-
-    // Feature Modules
     implementation(project(":core"))
-    implementation(project(":feature_med"))
-    implementation(project(":feature_schedule"))
-    implementation(project(":feature_auth"))
-    implementation(project(":feature_iap"))
-    implementation(project(":feature_sync"))
-    implementation(project(":feature_advanced"))
+
+
 }
 ```
 ---
@@ -3489,18 +3486,12 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.material)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.kizitonwose.calendar)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
-    implementation(libs.kizitonwose.calendar)
     implementation(libs.kotlinx.coroutines.android)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -3510,14 +3501,13 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.lifecycle.viewmodel.compose)
 
-    // Feature Modules
     implementation(project(":core"))
-    implementation(project(":feature_med"))
-    implementation(project(":feature_schedule"))
-    implementation(project(":feature_auth"))
     implementation(project(":feature_iap"))
-    implementation(project(":feature_sync"))
-    implementation(project(":feature_advanced"))
+    implementation(project(":feature_med"))
+
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }
 ```
 ---
@@ -3582,12 +3572,6 @@ dependencies {
 
     // Feature Modules
     implementation(project(":core"))
-    implementation(project(":feature_med"))
-    implementation(project(":feature_schedule"))
-    implementation(project(":feature_auth"))
-    implementation(project(":feature_iap"))
-    implementation(project(":feature_sync"))
-    implementation(project(":feature_advanced"))
 }
 ```
 ---
@@ -3680,7 +3664,7 @@ File: app/src/main/AndroidManifest.xml
                 tools:node="remove" />
         </provider>
         <receiver
-            android:name=".ui.notifications.YourAlarmReceiver"
+            android:name="com.xai.core.ui.notifications.YourAlarmReceiver"
             android:exported="false" />
     </application>
 

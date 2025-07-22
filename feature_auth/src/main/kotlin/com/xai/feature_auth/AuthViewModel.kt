@@ -1,15 +1,11 @@
 package com.xai.feature_auth
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.xai.core.data.repository.AuthRepository
 import com.xai.feature.sync.utils.SyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.awaitClose
@@ -26,6 +22,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.xai.core.data.repository.AuthRepository
 import com.xai.feature_sync.utils.syncworker
+
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val repo: AuthRepository,

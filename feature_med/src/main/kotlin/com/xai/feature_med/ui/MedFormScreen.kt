@@ -84,8 +84,8 @@ fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
                     type = type,
                     strength = strength.toDoubleOrNull() ?: 0.0,
                     unit = unit,
-                    stock = stock.toDoubleOrNull() ?: 0.0,
-                    lowStockThreshold = lowStockThreshold.toDoubleOrNull() ?: 0.0,
+                    stock = stock.toIntOrNull() ?: 0,
+                    lowStockThreshold = lowStockThreshold.toIntOrNull() ?: 0,
                     reconstitution = type == MedType.INJECTION
                 )
                 coroutineScope.launch {
