@@ -41,6 +41,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.kizitonwose.calendar)
     implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
     implementation(libs.kotlinx.coroutines.android)
     implementation(platform(libs.androidx.compose.bom))

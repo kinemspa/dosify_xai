@@ -29,8 +29,8 @@ import com.xai.core.data.models.DoseSchedule
 import com.xai.core.data.models.Frequency
 import com.xai.core.data.models.Medication
 import com.xai.core.utils.setDoseAlarm
-import com.xai.feature.iap.viewmodel.IapViewModel
-import com.xai.feature.med.viewmodel.MedListViewModel
+import com.xai.feature_iap.viewmodel.IapViewModel
+import com.xai.feature_med.viewmodel.MedListViewModel
 import com.xai.feature_schedule.viewmodel.ScheduleViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalTime

@@ -45,6 +45,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
@@ -57,6 +58,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.hilt.work)
     ksp(libs.hilt.work.compiler)
+    implementation(libs.timber)
 
     // Feature Modules
     implementation(project(":core"))

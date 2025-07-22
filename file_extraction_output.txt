@@ -1283,7 +1283,7 @@ File: core\src\main\kotlin\com\xai\core\ui\components\AppBar.kt
 package com.xai.core.ui.components
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -1309,7 +1309,7 @@ fun DosifyAppBar(
             if (showBackButton && navController.previousBackStackEntry != null) {
                 IconButton(onClick = { navController.navigateUp() }) {
                     Icon(
-                        imageVector = Icons.Filled.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back"
                     )
                 }
@@ -1571,11 +1571,6 @@ File: feature_advanced\src\main\kotlin\com\xai\feature_advanced\ui\ReportsScreen
 ```
 package com.xai.feature_advanced.ui
 
-import com.github.mikephil.charting.charts.LineChart
-import com.github.mikephil.charting.data.Entry
-import com.github.mikephil.charting.data.LineData
-import com.github.mikephil.charting.data.LineDataSet
-import com.xai.feature_advanced.viewmodel.ReportsViewModel
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -1583,6 +1578,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
+import com.xai.feature_advanced.viewmodel.ReportsViewModel
 
 @Composable
 fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
@@ -1605,14 +1605,14 @@ File: feature_advanced\src\main\kotlin\com\xai\feature_advanced\viewmodel\Report
 ```
 package com.xai.feature_advanced.viewmodel
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.stateIn
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xai.core.data.models.DoseLog
 import com.xai.core.data.repository.DoseLogRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
@@ -1957,7 +1957,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import dagger.hilt.android.lifecycle.HiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.xai.core.data.models.MedType
 import com.xai.core.data.models.Medication
 import com.xai.feature_med.viewmodel.MedViewModel
@@ -2169,7 +2169,6 @@ import androidx.lifecycle.viewModelScope
 import com.xai.core.data.models.Medication
 import com.xai.core.data.repository.MedicationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
@@ -2178,8 +2177,7 @@ import javax.inject.Inject
 class MedListViewModel @Inject constructor(
     private val repo: MedicationRepository
 ) : ViewModel() {
-    val meds: Flow<List<Medication>> = repo.getAll()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val meds = repo.getAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }
 ```
 ---
@@ -2826,6 +2824,7 @@ package com.xai.feature_sync.viewmodel
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.xai.core.data.repository.*
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -2841,7 +2840,7 @@ class SyncViewModel @Inject constructor(
     private val logRepo: DoseLogRepository,
     private val supplyRepo: SupplyRepository,
     private val reconstRepo: ReconstitutionRepository,
-    private val profileRepo: ProfileRepository  // Add
+    private val profileRepo: ProfileRepository
 ) : ViewModel() {
 
     fun testSync() = viewModelScope.launch {
@@ -2861,7 +2860,7 @@ class SyncViewModel @Inject constructor(
             logRepo.syncWithFirestore(userId)
             supplyRepo.syncWithFirestore(userId)
             reconstRepo.syncWithFirestore(userId)
-            profileRepo.syncWithFirestore(userId)  // Add
+            profileRepo.syncWithFirestore(userId)
             snackbarHostState.showSnackbar("Synced successfully")
             Timber.d("Manual sync success")
         } catch (e: Exception) {
@@ -2895,6 +2894,7 @@ googleid = "1.1.1"
 gson = "2.13.1"
 google-services = "4.4.3"
 hiltWork = "1.2.0"
+hilt-work-compiler = "1.2.0"
 hilt = "2.57"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -2948,6 +2948,7 @@ hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt"
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version = "1.2.0" }
 hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
+hilt-work-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltWork" }
 
 # Room
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
@@ -3085,7 +3086,6 @@ android {
     namespace = "com.xai.dosify"
     compileSdk = 36
 
-
     defaultConfig {
         applicationId = "com.xai.dosify"
         minSdk = 24
@@ -3105,7 +3105,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-        isCoreLibraryDesugaringEnabled = true  // Updated syntax for AGP 4.1+
+        isCoreLibraryDesugaringEnabled = true
     }
     buildFeatures {
         compose = true
@@ -3116,7 +3116,7 @@ android {
 }
 
 dependencies {
-    coreLibraryDesugaring(libs.desugar.jdk.libs)  // Desugaring dependency
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     // Core AndroidX
     implementation(libs.androidx.core.ktx)
@@ -3136,21 +3136,19 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
 
     // Room
     implementation(libs.room.runtime)
     ksp(libs.room.compiler)
     implementation(libs.room.ktx)
-    implementation(libs.hilt.work)
-    ksp(libs.hilt.work.compiler)
 
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
-    implementation(libs.firebase.auth)
-    implementation(libs.work.runtime.ktx)
 
     // Credential Manager for Google Sign-In
     implementation(libs.androidx.credentials)
@@ -3315,6 +3313,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
     implementation(libs.kotlinx.coroutines.android)
     implementation(platform(libs.androidx.compose.bom))
@@ -3362,7 +3361,7 @@ android {
     }
     kotlin {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_11)
         }
     }
 }
@@ -3377,7 +3376,6 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.hilt.android)
-    implementation(libs.hilt.work)
     ksp(libs.hilt.compiler)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
@@ -3392,7 +3390,9 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(project(":core"))
-    ksp(libs.hilt.work)
+    implementation(project(":feature_sync"))
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
 
 }
 ```
@@ -3501,6 +3501,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.kizitonwose.calendar)
     implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
     implementation(libs.kotlinx.coroutines.android)
     implementation(platform(libs.androidx.compose.bom))
@@ -3570,6 +3571,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
@@ -3582,6 +3584,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.hilt.work)
     ksp(libs.hilt.work.compiler)
+    implementation(libs.timber)
 
     // Feature Modules
     implementation(project(":core"))
