@@ -37,12 +37,8 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.material)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.kizitonwose.calendar)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
@@ -58,4 +54,8 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":feature_iap"))
     implementation(project(":feature_med"))
+
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }
