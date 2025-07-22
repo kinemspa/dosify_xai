@@ -11,4 +11,5 @@ interface DoseScheduleRepository {
     fun getByMedId(medId: Long): Flow<List<DoseSchedule>>
     fun getActive(): Flow<List<DoseSchedule>>
     suspend fun syncWithFirestore(userId: String)
+    fun getAll(): Flow<List<DoseSchedule>>
 }
