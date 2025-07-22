@@ -36,9 +36,5 @@ fun SettingsScreen(viewModel: SyncViewModel) {
             Text("Manual Sync")
         }
     }
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier = Modifier,
-        snackbar = null
-    )
+    SnackbarHost( hostState = snackbarHostState, modifier = Modifier )
 }
