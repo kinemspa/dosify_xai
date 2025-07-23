@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -39,6 +38,13 @@ class AuthViewModel @Inject constructor(
         _state.value = _state.value.copy(loading = true)
         val success = repo.emailLogin(email, password)
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Login failed" else null)
+        if (success) enqueueSync()
+    }
+
+    fun registerEmail(email: String, password: String) = viewModelScope.launch { // Add this
+        _state.value = _state.value.copy(loading = true)
+        val success = repo.registerEmail(email, password)
+        _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Registration failed" else null)
         if (success) enqueueSync()
     }
 

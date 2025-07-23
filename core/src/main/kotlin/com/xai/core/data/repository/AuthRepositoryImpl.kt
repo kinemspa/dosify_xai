@@ -16,6 +16,10 @@ class AuthRepositoryImpl @Inject constructor(
         auth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null)).await() != null
     } catch (e: Exception) { false }
 
+    override suspend fun registerEmail(email: String, password: String): Boolean = try {
+        auth.createUserWithEmailAndPassword(email, password).await() != null
+    } catch (e: Exception) { false } // Handle exceptions (e.g., weak password, email in use)
+
     override fun logout() = auth.signOut()
 
     override fun currentUser() = auth.currentUser != null

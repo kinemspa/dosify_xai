@@ -25,12 +25,13 @@ import kotlinx.coroutines.launch
 fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
     onLoginSuccess: () -> Unit,
-    innerPadding: PaddingValues // Add innerPadding as a parameter
+    innerPadding: PaddingValues
 ) {
     val state by viewModel.state.collectAsState()
     val user by viewModel.authUser.collectAsState()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var isRegistering by remember { mutableStateOf(false) } // Toggle between login and register
     val context = LocalContext.current
     val credentialManager = remember { CredentialManager.create(context) }
     val coroutineScope = rememberCoroutineScope()
@@ -41,10 +42,9 @@ fun LoginScreen(
         if (user != null) onLoginSuccess()
     }
 
-    // Remove the nested Scaffold and use the innerPadding directly
     Column(
         modifier = Modifier
-            .padding(innerPadding) // Apply innerPadding from MainActivity
+            .padding(innerPadding)
             .padding(horizontal = 16.dp)
             .fillMaxSize(),
         verticalArrangement = Arrangement.Top,
@@ -56,7 +56,8 @@ fun LoginScreen(
                 Text("Logout")
             }
         } else {
-            Spacer(modifier = Modifier.height(16.dp)) // Add spacing below app bar
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(text = if (isRegistering) "Register" else "Login")
             TextField(
                 value = email,
                 onValueChange = { email = it },
@@ -70,10 +71,24 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             Button(
-                onClick = { viewModel.loginEmail(email, password) },
+                onClick = {
+                    coroutineScope.launch {
+                        if (isRegistering) {
+                            val success = viewModel.registerEmail(email, password) // Use register
+                            if (success) {
+                                snackbarHostState.showSnackbar("Registration successful")
+                                onLoginSuccess() // Automatically log in after registration
+                            } else {
+                                snackbarHostState.showSnackbar("Registration failed")
+                            }
+                        } else {
+                            viewModel.loginEmail(email, password) // Use login
+                        }
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Login")
+                Text(if (isRegistering) "Register" else "Login")
             }
             Button(
                 onClick = {
@@ -91,11 +106,16 @@ fun LoginScreen(
             ) {
                 Text("Google Login")
             }
+            Button(
+                onClick = { isRegistering = !isRegistering },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (isRegistering) "Switch to Login" else "Switch to Register")
+            }
             if (state.loading) Text("Loading...")
             state.error?.let { Text(it) }
             if (state.success) Text("Logged in")
         }
-        // Add SnackbarHost outside the conditional block to ensure it’s always available
         SnackbarHost(hostState = snackbarHostState)
     }
 }
@@ -107,7 +127,7 @@ private suspend fun handleGoogleSignIn(
 ): GetCredentialResponse? {
     return try {
         val googleIdOption = GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(true)
+            .setFilterByAuthorizedAccounts(false) // Allow choosing any account
             .setServerClientId(webClientId)
             .build()
 
@@ -117,20 +137,7 @@ private suspend fun handleGoogleSignIn(
 
         credentialManager.getCredential(request = request, context = context)
     } catch (e: GetCredentialException) {
-        try {
-            val googleIdOptionFallback = GetGoogleIdOption.Builder()
-                .setFilterByAuthorizedAccounts(false)
-                .setServerClientId(webClientId)
-                .build()
-
-            val requestFallback = GetCredentialRequest.Builder()
-                .addCredentialOption(googleIdOptionFallback)
-                .build()
-
-            credentialManager.getCredential(request = requestFallback, context = context)
-        } catch (fallbackE: GetCredentialException) {
-            null
-        }
+        null
     }
 }
 
