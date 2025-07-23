@@ -124,7 +124,7 @@ tasks.register<Exec>("alignDebugApk") {
     description = "Aligns the debug APK for 16 KB page size compatibility"
     val inputApk = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
     val outputApk = layout.buildDirectory.file("outputs/apk/debug/app-debug-aligned.apk").get().asFile
-    dependsOn("assembleDebug")
+    dependsOn(tasks.named("assembleDebug"))
     doLast {
         exec {
             commandLine(
@@ -136,8 +136,4 @@ tasks.register<Exec>("alignDebugApk") {
             )
         }
     }
-}
-
-tasks.named("assembleDebug") {
-    finalizedBy("alignDebugApk")
 }
