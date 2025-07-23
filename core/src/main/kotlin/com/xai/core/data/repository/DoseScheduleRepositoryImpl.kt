@@ -3,19 +3,15 @@ package com.xai.core.data.repository
 import com.xai.core.data.dao.DoseScheduleDao
 import com.xai.core.data.models.DoseSchedule
 import com.google.firebase.firestore.FirebaseFirestore
-import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-@ViewModelScoped
 class DoseScheduleRepositoryImpl @Inject constructor(
     private val dao: DoseScheduleDao,
     private val firestore: FirebaseFirestore
-
 ) : DoseScheduleRepository {
-
     override suspend fun insert(schedule: DoseSchedule) = dao.insert(schedule)
 
     override suspend fun update(schedule: DoseSchedule) = dao.update(schedule)
@@ -44,7 +40,5 @@ class DoseScheduleRepositoryImpl @Inject constructor(
                 dao.insert(remote)
             }
         }
-
     }
-
 }

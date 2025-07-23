@@ -6,14 +6,12 @@ import com.xai.core.data.models.Medication
 import com.xai.core.data.models.Reconstitution
 import com.xai.core.utils.ReconstitutionUtils
 import com.google.firebase.firestore.FirebaseFirestore
-import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 import javax.inject.Inject
 
-@ViewModelScoped
 class MedicationRepositoryImpl @Inject constructor(
     private val dao: MedicationDao,
     private val firestore: FirebaseFirestore,

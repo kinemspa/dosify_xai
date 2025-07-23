@@ -7,6 +7,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.xai.core.nav.NavRoutes
+import com.xai.dosify.ui.HomeScreen
 import com.xai.feature_advanced.ui.ReportsScreen
 import com.xai.feature_auth.LoginScreen
 import com.xai.feature_med.ui.MedFormScreen
@@ -14,24 +16,8 @@ import com.xai.feature_med.ui.MedListScreen
 import com.xai.feature_schedule.ui.DoseConfirmScreen
 import com.xai.feature_schedule.ui.ScheduleFormScreen
 import com.xai.feature_sync.ui.SettingsScreen
-import com.xai.dosify.ui.HomeScreen
 import com.xai.feature_schedule.ui.CalendarScreen
 import com.xai.feature_med.ui.SupplyFormScreen
-
-object NavRoutes {
-    const val LOGIN = "login"
-    const val HOME = "home"
-    const val MED_FORM = "med_form"
-    const val MED_LIST = "med_list"
-    const val SCHEDULE_FORM = "schedule_form"
-    const val DOSE_CONFIRM = "dose_confirm"
-    const val REPORTS = "reports"
-    const val SETTINGS = "settings"
-
-    const val CALENDAR = "calendar"
-
-    const val SUPPLY_FORM = "supply_form"
-}
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -79,7 +65,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
-import com.xai.dosify.nav.NavRoutes
+import com.xai.core.nav.NavRoutes
 
 @Composable
 fun HomeScreen(navController: NavController) {
@@ -129,7 +115,7 @@ import androidx.navigation.compose.rememberNavController
 import com.xai.core.ui.theme.DosifyTheme
 import com.xai.core.ui.components.DosifyAppBar
 import com.xai.dosify.nav.AppNavGraph
-import com.xai.dosify.nav.NavRoutes
+import com.xai.core.nav.NavRoutes
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -235,7 +221,6 @@ File: app\src\main\res\values\strings.xml
 ```
 <resources>
     <string name="app_name">Dosify</string>
-    <string name="web_client_id">442282970063-fv9d227q9imcntr9i7tbm1akirltjvml.apps.googleusercontent.com</string>  <!-- From Firebase console -->
 </resources>
 ```
 ---
@@ -1286,6 +1271,24 @@ abstract class RepositoryModule {
 }
 ```
 ---
+File: core\src\main\kotlin\com\xai\core\nav\NavRoutes.kt
+```
+package com.xai.core.nav
+
+object NavRoutes {
+    const val LOGIN = "login"
+    const val HOME = "home"
+    const val MED_FORM = "med_form"
+    const val MED_LIST = "med_list"
+    const val SCHEDULE_FORM = "schedule_form"
+    const val DOSE_CONFIRM = "dose_confirm"
+    const val REPORTS = "reports"
+    const val SETTINGS = "settings"
+    const val CALENDAR = "calendar"
+    const val SUPPLY_FORM = "supply_form"
+}
+```
+---
 File: core\src\main\kotlin\com\xai\core\ui\components\AppBar.kt
 ```
 package com.xai.core.ui.components
@@ -1752,8 +1755,8 @@ import androidx.credentials.exceptions.GetCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.xai.dosify.R
-import com.xai.dosify.nav.NavRoutes
+import com.xai.core.R
+import com.xai.core.nav.NavRoutes
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1779,7 +1782,7 @@ fun LoginScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Surface(modifier = Modifier.padding(pading).fillMaxSize()) {
+        Surface(modifier = Modifier.padding(padding).fillMaxSize()) {
             Column(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -3147,6 +3150,13 @@ android {
     }
     room {
         schemaDirectory("$projectDir/schemas")
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+        freeCompilerArgs = freeCompilerArgs + listOf("-Xsuppress-version-warnings")
     }
 }
 

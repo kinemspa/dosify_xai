@@ -3,13 +3,11 @@ package com.xai.core.data.repository
 import com.xai.core.data.dao.SupplyDao
 import com.xai.core.data.models.Supply
 import com.google.firebase.firestore.FirebaseFirestore
-import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-@ViewModelScoped
 class SupplyRepositoryImpl @Inject constructor(
     private val dao: SupplyDao,
     private val firestore: FirebaseFirestore

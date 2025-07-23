@@ -2,11 +2,9 @@ package com.xai.core.data.repository
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
-import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-@ViewModelScoped
 class AuthRepositoryImpl @Inject constructor(
     private val auth: FirebaseAuth
 ) : AuthRepository {
