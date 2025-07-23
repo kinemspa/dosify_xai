@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,7 +28,7 @@ import com.xai.core.data.models.DoseSchedule
 @Composable
 fun CalendarScreen(
     viewModel: CalendarViewModel = hiltViewModel(),
-    modifier: Modifier = Modifier // Add modifier parameter to accept innerPadding
+    modifier: Modifier = Modifier
 ) {
     val schedules by viewModel.schedules.collectAsState(emptyList<DoseSchedule>())
     val currentMonth = YearMonth.now()

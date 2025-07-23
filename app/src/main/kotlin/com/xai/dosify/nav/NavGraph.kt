@@ -1,6 +1,7 @@
 package com.xai.dosify.nav
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -22,8 +23,8 @@ import com.xai.feature_sync.ui.SettingsScreen
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
-    modifier: Modifier = Modifier, // Add modifier parameter to accept innerPadding
-    innerPadding: PaddingValues // Add innerPadding parameter
+    modifier: Modifier = Modifier,
+    innerPadding: PaddingValues
 ) {
     NavHost(
         navController = navController,
@@ -41,7 +42,7 @@ fun AppNavGraph(
         }
         composable(NavRoutes.MED_LIST) {
             MedListScreen(
-                modifier = Modifier.padding(innerPadding) // Pass innerPadding
+                modifier = Modifier.padding(innerPadding)
             )
         }
         composable(NavRoutes.SCHEDULE_FORM) {
@@ -55,12 +56,12 @@ fun AppNavGraph(
         }
         composable(NavRoutes.SETTINGS) {
             SettingsScreen(
-                modifier = Modifier.padding(innerPadding) // Pass innerPadding
+                modifier = Modifier.padding(innerPadding)
             )
         }
         composable(NavRoutes.CALENDAR) {
             CalendarScreen(
-                modifier = Modifier.padding(innerPadding) // Pass innerPadding
+                modifier = Modifier.padding(innerPadding)
             )
         }
         composable(NavRoutes.SUPPLY_FORM) {

@@ -8,6 +8,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xai.feature_med.viewmodel.MedListViewModel
@@ -15,7 +16,7 @@ import com.xai.feature_med.viewmodel.MedListViewModel
 @Composable
 fun MedListScreen(
     viewModel: MedListViewModel = hiltViewModel(),
-    modifier: Modifier = Modifier // Add modifier parameter to accept innerPadding
+    modifier: Modifier = Modifier
 ) {
     val meds by viewModel.meds.collectAsState(emptyList())
 
