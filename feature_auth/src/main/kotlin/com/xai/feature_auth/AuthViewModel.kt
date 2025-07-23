@@ -18,8 +18,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.stateIn // Add this import
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -33,18 +34,34 @@ class AuthViewModel @Inject constructor(
     val state: StateFlow<AuthState> = _state
 
     val authUser: StateFlow<FirebaseUser?> = auth.authStateChanges()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null) // Ensure stateIn is used correctly
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun loginEmail(email: String, password: String) = viewModelScope.launch {
+        val trimmedEmail = email.trim()
+        Timber.d("Attempting login with email: $trimmedEmail")
+        if (!isValidEmail(trimmedEmail)) {
+            _state.value = _state.value.copy(loading = false, error = "Invalid email format")
+            return@launch
+        }
         _state.value = _state.value.copy(loading = true)
-        val success = repo.emailLogin(email, password)
+        val success = repo.emailLogin(trimmedEmail, password)
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Login failed" else null)
         if (success) enqueueSync()
     }
 
     fun registerEmail(email: String, password: String) = viewModelScope.launch {
+        val trimmedEmail = email.trim()
+        Timber.d("Attempting registration with email: $trimmedEmail")
+        if (!isValidEmail(trimmedEmail)) {
+            _state.value = _state.value.copy(loading = false, error = "Invalid email format")
+            return@launch
+        }
+        if (password.length < 6) {
+            _state.value = _state.value.copy(loading = false, error = "Password must be at least 6 characters")
+            return@launch
+        }
         _state.value = _state.value.copy(loading = true)
-        val success = repo.registerEmail(email, password)
+        val success = repo.registerEmail(trimmedEmail, password)
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Registration failed" else null)
         if (success) enqueueSync()
     }
@@ -68,6 +85,10 @@ class AuthViewModel @Inject constructor(
             .build()
 
         workManager.enqueueUniquePeriodicWork("sync", ExistingPeriodicWorkPolicy.KEEP, periodicRequest)
+    }
+
+    private fun isValidEmail(email: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 }
 

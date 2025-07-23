@@ -31,7 +31,7 @@ fun LoginScreen(
     val user by viewModel.authUser.collectAsState()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var isRegistering by remember { mutableStateOf(false) } // Toggle between login and register
+    var isRegistering by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val credentialManager = remember { CredentialManager.create(context) }
     val coroutineScope = rememberCoroutineScope()
@@ -83,9 +83,9 @@ fun LoginScreen(
                 onClick = {
                     coroutineScope.launch {
                         if (isRegistering) {
-                            viewModel.registerEmail(email, password) // Trigger registration
+                            viewModel.registerEmail(email, password)
                         } else {
-                            viewModel.loginEmail(email, password) // Trigger login
+                            viewModel.loginEmail(email, password)
                         }
                     }
                 },
@@ -130,7 +130,7 @@ private suspend fun handleGoogleSignIn(
 ): GetCredentialResponse? {
     return try {
         val googleIdOption = GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(false) // Allow choosing any account
+            .setFilterByAuthorizedAccounts(false)
             .setServerClientId(webClientId)
             .build()
 
@@ -140,6 +140,7 @@ private suspend fun handleGoogleSignIn(
 
         credentialManager.getCredential(request = request, context = context)
     } catch (e: GetCredentialException) {
+        Timber.e(e, "Google Sign-In failed: ${e.message}")
         null
     }
 }
