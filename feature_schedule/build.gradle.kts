@@ -30,10 +30,11 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
+        kotlinCompilerExtensionVersion = "1.6.11" // Update to match latest Compose
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -57,6 +58,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.timber)
     implementation(libs.lifecycle.viewmodel.compose)
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
+    implementation("androidx.compose.foundation:foundation:1.6.1") // Add this to ensure gestures.snapping is included
 
     implementation(project(":core"))
     implementation(project(":feature_iap"))

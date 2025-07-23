@@ -20,17 +20,17 @@ import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
+import com.xai.core.data.models.DoseSchedule
 import com.xai.feature_schedule.viewmodel.CalendarViewModel
 import java.time.LocalDate
 import java.time.YearMonth
-import com.xai.core.data.models.DoseSchedule
 
 @Composable
 fun CalendarScreen(
     viewModel: CalendarViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
-    val schedules by viewModel.schedules.collectAsState(emptyList<DoseSchedule>())
+    val schedules by viewModel.schedules.collectAsState(emptyList())
     val currentMonth = YearMonth.now()
     val startMonth = currentMonth.minusMonths(12)
     val endMonth = currentMonth.plusMonths(12)
@@ -48,7 +48,7 @@ fun CalendarScreen(
     ) {
         HorizontalCalendar(
             state = state,
-            dayContent = { day: CalendarDay ->
+            dayContent = { day ->
                 val hasDose = hasDoseOnDay(day.date, schedules)
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(day.date.dayOfMonth.toString())

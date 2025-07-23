@@ -37,7 +37,7 @@ sqlcipher = "4.5.4"
 sqlite = "2.5.2"
 timber = "5.0.1"
 work-runtime = "2.10.2"
-desugarJdkLibs = "2.1.5"
+desugarJdkLibs = "2.2.0"
 androidx-junit = "1.2.1"
 espresso = "3.6.1"
 compose-junit = "1.6.1"
@@ -59,6 +59,7 @@ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-co
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "compose" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-ui-runtime = { group = "androidx.compose.runtime", name = "runtime" }
