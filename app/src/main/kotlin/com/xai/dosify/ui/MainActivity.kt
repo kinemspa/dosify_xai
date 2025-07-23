@@ -44,7 +44,10 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 ) { innerPadding ->
-                    AppNavGraph(navController = navController)
+                    AppNavGraph(
+                        navController = navController,
+                        innerPadding = innerPadding // Pass innerPadding to AppNavGraph
+                    )
                 }
             }
         }

@@ -3,6 +3,7 @@ package com.xai.feature_med.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -31,18 +32,45 @@ fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
+    ) { innerPadding ->
         Column(
-            modifier = Modifier.padding(padding).padding(16.dp),
+            modifier = Modifier
+                .padding(innerPadding) // Apply innerPadding from MainActivity
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            TextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
-            TextField(value = strength, onValueChange = { strength = it }, label = { Text("Strength") })
-            TextField(value = unit, onValueChange = { unit = it }, label = { Text("Unit") })
-            TextField(value = stock, onValueChange = { stock = it }, label = { Text("Stock") })
-            TextField(value = lowStockThreshold, onValueChange = { lowStockThreshold = it }, label = { Text("Low Stock Threshold") })
+            TextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = strength,
+                onValueChange = { strength = it },
+                label = { Text("Strength") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = unit,
+                onValueChange = { unit = it },
+                label = { Text("Unit") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = stock,
+                onValueChange = { stock = it },
+                label = { Text("Stock") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = lowStockThreshold,
+                onValueChange = { lowStockThreshold = it },
+                label = { Text("Low Stock Threshold") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-            // Type dropdown
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded }
@@ -54,7 +82,9 @@ fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
                     label = { Text("Type") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     colors = ExposedDropdownMenuDefaults.textFieldColors(),
-                    modifier = Modifier.menuAnchor()
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expanded,
@@ -74,35 +104,48 @@ fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
             }
 
             if (type == MedType.INJECTION) {
-                TextField(value = powder, onValueChange = { powder = it }, label = { Text("Powder Amount") })
-                TextField(value = solvent, onValueChange = { solvent = it }, label = { Text("Solvent Volume") })
-            }
-            Button(onClick = {
-                Timber.d("Save button clicked")
-                val med = Medication(
-                    name = name,
-                    type = type,
-                    strength = strength.toDoubleOrNull() ?: 0.0,
-                    unit = unit,
-                    stock = stock.toIntOrNull() ?: 0,
-                    lowStockThreshold = lowStockThreshold.toIntOrNull() ?: 0,
-                    reconstitution = type == MedType.INJECTION
+                TextField(
+                    value = powder,
+                    onValueChange = { powder = it },
+                    label = { Text("Powder Amount") },
+                    modifier = Modifier.fillMaxWidth()
                 )
-                coroutineScope.launch {
-                    try {
-                        if (med.reconstitution) {
-                            viewModel.saveWithReconstitution(med, powder.toDoubleOrNull() ?: 0.0, solvent.toDoubleOrNull() ?: 0.0)
-                        } else {
-                            viewModel.insert(med)
+                TextField(
+                    value = solvent,
+                    onValueChange = { solvent = it },
+                    label = { Text("Solvent Volume") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            Button(
+                onClick = {
+                    Timber.d("Save button clicked")
+                    val med = Medication(
+                        name = name,
+                        type = type,
+                        strength = strength.toDoubleOrNull() ?: 0.0,
+                        unit = unit,
+                        stock = stock.toIntOrNull() ?: 0,
+                        lowStockThreshold = lowStockThreshold.toIntOrNull() ?: 0,
+                        reconstitution = type == MedType.INJECTION
+                    )
+                    coroutineScope.launch {
+                        try {
+                            if (med.reconstitution) {
+                                viewModel.saveWithReconstitution(med, powder.toDoubleOrNull() ?: 0.0, solvent.toDoubleOrNull() ?: 0.0)
+                            } else {
+                                viewModel.insert(med)
+                            }
+                            snackbarHostState.showSnackbar("Medication saved")
+                            Timber.d("Save success")
+                        } catch (e: Exception) {
+                            snackbarHostState.showSnackbar("Save failed: ${e.message}")
+                            Timber.e(e, "Save error")
                         }
-                        snackbarHostState.showSnackbar("Medication saved")
-                        Timber.d("Save success")
-                    } catch (e: Exception) {
-                        snackbarHostState.showSnackbar("Save failed: ${e.message}")
-                        Timber.e(e, "Save error")
                     }
-                }
-            }) {
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Save")
             }
         }

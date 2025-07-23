@@ -3,6 +3,7 @@ package com.xai.feature_med.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -36,34 +37,60 @@ fun SupplyFormScreen(viewModel: SupplyViewModel = hiltViewModel()) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
+    ) { innerPadding ->
         Column(
-            modifier = Modifier.padding(padding).padding(16.dp),
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            TextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
-            TextField(value = unit, onValueChange = { unit = it }, label = { Text("Unit") })
-            TextField(value = stock, onValueChange = { stock = it }, label = { Text("Stock") })
-            TextField(value = lowStockThreshold, onValueChange = { lowStockThreshold = it }, label = { Text("Low Stock Threshold") })
-            Button(onClick = {
-                Timber.d("Save supply button clicked")
-                val supply = Supply(
-                    name = name,
-                    unit = unit,
-                    stock = stock.toDoubleOrNull() ?: 0.0,
-                    lowStockThreshold = lowStockThreshold.toDoubleOrNull() ?: 0.0
-                )
-                coroutineScope.launch {
-                    try {
-                        viewModel.insert(supply)
-                        snackbarHostState.showSnackbar("Supply saved")
-                        Timber.d("Save success")
-                    } catch (e: Exception) {
-                        snackbarHostState.showSnackbar("Save failed: ${e.message}")
-                        Timber.e(e, "Save error")
+            TextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = unit,
+                onValueChange = { unit = it },
+                label = { Text("Unit") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = stock,
+                onValueChange = { stock = it },
+                label = { Text("Stock") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = lowStockThreshold,
+                onValueChange = { lowStockThreshold = it },
+                label = { Text("Low Stock Threshold") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Button(
+                onClick = {
+                    Timber.d("Save supply button clicked")
+                    val supply = Supply(
+                        name = name,
+                        unit = unit,
+                        stock = stock.toDoubleOrNull() ?: 0.0,
+                        lowStockThreshold = lowStockThreshold.toDoubleOrNull() ?: 0.0
+                    )
+                    coroutineScope.launch {
+                        try {
+                            viewModel.insert(supply)
+                            snackbarHostState.showSnackbar("Supply saved")
+                            Timber.d("Save success")
+                        } catch (e: Exception) {
+                            snackbarHostState.showSnackbar("Save failed: ${e.message}")
+                            Timber.e(e, "Save error")
+                        }
                     }
-                }
-            }) {
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Save")
             }
         }

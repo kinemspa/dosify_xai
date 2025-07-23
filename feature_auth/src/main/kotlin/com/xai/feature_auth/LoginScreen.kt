@@ -41,10 +41,16 @@ fun LoginScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
-        Surface(modifier = Modifier.padding(padding).fillMaxSize()) {
+    ) { innerPadding ->
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding) // Apply innerPadding from MainActivity's Scaffold
+        ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (user != null) {
@@ -56,14 +62,19 @@ fun LoginScreen(
                     TextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Email") }
+                        label = { Text("Email") },
+                        modifier = Modifier.fillMaxWidth()
                     )
                     TextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Password") }
+                        label = { Text("Password") },
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    Button(onClick = { viewModel.loginEmail(email, password) }) {
+                    Button(
+                        onClick = { viewModel.loginEmail(email, password) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("Login")
                     }
                     Button(
@@ -77,7 +88,8 @@ fun LoginScreen(
                                     snackbarHostState.showSnackbar("Sign-in failed")
                                 }
                             }
-                        }
+                        },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Google Login")
                     }

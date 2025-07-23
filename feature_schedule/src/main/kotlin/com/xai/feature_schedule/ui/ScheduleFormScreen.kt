@@ -4,7 +4,7 @@ import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -59,14 +59,15 @@ fun ScheduleFormScreen(
     val context = LocalContext.current
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        modifier = Modifier.padding(16.dp)
-    ) { paddingValues: PaddingValues ->
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { innerPadding ->
         Column(
-            modifier = Modifier.padding(paddingValues),
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Medication dropdown
             ExposedDropdownMenuBox(
                 expanded = expandedMed,
                 onExpandedChange = { expandedMed = !expandedMed }
@@ -77,7 +78,9 @@ fun ScheduleFormScreen(
                     onValueChange = { },
                     label = { Text("Medication") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedMed) },
-                    modifier = Modifier.menuAnchor()
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expandedMed,
@@ -97,22 +100,21 @@ fun ScheduleFormScreen(
                 }
             }
 
-            // Dose amount
             TextField(
                 value = doseAmount,
                 onValueChange = { doseAmount = it },
-                label = { Text("Dose Amount") }
+                label = { Text("Dose Amount") },
+                modifier = Modifier.fillMaxWidth()
             )
 
-            // Unit (auto-filled from med)
             TextField(
                 value = unit,
                 onValueChange = { unit = it },
                 label = { Text("Unit") },
-                enabled = false // Read-only from med
+                enabled = false,
+                modifier = Modifier.fillMaxWidth()
             )
 
-            // Frequency dropdown
             ExposedDropdownMenuBox(
                 expanded = expandedFreq,
                 onExpandedChange = { expandedFreq = !expandedFreq }
@@ -123,7 +125,9 @@ fun ScheduleFormScreen(
                     onValueChange = { },
                     label = { Text("Frequency") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedFreq) },
-                    modifier = Modifier.menuAnchor()
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expandedFreq,
@@ -142,19 +146,21 @@ fun ScheduleFormScreen(
                 }
             }
 
-            // Time picker button
-            Button(onClick = {
-                val now = LocalTime.now()
-                TimePickerDialog(
-                    context,
-                    { _, hour, minute ->
-                        times = times + LocalTime.of(hour, minute)
-                    },
-                    now.hour,
-                    now.minute,
-                    true // 24-hour format
-                ).show()
-            }) {
+            Button(
+                onClick = {
+                    val now = LocalTime.now()
+                    TimePickerDialog(
+                        context,
+                        { _, hour, minute ->
+                            times = times + LocalTime.of(hour, minute)
+                        },
+                        now.hour,
+                        now.minute,
+                        true
+                    ).show()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Add Dose Time")
             }
             Text("Times: ${times.joinToString { it.format(DateTimeFormatter.ofPattern("HH:mm")) }}")
@@ -163,40 +169,46 @@ fun ScheduleFormScreen(
                 TextField(
                     value = cycleWeeks,
                     onValueChange = { cycleWeeks = it },
-                    label = { Text("Cycle Weeks") }
+                    label = { Text("Cycle Weeks") },
+                    modifier = Modifier.fillMaxWidth()
                 )
-                // Add cycleOffWeeks, isCycling checkbox, titration later
             } else {
                 Text("Premium feature - Subscribe for cycling/titration")
-                Button(onClick = { /* Launch billing flow later */ }) {
+                Button(
+                    onClick = { /* Launch billing flow later */ },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text("Subscribe")
                 }
             }
 
-            Button(onClick = {
-                if (selectedMed == null) {
+            Button(
+                onClick = {
+                    if (selectedMed == null) {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Select a medication")
+                        }
+                        return@Button
+                    }
+                    val schedule = DoseSchedule(
+                        medId = selectedMed!!.id,
+                        doseAmount = doseAmount.toDoubleOrNull() ?: 0.0,
+                        unit = unit,
+                        frequency = frequency,
+                        times = times
+                    )
                     coroutineScope.launch {
-                        snackbarHostState.showSnackbar("Select a medication")
+                        try {
+                            viewModel.save(schedule)
+                            setDoseAlarm(context, schedule)
+                            snackbarHostState.showSnackbar("Schedule saved")
+                        } catch (e: Exception) {
+                            snackbarHostState.showSnackbar("Save failed: ${e.message}")
+                        }
                     }
-                    return@Button
-                }
-                val schedule = DoseSchedule(
-                    medId = selectedMed!!.id,
-                    doseAmount = doseAmount.toDoubleOrNull() ?: 0.0,
-                    unit = unit,
-                    frequency = frequency,
-                    times = times
-                )
-                coroutineScope.launch {
-                    try {
-                        viewModel.save(schedule)
-                        setDoseAlarm(context, schedule)
-                        snackbarHostState.showSnackbar("Schedule saved")
-                    } catch (e: Exception) {
-                        snackbarHostState.showSnackbar("Save failed: ${e.message}")
-                    }
-                }
-            }) {
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Save Schedule")
             }
         }

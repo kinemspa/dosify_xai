@@ -3,7 +3,7 @@ package com.xai.feature_schedule.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,14 +44,15 @@ fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
     val context = LocalContext.current
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        modifier = Modifier.padding(16.dp)
-    ) { paddingValues: PaddingValues ->
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { innerPadding ->
         Column(
-            modifier = Modifier.padding(paddingValues),
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Schedule dropdown
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded }
@@ -62,7 +63,9 @@ fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
                     onValueChange = { },
                     label = { Text("Schedule") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.menuAnchor()
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expanded,
@@ -81,43 +84,44 @@ fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
                 }
             }
 
-            // Notes field
             TextField(
                 value = notes,
                 onValueChange = { notes = it },
-                label = { Text("Notes (optional)") }
+                label = { Text("Notes (optional)") },
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Button(onClick = {
-                if (selectedSchedule == null) {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("Select a schedule")
-                    }
-                    return@Button
-                }
-                coroutineScope.launch {
-                    try {
-                        val doseLog = DoseLog(
-                            scheduleId = selectedSchedule!!.id,
-                            amountTaken = selectedSchedule!!.doseAmount,
-                            takenTime = LocalDateTime.now(),
-                            notes = notes.takeIf { it.isNotBlank() }
-                        )
-                        viewModel.doseLogRepo.insert(doseLog)
-                        // Decrement stock
-                        val success = viewModel.medRepo.decrementStock(selectedSchedule!!.medId, selectedSchedule!!.doseAmount)
-                        if (!success) {
-                            snackbarHostState.showSnackbar("Low stock")
-                        } else {
-                            // Set next alarm
-                            setDoseAlarm(context, selectedSchedule!!)
-                            snackbarHostState.showSnackbar("Dose confirmed")
+            Button(
+                onClick = {
+                    if (selectedSchedule == null) {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Select a schedule")
                         }
-                    } catch (e: Exception) {
-                        snackbarHostState.showSnackbar("Confirm failed: ${e.message}")
+                        return@Button
                     }
-                }
-            }) {
+                    coroutineScope.launch {
+                        try {
+                            val doseLog = DoseLog(
+                                scheduleId = selectedSchedule!!.id,
+                                amountTaken = selectedSchedule!!.doseAmount,
+                                takenTime = LocalDateTime.now(),
+                                notes = notes.takeIf { it.isNotBlank() }
+                            )
+                            viewModel.doseLogRepo.insert(doseLog)
+                            val success = viewModel.medRepo.decrementStock(selectedSchedule!!.medId, selectedSchedule!!.doseAmount)
+                            if (!success) {
+                                snackbarHostState.showSnackbar("Low stock")
+                            } else {
+                                setDoseAlarm(context, selectedSchedule!!)
+                                snackbarHostState.showSnackbar("Dose confirmed")
+                            }
+                        } catch (e: Exception) {
+                            snackbarHostState.showSnackbar("Confirm failed: ${e.message}")
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Confirm Dose")
             }
         }
