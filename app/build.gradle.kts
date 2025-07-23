@@ -47,19 +47,6 @@ android {
     }
 }
 
-tasks.named("packageDebug") {
-    doLast {
-        val unalignedApk = outputs.files.singleFile
-        val alignedApk = file("${unalignedApk.parent}/app-debug-aligned.apk")
-
-        project.exec {
-            commandLine("zipalign", "-f", "-p", "4", unalignedApk, alignedApk)
-        }
-
-        outputs.files = files(alignedApk)
-    }
-}
-
 dependencies {
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
@@ -129,4 +116,28 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.espresso.core)
+}
+
+// Add zipalign task for 16 KB page size compatibility
+tasks.register<Exec>("alignDebugApk") {
+    group = "build"
+    description = "Aligns the debug APK for 16 KB page size compatibility"
+    val inputApk = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
+    val outputApk = layout.buildDirectory.file("outputs/apk/debug/app-debug-aligned.apk").get().asFile
+    dependsOn("assembleDebug")
+    doLast {
+        exec {
+            commandLine(
+                "zipalign",
+                "-f", // Force overwrite
+                "-p", "4", // 4KB page alignment
+                inputApk.absolutePath,
+                outputApk.absolutePath
+            )
+        }
+    }
+}
+
+tasks.named("assembleDebug") {
+    finalizedBy("alignDebugApk")
 }
