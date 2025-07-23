@@ -1,10 +1,12 @@
 package com.xai.feature_schedule.ui
 
 import android.app.TimePickerDialog
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,14 +38,17 @@ import com.xai.feature_schedule.viewmodel.ScheduleViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
+// Removed @RequiresApi(Build.VERSION_CODES.O) to support API 24+
 @Composable
-fun ScheduleFormScreen(
-    viewModel: ScheduleViewModel = hiltViewModel(),
-    iapViewModel: IapViewModel = hiltViewModel(),
-    medViewModel: MedListViewModel = hiltViewModel()
-) {
+fun ScheduleFormScreen(innerPadding: PaddingValues) {
+    val viewModel: ScheduleViewModel = hiltViewModel()
+    val iapViewModel: IapViewModel = hiltViewModel()
+    val medViewModel: MedListViewModel = hiltViewModel()
     val isPremium by iapViewModel.isPremium.collectAsState(false)
     val meds by medViewModel.meds.collectAsState(emptyList())
     var doseAmount by remember { mutableStateOf("") }
@@ -60,9 +65,10 @@ fun ScheduleFormScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { innerPadding ->
+    ) { scaffoldPadding ->
         Column(
             modifier = Modifier
+                .padding(scaffoldPadding)
                 .padding(innerPadding)
                 .padding(16.dp)
                 .fillMaxWidth(),
@@ -133,7 +139,7 @@ fun ScheduleFormScreen(
                     expanded = expandedFreq,
                     onDismissRequest = { expandedFreq = false }
                 ) {
-                    Frequency.values().forEach { freq ->
+                    Frequency.entries.forEach { freq ->
                         DropdownMenuItem(
                             text = { Text(freq.name) },
                             onClick = {
@@ -148,14 +154,14 @@ fun ScheduleFormScreen(
 
             Button(
                 onClick = {
-                    val now = LocalTime.now()
+                    val calendar = Calendar.getInstance()
                     TimePickerDialog(
                         context,
                         { _, hour, minute ->
-                            times = times + LocalTime.of(hour, minute)
+                            times = times + LocalTime.of(hour, minute) // Should work with desugaring
                         },
-                        now.hour,
-                        now.minute,
+                        calendar.get(Calendar.HOUR_OF_DAY),
+                        calendar.get(Calendar.MINUTE),
                         true
                     ).show()
                 },
@@ -163,7 +169,17 @@ fun ScheduleFormScreen(
             ) {
                 Text("Add Dose Time")
             }
-            Text("Times: ${times.joinToString { it.format(DateTimeFormatter.ofPattern("HH:mm")) }}")
+            Text("Times: ${times.joinToString { time ->
+                if (Build.VERSION.SDK_INT >= 26) {
+                    time.format(DateTimeFormatter.ofPattern("HH:mm")) // Use with desugaring
+                } else {
+                    val cal = Calendar.getInstance().apply {
+                        set(Calendar.HOUR_OF_DAY, time.hour)
+                        set(Calendar.MINUTE, time.minute)
+                    }
+                    SimpleDateFormat("HH:mm", Locale.getDefault()).format(cal.time)
+                }
+            }}")
 
             if (isPremium) {
                 TextField(
