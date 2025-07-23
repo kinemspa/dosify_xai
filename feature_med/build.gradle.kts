@@ -32,6 +32,9 @@ android {
         jvmTarget = "11"
         freeCompilerArgs = freeCompilerArgs + listOf("-Xsuppress-version-warnings")
     }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
+    }
 
     buildFeatures {
         compose = true
