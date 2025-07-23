@@ -1,15 +1,23 @@
 package com.xai.dosify.ui
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.xai.core.nav.NavRoutes
 
 @Composable
-fun HomeScreen(navController: NavController) {
-    Column {
+fun HomeScreen(navController: NavController, innerPadding: PaddingValues) {
+    Column(
+        modifier = Modifier
+            .padding(innerPadding) // Apply innerPadding to shift content below app bar
+            .padding(horizontal = 16.dp)
+    ) {
         Text("Home - Dosify Dashboard")
         Button(onClick = { navController.navigate(NavRoutes.MED_FORM) }) {
             Text("Add Medication")

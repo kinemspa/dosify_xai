@@ -2,6 +2,7 @@ package com.xai.feature_med.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
@@ -27,7 +28,8 @@ import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SupplyFormScreen(viewModel: SupplyViewModel = hiltViewModel()) {
+fun SupplyFormScreen(innerPadding: PaddingValues) { // Add innerPadding parameter
+    val viewModel: SupplyViewModel = hiltViewModel()
     var name by remember { mutableStateOf("") }
     var unit by remember { mutableStateOf("") }
     var stock by remember { mutableStateOf("") }
@@ -37,10 +39,11 @@ fun SupplyFormScreen(viewModel: SupplyViewModel = hiltViewModel()) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { innerPadding ->
+    ) { scaffoldPadding ->
         Column(
             modifier = Modifier
-                .padding(innerPadding)
+                .padding(scaffoldPadding) // Apply Scaffold padding
+                .padding(innerPadding) // Apply innerPadding from nav graph
                 .padding(16.dp)
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)

@@ -1,6 +1,8 @@
 package com.xai.feature_advanced.ui
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -14,12 +16,14 @@ import com.github.mikephil.charting.data.LineDataSet
 import com.xai.feature_advanced.viewmodel.ReportsViewModel
 
 @Composable
-fun ReportsScreen(viewModel: ReportsViewModel) {
+fun ReportsScreen(viewModel: ReportsViewModel, innerPadding: PaddingValues) { // Add innerPadding parameter
     val logs by viewModel.doseLogs.collectAsState(emptyList())
 
     AndroidView(
         factory = { LineChart(it) },
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding), // Apply innerPadding
         update = { chart ->
             val entries = logs.mapIndexed { i, log -> Entry(i.toFloat(), log.amountTaken.toFloat()) }
             val dataSet = LineDataSet(entries, "Dose History")

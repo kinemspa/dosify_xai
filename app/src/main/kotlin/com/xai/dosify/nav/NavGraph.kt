@@ -34,41 +34,41 @@ fun AppNavGraph(
         composable(NavRoutes.LOGIN) {
             LoginScreen(
                 onLoginSuccess = { navController.navigate(NavRoutes.HOME) },
-                innerPadding = innerPadding // Pass innerPadding to LoginScreen
+                innerPadding = innerPadding
             )
         }
         composable(NavRoutes.HOME) {
-            HomeScreen(navController)
+            HomeScreen(navController, innerPadding = innerPadding) // Pass innerPadding
         }
         composable(NavRoutes.MED_FORM) {
-            MedFormScreen()
+            MedFormScreen(innerPadding = innerPadding) // Pass innerPadding
         }
         composable(NavRoutes.MED_LIST) {
             MedListScreen(
-                modifier = Modifier.padding(innerPadding)
+                modifier = Modifier.padding(innerPadding) // Already uses padding
             )
         }
         composable(NavRoutes.SCHEDULE_FORM) {
-            ScheduleFormScreen()
+            ScheduleFormScreen(innerPadding = innerPadding) // Pass innerPadding
         }
         composable(NavRoutes.DOSE_CONFIRM) {
-            DoseConfirmScreen()
+            DoseConfirmScreen(innerPadding = innerPadding) // Pass innerPadding
         }
         composable(NavRoutes.REPORTS) {
-            ReportsScreen(hiltViewModel())
+            ReportsScreen(hiltViewModel(), innerPadding = innerPadding) // Pass innerPadding
         }
         composable(NavRoutes.SETTINGS) {
             SettingsScreen(
-                modifier = Modifier.padding(innerPadding)
+                modifier = Modifier.padding(innerPadding) // Already uses padding
             )
         }
         composable(NavRoutes.CALENDAR) {
             CalendarScreen(
-                modifier = Modifier.padding(innerPadding)
+                modifier = Modifier.padding(innerPadding) // Already uses padding
             )
         }
         composable(NavRoutes.SUPPLY_FORM) {
-            SupplyFormScreen()
+            SupplyFormScreen(innerPadding = innerPadding) // Pass innerPadding
         }
     }
 }

@@ -2,6 +2,7 @@ package com.xai.feature_med.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.*
@@ -17,7 +18,8 @@ import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
+fun MedFormScreen(innerPadding: PaddingValues) { // Add innerPadding parameter
+    val viewModel: MedViewModel = hiltViewModel()
     var name by remember { mutableStateOf("") }
     var strength by remember { mutableStateOf("") }
     var unit by remember { mutableStateOf("") }
@@ -32,10 +34,11 @@ fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { innerPadding ->
+    ) { scaffoldPadding ->
         Column(
             modifier = Modifier
-                .padding(innerPadding) // Apply innerPadding from MainActivity
+                .padding(scaffoldPadding) // Apply Scaffold padding
+                .padding(innerPadding) // Apply innerPadding from nav graph
                 .padding(16.dp)
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)

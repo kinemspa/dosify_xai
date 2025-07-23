@@ -2,6 +2,7 @@ package com.xai.feature_schedule.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
@@ -34,7 +35,8 @@ import java.time.LocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
+fun DoseConfirmScreen(innerPadding: PaddingValues) { // Add innerPadding parameter
+    val viewModel: DoseConfirmViewModel = hiltViewModel()
     val schedules by viewModel.activeSchedules.collectAsState(emptyList())
     var selectedSchedule by remember { mutableStateOf<DoseSchedule?>(null) }
     var notes by remember { mutableStateOf("") }
@@ -45,10 +47,11 @@ fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { innerPadding ->
+    ) { scaffoldPadding ->
         Column(
             modifier = Modifier
-                .padding(innerPadding)
+                .padding(scaffoldPadding) // Apply Scaffold padding
+                .padding(innerPadding) // Apply innerPadding from nav graph
                 .padding(16.dp)
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
