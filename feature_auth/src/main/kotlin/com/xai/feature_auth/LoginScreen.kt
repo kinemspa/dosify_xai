@@ -10,14 +10,15 @@ import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import kotlinx.coroutines.launch
 import com.xai.dosify.R
-import com.xai.dosify.nav.NavRoutes
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
@@ -32,7 +33,7 @@ fun LoginScreen(
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Auto-nav on logged-in (persistent or new)
+    // Auto-nav on logged-in
     LaunchedEffect(user) {
         if (user != null) onLoginSuccess()
     }
@@ -67,41 +68,9 @@ fun LoginScreen(
                     Button(
                         onClick = {
                             coroutineScope.launch {
-                                try {
-                                    val googleIdOption = GetGoogleIdOption.Builder()
-                                        .setFilterByAuthorizedAccounts(true)
-                                        .setServerClientId(stringResource(R.string.web_client_id))
-                                        .build()
-
-                                    val request = GetCredentialRequest.Builder()
-                                        .addCredentialOption(googleIdOption)
-                                        .build()
-
-                                    val result = credentialManager.getCredential(
-                                        request = request,
-                                        context = context
-                                    )
-
+                                val result = handleGoogleSignIn(context, credentialManager, snackbarHostState)
+                                if (result != null) {
                                     handleCredential(result, viewModel)
-                                } catch (e: GetCredentialException) {
-                                    try {
-                                        val googleIdOptionFallback = GetGoogleIdOption.Builder()
-                                            .setFilterByAuthorizedAccounts(false)
-                                            .setServerClientId(stringResource(R.string.web_client_id))
-                                            .build()
-
-                                        val requestFallback = GetCredentialRequest.Builder()
-                                            .addCredentialOption(googleIdOptionFallback)
-                                            .build()
-
-                                        val resultFallback = credentialManager.getCredential(
-                                            request = requestFallback,
-                                            context = context
-                                        )
-                                        handleCredential(resultFallback, viewModel)
-                                    } catch (fallbackE: GetCredentialException) {
-                                        snackbarHostState.showSnackbar("Sign-in failed: ${fallbackE.message}")
-                                    }
                                 }
                             }
                         }
@@ -113,6 +82,41 @@ fun LoginScreen(
                     if (state.success) Text("Logged in")
                 }
             }
+        }
+    }
+}
+
+private suspend fun handleGoogleSignIn(
+    context: android.content.Context,
+    credentialManager: CredentialManager,
+    snackbarHostState: SnackbarHostState
+): GetCredentialResponse? {
+    return try {
+        val googleIdOption = GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(true)
+            .setServerClientId(stringResource(R.string.web_client_id))
+            .build()
+
+        val request = GetCredentialRequest.Builder()
+            .addCredentialOption(googleIdOption)
+            .build()
+
+        credentialManager.getCredential(request = request, context = context)
+    } catch (e: GetCredentialException) {
+        try {
+            val googleIdOptionFallback = GetGoogleIdOption.Builder()
+                .setFilterByAuthorizedAccounts(false)
+                .setServerClientId(stringResource(R.string.web_client_id))
+                .build()
+
+            val requestFallback = GetCredentialRequest.Builder()
+                .addCredentialOption(googleIdOptionFallback)
+                .build()
+
+            credentialManager.getCredential(request = requestFallback, context = context)
+        } catch (fallbackE: GetCredentialException) {
+            snackbarHostState.showSnackbar("Sign-in failed: ${fallbackE.message}")
+            null
         }
     }
 }

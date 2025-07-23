@@ -15,6 +15,8 @@ subprojects {
             force("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
             force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.0")
             force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0")
+            force("com.android.billingclient:billing-ktx:7.0.0")
+            force("com.kizitonwose.calendar:compose:2.5.0")
         }
     }
 }
