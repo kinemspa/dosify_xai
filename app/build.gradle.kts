@@ -45,6 +45,21 @@ android {
         jvmTarget = "11"
         freeCompilerArgs = freeCompilerArgs + listOf("-Xsuppress-version-warnings")
     }
+
+    // Add zipalign task for 16 KB page size compatibility
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            if (it.name == "debug") {
+                it.outputFileName = "app-debug.apk"
+                it.doLast {
+                    exec {
+                        commandLine("zipalign", "-f", "-p", "4", it.outputFile, "${buildDir}/outputs/apk/${variant.name}/app-debug-aligned.apk")
+                    }
+                    it.outputFile = file("${buildDir}/outputs/apk/${variant.name}/app-debug-aligned.apk")
+                }
+            }
+        }
+    }
 }
 
 dependencies {

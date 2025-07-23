@@ -42,61 +42,58 @@ fun LoginScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        Surface(
+        Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding) // Apply innerPadding from MainActivity's Scaffold
+                .padding(innerPadding) // Apply innerPadding directly to Column
+                .padding(horizontal = 16.dp) // Horizontal padding only
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (user != null) {
-                    Text("Welcome, ${user!!.displayName}")
-                    Button(onClick = { viewModel.logout() }) {
-                        Text("Logout")
-                    }
-                } else {
-                    TextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    TextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Password") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Button(
-                        onClick = { viewModel.loginEmail(email, password) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Login")
-                    }
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                val result = handleGoogleSignIn(context, credentialManager, webClientId)
-                                if (result != null) {
-                                    handleCredential(result, viewModel)
-                                    snackbarHostState.showSnackbar("Sign-in successful")
-                                } else {
-                                    snackbarHostState.showSnackbar("Sign-in failed")
-                                }
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Google Login")
-                    }
-                    if (state.loading) Text("Loading...")
-                    state.error?.let { Text(it) }
-                    if (state.success) Text("Logged in")
+            if (user != null) {
+                Text("Welcome, ${user!!.displayName}")
+                Button(onClick = { viewModel.logout() }) {
+                    Text("Logout")
                 }
+            } else {
+                Spacer(modifier = Modifier.height(16.dp)) // Add spacing below app bar
+                TextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                TextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Button(
+                    onClick = { viewModel.loginEmail(email, password) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Login")
+                }
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            val result = handleGoogleSignIn(context, credentialManager, webClientId)
+                            if (result != null) {
+                                handleCredential(result, viewModel)
+                                snackbarHostState.showSnackbar("Sign-in successful")
+                            } else {
+                                snackbarHostState.showSnackbar("Sign-in failed")
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Google Login")
+                }
+                if (state.loading) Text("Loading...")
+                state.error?.let { Text(it) }
+                if (state.success) Text("Logged in")
             }
         }
     }
