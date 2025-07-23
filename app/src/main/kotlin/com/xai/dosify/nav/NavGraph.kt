@@ -32,7 +32,10 @@ fun AppNavGraph(
         modifier = modifier
     ) {
         composable(NavRoutes.LOGIN) {
-            LoginScreen(onLoginSuccess = { navController.navigate(NavRoutes.HOME) })
+            LoginScreen(
+                onLoginSuccess = { navController.navigate(NavRoutes.HOME) },
+                innerPadding = innerPadding // Pass innerPadding to LoginScreen
+            )
         }
         composable(NavRoutes.HOME) {
             HomeScreen(navController)

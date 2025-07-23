@@ -3,6 +3,7 @@ package com.xai.feature_auth
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -23,7 +24,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    innerPadding: PaddingValues // Add innerPadding as a parameter
 ) {
     val state by viewModel.state.collectAsState()
     val user by viewModel.authUser.collectAsState()
@@ -39,63 +41,62 @@ fun LoginScreen(
         if (user != null) onLoginSuccess()
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding) // Apply innerPadding directly to Column
-                .padding(horizontal = 16.dp) // Horizontal padding only
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            if (user != null) {
-                Text("Welcome, ${user!!.displayName}")
-                Button(onClick = { viewModel.logout() }) {
-                    Text("Logout")
-                }
-            } else {
-                Spacer(modifier = Modifier.height(16.dp)) // Add spacing below app bar
-                TextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                TextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Button(
-                    onClick = { viewModel.loginEmail(email, password) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Login")
-                }
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            val result = handleGoogleSignIn(context, credentialManager, webClientId)
-                            if (result != null) {
-                                handleCredential(result, viewModel)
-                                snackbarHostState.showSnackbar("Sign-in successful")
-                            } else {
-                                snackbarHostState.showSnackbar("Sign-in failed")
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Google Login")
-                }
-                if (state.loading) Text("Loading...")
-                state.error?.let { Text(it) }
-                if (state.success) Text("Logged in")
+    // Remove the nested Scaffold and use the innerPadding directly
+    Column(
+        modifier = Modifier
+            .padding(innerPadding) // Apply innerPadding from MainActivity
+            .padding(horizontal = 16.dp)
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (user != null) {
+            Text("Welcome, ${user!!.displayName}")
+            Button(onClick = { viewModel.logout() }) {
+                Text("Logout")
             }
+        } else {
+            Spacer(modifier = Modifier.height(16.dp)) // Add spacing below app bar
+            TextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Button(
+                onClick = { viewModel.loginEmail(email, password) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Login")
+            }
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        val result = handleGoogleSignIn(context, credentialManager, webClientId)
+                        if (result != null) {
+                            handleCredential(result, viewModel)
+                            snackbarHostState.showSnackbar("Sign-in successful")
+                        } else {
+                            snackbarHostState.showSnackbar("Sign-in failed")
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Google Login")
+            }
+            if (state.loading) Text("Loading...")
+            state.error?.let { Text(it) }
+            if (state.success) Text("Logged in")
         }
+        // Add SnackbarHost outside the conditional block to ensure it’s always available
+        SnackbarHost(hostState = snackbarHostState)
     }
 }
 
