@@ -48,6 +48,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.material.icons.extended)
+    implementation(libs.kotlin.stdlib)
 
     // Compose (via BOM for version alignment)
     implementation(platform(libs.androidx.compose.bom))

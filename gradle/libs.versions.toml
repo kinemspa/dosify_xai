@@ -24,6 +24,7 @@ hilt = "2.51.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 kotlin = "1.9.24"
+kotlin-stdlib = "1.9.0"
 ksp = "1.9.24-1.0.20"
 lifecycle = "2.9.2"
 lifecycleRuntimeKtx = "2.9.2"
@@ -67,6 +68,7 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "compose-material-icons" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin-stdlib" }
 
 # Hilt
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
