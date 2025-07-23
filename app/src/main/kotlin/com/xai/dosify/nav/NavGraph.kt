@@ -5,6 +5,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.xai.core.nav.NavRoutes
+import com.xai.dosify.ui.HomeScreen
 import com.xai.feature_advanced.ui.ReportsScreen
 import com.xai.feature_auth.LoginScreen
 import com.xai.feature_med.ui.MedFormScreen
@@ -12,24 +14,8 @@ import com.xai.feature_med.ui.MedListScreen
 import com.xai.feature_schedule.ui.DoseConfirmScreen
 import com.xai.feature_schedule.ui.ScheduleFormScreen
 import com.xai.feature_sync.ui.SettingsScreen
-import com.xai.dosify.ui.HomeScreen
 import com.xai.feature_schedule.ui.CalendarScreen
 import com.xai.feature_med.ui.SupplyFormScreen
-
-object NavRoutes {
-    const val LOGIN = "login"
-    const val HOME = "home"
-    const val MED_FORM = "med_form"
-    const val MED_LIST = "med_list"
-    const val SCHEDULE_FORM = "schedule_form"
-    const val DOSE_CONFIRM = "dose_confirm"
-    const val REPORTS = "reports"
-    const val SETTINGS = "settings"
-
-    const val CALENDAR = "calendar"
-
-    const val SUPPLY_FORM = "supply_form"
-}
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {

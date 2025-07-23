@@ -15,7 +15,8 @@ import androidx.credentials.exceptions.GetCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.xai.dosify.R
+import com.xai.core.R
+import com.xai.core.nav.NavRoutes
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

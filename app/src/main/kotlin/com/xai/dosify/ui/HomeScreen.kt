@@ -5,7 +5,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
-import com.xai.dosify.nav.NavRoutes
+import com.xai.core.nav.NavRoutes
 
 @Composable
 fun HomeScreen(navController: NavController) {
