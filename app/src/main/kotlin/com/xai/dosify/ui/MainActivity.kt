@@ -13,7 +13,9 @@ import com.xai.core.ui.theme.DosifyTheme
 import com.xai.core.ui.components.DosifyAppBar
 import com.xai.dosify.nav.AppNavGraph
 import com.xai.core.nav.NavRoutes
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
