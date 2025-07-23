@@ -38,6 +38,13 @@ android {
     room {
         schemaDirectory("$projectDir/schemas")
     }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+        freeCompilerArgs = freeCompilerArgs + listOf("-Xsuppress-version-warnings")
+    }
 }
 
 dependencies {
