@@ -16,7 +16,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.xai.dosify.R
-import com.xai.dosify.nav.NavRoutes
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,9 +32,8 @@ fun LoginScreen(
     val credentialManager = remember { CredentialManager.create(context) }
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    val webClientId = stringResource(R.string.web_client_id) // Move to Composable context
+    val webClientId = stringResource(R.string.web_client_id)
 
-    // Auto-nav on logged-in
     LaunchedEffect(user) {
         if (user != null) onLoginSuccess()
     }

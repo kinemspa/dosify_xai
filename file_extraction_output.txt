@@ -1747,13 +1747,16 @@ import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import kotlinx.coroutines.launch
 import com.xai.dosify.R
+import com.xai.dosify.nav.NavRoutes
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
@@ -1767,8 +1770,8 @@ fun LoginScreen(
     val credentialManager = remember { CredentialManager.create(context) }
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val webClientId = stringResource(R.string.web_client_id)
 
-    // Auto-nav on logged-in (persistent or new)
     LaunchedEffect(user) {
         if (user != null) onLoginSuccess()
     }
@@ -1776,7 +1779,7 @@ fun LoginScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Surface(modifier = Modifier.padding(padding).fillMaxSize()) {
+        Surface(modifier = Modifier.padding(pading).fillMaxSize()) {
             Column(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -1790,7 +1793,7 @@ fun LoginScreen(
                     TextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Login") }
+                        label = { Text("Email") }
                     )
                     TextField(
                         value = password,
@@ -1803,41 +1806,12 @@ fun LoginScreen(
                     Button(
                         onClick = {
                             coroutineScope.launch {
-                                try {
-                                    val googleIdOption = GetGoogleIdOption.Builder()
-                                        .setFilterByAuthorizedAccounts(true)
-                                        .setServerClientId(stringResource(R.string.web_client_id))
-                                        .build()
-
-                                    val request = GetCredentialRequest.Builder()
-                                        .addCredentialOption(googleIdOption)
-                                        .build()
-
-                                    val result = credentialManager.getCredential(
-                                        request = request,
-                                        context = context
-                                    )
-
+                                val result = handleGoogleSignIn(context, credentialManager, webClientId)
+                                if (result != null) {
                                     handleCredential(result, viewModel)
-                                } catch (e: GetCredentialException) {
-                                    try {
-                                        val googleIdOptionFallback = GetGoogleIdOption.Builder()
-                                            .setFilterByAuthorizedAccounts(false)
-                                            .setServerClientId(stringResource(R.string.web_client_id))
-                                            .build()
-
-                                        val requestFallback = GetCredentialRequest.Builder()
-                                            .addCredentialOption(googleIdOptionFallback)
-                                            .build()
-
-                                        val resultFallback = credentialManager.getCredential(
-                                            request = requestFallback,
-                                            context = context
-                                        )
-                                        handleCredential(resultFallback, viewModel)
-                                    } catch (fallbackE: GetCredentialException) {
-                                        snackbarHostState.showSnackbar("Sign-in failed: ${fallbackE.message}")
-                                    }
+                                    snackbarHostState.showSnackbar("Sign-in successful")
+                                } else {
+                                    snackbarHostState.showSnackbar("Sign-in failed")
                                 }
                             }
                         }
@@ -1849,6 +1823,40 @@ fun LoginScreen(
                     if (state.success) Text("Logged in")
                 }
             }
+        }
+    }
+}
+
+private suspend fun handleGoogleSignIn(
+    context: android.content.Context,
+    credentialManager: CredentialManager,
+    webClientId: String
+): GetCredentialResponse? {
+    return try {
+        val googleIdOption = GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(true)
+            .setServerClientId(webClientId)
+            .build()
+
+        val request = GetCredentialRequest.Builder()
+            .addCredentialOption(googleIdOption)
+            .build()
+
+        credentialManager.getCredential(request = request, context = context)
+    } catch (e: GetCredentialException) {
+        try {
+            val googleIdOptionFallback = GetGoogleIdOption.Builder()
+                .setFilterByAuthorizedAccounts(false)
+                .setServerClientId(webClientId)
+                .build()
+
+            val requestFallback = GetCredentialRequest.Builder()
+                .addCredentialOption(googleIdOptionFallback)
+                .build()
+
+            credentialManager.getCredential(request = requestFallback, context = context)
+        } catch (fallbackE: GetCredentialException) {
+            null
         }
     }
 }
@@ -2914,6 +2922,7 @@ hilt-work-compiler = "1.2.0"
 hilt = "2.51.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
+kizitonwose-calendar = "2.5.0"
 kotlin = "1.9.24"
 kotlin-stdlib = "1.9.0"
 ksp = "1.9.24-1.0.20"
@@ -2929,7 +2938,6 @@ sqlite = "2.5.2"
 timber = "5.0.1"
 work-runtime = "2.10.2"
 desugarJdkLibs = "2.1.5"
-kizitonwose-calendar = "2.8.0"
 androidx-junit = "1.2.1"
 espresso = "3.6.1"
 compose-junit = "1.6.1"
@@ -3029,6 +3037,8 @@ subprojects {
             force("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
             force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.0")
             force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0")
+            force("com.android.billingclient:billing-ktx:7.0.0")
+            force("com.kizitonwose.calendar:compose:2.5.0")
         }
     }
 }
@@ -3446,21 +3456,18 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.hilt.android)
+    alias(libs.plugins.kotlin.ksp)
 }
 
 android {
     namespace = "com.xai.feature_iap"
     compileSdk = 36
-
     defaultConfig {
         minSdk = 24
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
-
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -3474,7 +3481,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"
     }
@@ -3485,23 +3491,27 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.ui.runtime)
-    implementation(libs.hilt.android)
     implementation(libs.material)
     implementation(libs.billing.ktx)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
     implementation(libs.lifecycle.viewmodel.ktx)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.ui.runtime)
+    implementation(libs.androidx.material3)
+    implementation(libs.navigation.compose)
+    implementation(project(":core"))
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    ksp(libs.hilt.compiler)
-    implementation(project(":core"))
-    implementation(libs.hilt.work)
-    ksp(libs.hilt.work)
-
-
 }
 ```
 ---
