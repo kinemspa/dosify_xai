@@ -58,7 +58,8 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     implementation(libs.hilt.work)
     implementation(libs.kotlin.stdlib)
-    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.android) // Already present
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3") // Explicitly add core
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.material)
     implementation(libs.navigation.compose)

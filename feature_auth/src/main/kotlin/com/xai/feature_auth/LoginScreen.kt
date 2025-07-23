@@ -42,6 +42,15 @@ fun LoginScreen(
         if (user != null) onLoginSuccess()
     }
 
+    LaunchedEffect(state.success) {
+        if (state.success) {
+            snackbarHostState.showSnackbar(if (isRegistering) "Registration successful" else "Login successful")
+            onLoginSuccess()
+        } else if (state.error != null) {
+            snackbarHostState.showSnackbar(state.error ?: "An error occurred")
+        }
+    }
+
     Column(
         modifier = Modifier
             .padding(innerPadding)
@@ -74,15 +83,9 @@ fun LoginScreen(
                 onClick = {
                     coroutineScope.launch {
                         if (isRegistering) {
-                            val success = viewModel.registerEmail(email, password) // Use register
-                            if (success) {
-                                snackbarHostState.showSnackbar("Registration successful")
-                                onLoginSuccess() // Automatically log in after registration
-                            } else {
-                                snackbarHostState.showSnackbar("Registration failed")
-                            }
+                            viewModel.registerEmail(email, password) // Trigger registration
                         } else {
-                            viewModel.loginEmail(email, password) // Use login
+                            viewModel.loginEmail(email, password) // Trigger login
                         }
                     }
                 },

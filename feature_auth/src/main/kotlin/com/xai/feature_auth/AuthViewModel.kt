@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.stateIn // Add this import
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -32,7 +33,7 @@ class AuthViewModel @Inject constructor(
     val state: StateFlow<AuthState> = _state
 
     val authUser: StateFlow<FirebaseUser?> = auth.authStateChanges()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null) // Ensure stateIn is used correctly
 
     fun loginEmail(email: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(loading = true)
@@ -41,7 +42,7 @@ class AuthViewModel @Inject constructor(
         if (success) enqueueSync()
     }
 
-    fun registerEmail(email: String, password: String) = viewModelScope.launch { // Add this
+    fun registerEmail(email: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(loading = true)
         val success = repo.registerEmail(email, password)
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Registration failed" else null)
