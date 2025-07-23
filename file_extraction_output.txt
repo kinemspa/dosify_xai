@@ -3,6 +3,7 @@ File: app\src\main\kotlin\com\xai\dosify\nav\NavGraph.kt
 package com.xai.dosify.nav
 
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -54,13 +55,13 @@ fun AppNavGraph(navController: NavHostController) {
             DoseConfirmScreen()
         }
         composable(NavRoutes.REPORTS) {
-            ReportsScreen()
+            ReportsScreen(hiltViewModel())
         }
         composable(NavRoutes.SETTINGS) {
-            SettingsScreen()
+            SettingsScreen(hiltViewModel())
         }
         composable(NavRoutes.CALENDAR) {
-            CalendarScreen()
+            CalendarScreen(hiltViewModel())
         }
         composable(NavRoutes.SUPPLY_FORM) {
             SupplyFormScreen()
@@ -732,6 +733,7 @@ interface DoseScheduleRepository {
     fun getByMedId(medId: Long): Flow<List<DoseSchedule>>
     fun getActive(): Flow<List<DoseSchedule>>
     suspend fun syncWithFirestore(userId: String)
+    fun getAll(): Flow<List<DoseSchedule>>
 }
 ```
 ---
@@ -752,7 +754,9 @@ import javax.inject.Inject
 class DoseScheduleRepositoryImpl @Inject constructor(
     private val dao: DoseScheduleDao,
     private val firestore: FirebaseFirestore
+
 ) : DoseScheduleRepository {
+
     override suspend fun insert(schedule: DoseSchedule) = dao.insert(schedule)
 
     override suspend fun update(schedule: DoseSchedule) = dao.update(schedule)
@@ -764,6 +768,8 @@ class DoseScheduleRepositoryImpl @Inject constructor(
     override fun getByMedId(medId: Long): Flow<List<DoseSchedule>> = dao.getByMedId(medId)
 
     override fun getActive(): Flow<List<DoseSchedule>> = dao.getActive()
+
+    override fun getAll(): Flow<List<DoseSchedule>> = dao.getAll()
 
     override suspend fun syncWithFirestore(userId: String) {
         val localSchedules = dao.getAll().first()
@@ -779,7 +785,9 @@ class DoseScheduleRepositoryImpl @Inject constructor(
                 dao.insert(remote)
             }
         }
+
     }
+
 }
 ```
 ---
@@ -1585,7 +1593,7 @@ import com.github.mikephil.charting.data.LineDataSet
 import com.xai.feature_advanced.viewmodel.ReportsViewModel
 
 @Composable
-fun ReportsScreen(viewModel: ReportsViewModel = hiltViewModel()) {
+fun ReportsScreen(viewModel: ReportsViewModel) {
     val logs by viewModel.doseLogs.collectAsState(emptyList())
 
     AndroidView(
@@ -1665,6 +1673,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.stateIn
@@ -1733,11 +1742,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
-import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
@@ -1781,7 +1790,7 @@ fun LoginScreen(
                     TextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Email") }
+                        label = { Text("Login") }
                     )
                     TextField(
                         value = password,
@@ -1797,7 +1806,7 @@ fun LoginScreen(
                                 try {
                                     val googleIdOption = GetGoogleIdOption.Builder()
                                         .setFilterByAuthorizedAccounts(true)
-                                        .setServerClientId(context.getString(R.string.web_client_id))
+                                        .setServerClientId(stringResource(R.string.web_client_id))
                                         .build()
 
                                     val request = GetCredentialRequest.Builder()
@@ -1814,7 +1823,7 @@ fun LoginScreen(
                                     try {
                                         val googleIdOptionFallback = GetGoogleIdOption.Builder()
                                             .setFilterByAuthorizedAccounts(false)
-                                            .setServerClientId(context.getString(R.string.web_client_id))
+                                            .setServerClientId(stringResource(R.string.web_client_id))
                                             .build()
 
                                         val requestFallback = GetCredentialRequest.Builder()
@@ -1851,8 +1860,6 @@ private suspend fun handleCredential(result: GetCredentialResponse, viewModel: A
     ) {
         val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
         viewModel.loginGoogle(googleIdTokenCredential.idToken)
-    } else {
-        // Invalid
     }
 }
 ```
@@ -2256,11 +2263,11 @@ import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
 import com.xai.feature_schedule.viewmodel.CalendarViewModel
 import java.time.LocalDate
 import java.time.YearMonth
+import com.xai.core.data.models.DoseSchedule
 
 
-@Composable
-fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
-    val schedules by viewModel.schedules.collectAsState(emptyList())
+@Composable fun CalendarScreen(viewModel: CalendarViewModel) {
+    val schedules by viewModel.schedules.collectAsState(emptyList<DoseSchedule>())
     val currentMonth = YearMonth.now()
     val startMonth = currentMonth.minusMonths(12)
     val endMonth = currentMonth.plusMonths(12)
@@ -2304,6 +2311,7 @@ package com.xai.feature_schedule.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -2346,9 +2354,9 @@ fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = Modifier.padding(16.dp)
-    ) { padding ->
+    ) { paddingValues: PaddingValues ->
         Column(
-            modifier = padding(padding),
+            modifier = Modifier.padding(paddingValues),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Schedule dropdown
@@ -2433,6 +2441,7 @@ import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -2458,8 +2467,8 @@ import com.xai.core.data.models.DoseSchedule
 import com.xai.core.data.models.Frequency
 import com.xai.core.data.models.Medication
 import com.xai.core.utils.setDoseAlarm
-import com.xai.feature.iap.viewmodel.IapViewModel
-import com.xai.feature.med.viewmodel.MedListViewModel
+import com.xai.feature_iap.viewmodel.IapViewModel
+import com.xai.feature_med.viewmodel.MedListViewModel
 import com.xai.feature_schedule.viewmodel.ScheduleViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalTime
@@ -2489,9 +2498,9 @@ fun ScheduleFormScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = Modifier.padding(16.dp)
-    ) { padding ->
+    ) { paddingValues: PaddingValues ->
         Column(
-            modifier = padding(padding),
+            modifier = Modifier.padding(paddingValues),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Medication dropdown
@@ -2643,12 +2652,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
+import com.xai.core.data.models.DoseSchedule
 
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     private val repo: DoseScheduleRepository
 ) : ViewModel() {
-    val schedules = repo.getAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val schedules = repo.getAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<DoseSchedule>())
 }
 ```
 ---
@@ -2738,16 +2748,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Arrangement
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xai.feature_sync.viewmodel.SyncViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(viewModel: SyncViewModel = hiltViewModel()) {
+fun SettingsScreen(viewModel: SyncViewModel) {
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    Column {
+    Column (
+        modifier = Modifier,
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start
+    ) {
         Button(onClick = { viewModel.testSync() }) {
             Text("Test DB Integrity & Sync")
         }
@@ -2759,7 +2776,7 @@ fun SettingsScreen(viewModel: SyncViewModel = hiltViewModel()) {
             Text("Manual Sync")
         }
     }
-    SnackbarHost(snackbarHostState)
+    SnackbarHost( hostState = snackbarHostState, modifier = Modifier )
 }
 ```
 ---
@@ -2877,29 +2894,29 @@ File: gradle/libs.versions.toml
 activityCompose = "1.10.1"
 androidxCore = "1.16.0"
 agp = "8.11.1"
-billing = "8.0.0"
+billing = "7.0.0"
 biometric = "1.2.0-alpha05"
-composeBom = "2025.07.00"
+composeBom = "2024.06.00"
 compose = "1.6.1"
 compose-material3 = "1.2.1"
 compose-material-icons = "1.7.8"
-compose-compiler = "2.2.0"
 coreKtx = "1.16.0"
-coroutines = "1.10.2"
+coroutines = "1.7.3"
 credentialsPlayServicesAuth = "1.5.0"
 espressoCore = "3.6.1"
 firebase-auth = "22.3.1"
-firebaseBom = "34.0.0"
+firebaseBom = "32.7.4"
 googleid = "1.1.1"
 gson = "2.13.1"
 google-services = "4.4.3"
 hiltWork = "1.2.0"
 hilt-work-compiler = "1.2.0"
-hilt = "2.57"
+hilt = "2.51.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
-kotlin = "2.2.0"
-ksp = "2.2.0-2.0.2"
+kotlin = "1.9.24"
+kotlin-stdlib = "1.9.0"
+ksp = "1.9.24-1.0.20"
 lifecycle = "2.9.2"
 lifecycleRuntimeKtx = "2.9.2"
 materialIconsExtended = "1.7.8"
@@ -2936,12 +2953,14 @@ androidx-activity-compose = { group = "androidx.activity", name = "activity-comp
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-runtime = { group = "androidx.compose.runtime", name = "runtime" }
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "compose-material-icons" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin-stdlib" }
 
 # Hilt
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
@@ -2985,7 +3004,6 @@ material = { group = "com.google.android.material", name = "material", version.r
 android-application = { id = "com.android.application", version.ref = "agp" }
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 room = { id = "androidx.room", version.ref = "room" }
@@ -2998,13 +3016,21 @@ File: build.gradle.kts
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.kotlin.android) apply false
-    alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.hilt.android) apply false
     alias(libs.plugins.room) apply false
     alias(libs.plugins.kotlin.ksp) apply false
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.android.library) apply false
+}
 
+subprojects {
+    configurations.all {
+        resolutionStrategy {
+            force("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
+            force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.0")
+            force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0")
+        }
+    }
 }
 ```
 ---
@@ -3075,7 +3101,6 @@ File: app/build.gradle.kts
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.room)
     alias(libs.plugins.kotlin.ksp)
@@ -3123,6 +3148,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.material.icons.extended)
+    implementation(libs.kotlin.stdlib)
 
     // Compose (via BOM for version alignment)
     implementation(platform(libs.androidx.compose.bom))
@@ -3196,7 +3222,6 @@ plugins {
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.room)
-    alias(libs.plugins.kotlin.compose)
 }
 
 android {
@@ -3216,17 +3241,20 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+    buildFeatures {
+        compose = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    buildFeatures {
-        compose = true
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-        }
+    kotlinOptions {
+        jvmTarget = "11"
+        freeCompilerArgs = freeCompilerArgs + listOf("-Xsuppress-version-warnings")
     }
     room {
         schemaDirectory("$projectDir/schemas")
@@ -3290,14 +3318,20 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+    buildFeatures {
+        compose = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-        }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+        freeCompilerArgs = freeCompilerArgs + listOf("-Xsuppress-version-warnings")
     }
 }
 
@@ -3355,45 +3389,53 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+    buildFeatures {
+        compose = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
-        }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+        freeCompilerArgs = freeCompilerArgs + listOf("-Xsuppress-version-warnings")
     }
 }
 
 dependencies {
-
+    implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-    implementation(libs.lifecycle.viewmodel.ktx)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.firestore)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
-    implementation(libs.googleid)
-    implementation(libs.work.runtime.ktx)
-    implementation(libs.kotlinx.coroutines.android)
-    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.material3)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.googleid)
+    implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
+    implementation(libs.hilt.work)
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.lifecycle.viewmodel.ktx)
+    implementation(libs.material)
+    implementation(libs.navigation.compose)
+    implementation(libs.work.runtime.ktx)
+    implementation(platform(libs.androidx.compose.bom))
+    ksp(libs.hilt.compiler)
+    ksp(libs.hilt.work.compiler)
     implementation(project(":core"))
     implementation(project(":feature_sync"))
-    implementation(libs.hilt.work)
-    ksp(libs.hilt.work.compiler)
-
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }
 ```
 ---
@@ -3425,14 +3467,20 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+    buildFeatures {
+        compose = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-        }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+        freeCompilerArgs = freeCompilerArgs + listOf("-Xsuppress-version-warnings")
     }
 }
 
@@ -3440,6 +3488,7 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.ui.runtime)
     implementation(libs.hilt.android)
     implementation(libs.material)
     implementation(libs.billing.ktx)
@@ -3484,14 +3533,20 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+    buildFeatures {
+        compose = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-        }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+        freeCompilerArgs = freeCompilerArgs + listOf("-Xsuppress-version-warnings")
     }
 }
 
@@ -3550,14 +3605,20 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+    buildFeatures {
+        compose = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
-        }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+        freeCompilerArgs = freeCompilerArgs + listOf("-Xsuppress-version-warnings")
     }
 }
 
