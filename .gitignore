@@ -41,3 +41,4 @@ tmp/
 # Secrets
 google-services.json  # Add if sensitive
 app/google-services.json
+file_extraction_output.txt
