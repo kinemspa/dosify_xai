@@ -24,19 +24,20 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+    buildFeatures {
+        compose = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    buildFeatures {
-        compose = true
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
     kotlinOptions {
         jvmTarget = "11"
         freeCompilerArgs = freeCompilerArgs + listOf("-Xsuppress-version-warnings")
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
     }
 }
 
