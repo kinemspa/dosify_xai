@@ -105,6 +105,7 @@ billing-ktx = { module = "com.android.billingclient:billing-ktx", version.ref = 
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 kizitonwose-calendar = { module = "com.kizitonwose.calendar:compose", version.ref = "kizitonwose-calendar" }
+kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
 
 # Testing
 espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
