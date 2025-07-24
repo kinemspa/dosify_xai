@@ -40,13 +40,11 @@ import com.xai.core.R
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
-import com.xai.feature_sync.viewmodel.SyncViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
-    syncViewModel: SyncViewModel = hiltViewModel(),
     onLoginSuccess: () -> Unit,
     innerPadding: PaddingValues
 ) {
@@ -93,7 +91,6 @@ fun LoginScreen(
     LaunchedEffect(state.success) {
         if (state.success) {
             snackbarHostState.showSnackbar(if (isRegistering) "Registration successful" else "Login successful")
-            syncViewModel.syncOnLogin() // Sync data for new user
             onLoginSuccess()
         } else if (state.error != null) {
             snackbarHostState.showSnackbar(state.error ?: "An error occurred")

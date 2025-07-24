@@ -21,14 +21,30 @@ import android.app.Activity
 import com.google.firebase.FirebaseException
 import com.xai.core.data.repository.AuthRepository
 import com.xai.core.data.AppDatabase
+import android.content.SharedPreferences
+import com.xai.core.data.repository.MedicationRepository
+import com.xai.core.data.repository.DoseScheduleRepository
+import com.xai.core.data.repository.DoseLogRepository
+import com.xai.core.data.repository.SupplyRepository
+import com.xai.core.data.repository.ReconstitutionRepository
+import com.xai.core.data.repository.ProfileRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 data class AuthState(val loading: Boolean = false, val success: Boolean = false, val error: String? = null)
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val auth: FirebaseAuth,
-    private val authRepository: AuthRepository
-    private val db: AppDatabase
+    private val authRepository: AuthRepository,
+    private val db: AppDatabase,
+    private val prefs: SharedPreferences,
+    private val medRepo: MedicationRepository,
+    private val scheduleRepo: DoseScheduleRepository,
+    private val logRepo: DoseLogRepository,
+    private val supplyRepo: SupplyRepository,
+    private val reconstRepo: ReconstitutionRepository,
+    private val profileRepo: ProfileRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthState())
@@ -58,6 +74,7 @@ class AuthViewModel @Inject constructor(
                 _authUser.value = authResult.user
                 Timber.d("Apple success: User ${authResult.user?.uid}")
                 _state.value = _state.value.copy(success = true)
+                viewModelScope.launch { clearAndSyncOnUserChange() }
             }
             .addOnFailureListener { e ->
                 _state.value = _state.value.copy(error = e.message)
@@ -71,6 +88,7 @@ class AuthViewModel @Inject constructor(
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Login failed" else null)
         _authUser.value = auth.currentUser
         if (success) checkAndEnrollMFA(activity)
+        clearAndSyncOnUserChange()
     }
 
     fun registerEmail(email: String, password: String, activity: Activity) = viewModelScope.launch {
@@ -79,19 +97,22 @@ class AuthViewModel @Inject constructor(
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Registration failed" else null)
         _authUser.value = auth.currentUser
         if (success) checkAndEnrollMFA(activity)
+        clearAndSyncOnUserChange()
     }
 
     fun logout() = viewModelScope.launch {
         authRepository.logout()
-        db.clearAllTables() // Clear local Room database
+        prefs.edit().remove("last_uid").apply()
         _authUser.value = null
     }
 
-    fun loginGoogle(idToken: String) = viewModelScope.launch {
+    fun loginGoogle(idToken: String, activity: Activity) = viewModelScope.launch {
         _state.value = _state.value.copy(loading = true)
         val success = authRepository.googleLogin(idToken)
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Google login failed" else null)
         _authUser.value = auth.currentUser
+        if (success) checkAndEnrollMFA(activity)
+        clearAndSyncOnUserChange()
     }
 
     private fun checkAndEnrollMFA(activity: Activity) {
@@ -150,5 +171,22 @@ class AuthViewModel @Inject constructor(
             Timber.e(e, "MFA enrollment failed")
             _state.value = _state.value.copy(error = e.message)
         }
+    }
+
+    private fun clearAndSyncOnUserChange() = viewModelScope.launch {
+        val currentUid = auth.currentUser?.uid ?: return@launch
+        val lastUid = prefs.getString("last_uid", null)
+        if (currentUid != lastUid) {
+            withContext(Dispatchers.IO) {
+                db.clearAllTables() // Clear local data if user changed
+            }
+        }
+        medRepo.syncWithFirestore(currentUid)
+        scheduleRepo.syncWithFirestore(currentUid)
+        logRepo.syncWithFirestore(currentUid)
+        supplyRepo.syncWithFirestore(currentUid)
+        reconstRepo.syncWithFirestore(currentUid)
+        profileRepo.syncWithFirestore(currentUid)
+        prefs.edit().putString("last_uid", currentUid).apply()
     }
 }

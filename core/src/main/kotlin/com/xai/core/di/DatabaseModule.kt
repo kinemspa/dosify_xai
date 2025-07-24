@@ -3,13 +3,6 @@ package com.xai.core.di
 import android.content.Context
 import androidx.room.Room
 import com.xai.core.data.AppDatabase
-import com.xai.core.data.dao.DoseLogDao
-import com.xai.core.data.dao.DoseScheduleDao
-import com.xai.core.data.dao.MedicationDao
-import com.xai.core.data.dao.ProfileDao
-import com.xai.core.data.dao.ReconstitutionDao
-import com.xai.core.data.dao.SupplyDao
-import com.xai.core.utils.BiometricUtils
 import com.xai.core.data.dao.*
 import dagger.Module
 import dagger.Provides
@@ -19,8 +12,10 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
+import com.xai.core.utils.BiometricUtils
 import com.xai.core.data.MIGRATION_1_2
-
+import android.content.SharedPreferences
+import android.preference.PreferenceManager
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -49,4 +44,10 @@ object DatabaseModule {
     fun provideReconstitutionDao(db: AppDatabase): ReconstitutionDao = db.reconstitutionDao()
     @Provides
     fun provideProfileDao(db: AppDatabase): ProfileDao = db.profileDao()
+
+    @Provides
+    @Singleton
+    fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences {
+        return PreferenceManager.getDefaultSharedPreferences(context)
+    }
 }
