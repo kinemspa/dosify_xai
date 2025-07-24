@@ -17,16 +17,15 @@ private fun nextTime(schedule: DoseSchedule): LocalDateTime? {
     val now = LocalDateTime.now()
     val nextTime = schedule.times.firstOrNull { it.isAfter(now.toLocalTime()) } ?: schedule.times.first() // Next today or tomorrow
     return if (nextTime.isAfter(now.toLocalTime())) {
-        now
-            .withHour(nextTime.hour)
+        now.withHour(nextTime.hour)
             .withMinute(nextTime.minute)
-            .withSecond(nextTime.second)
+            .withSecond(0)  // Assume 0 seconds; adjust if LocalTime has seconds
             .withNano(0)
     } else {
         now.plusDays(1)
             .withHour(nextTime.hour)
             .withMinute(nextTime.minute)
-            .withSecond(nextTime.second)
+            .withSecond(0)  // Assume 0 seconds
             .withNano(0)
     }
 }

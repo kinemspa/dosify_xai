@@ -90,9 +90,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.xai.core.nav.NavRoutes
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.xai.feature_auth.AuthViewModel
 
 @Composable
 fun HomeScreen(navController: NavController, innerPadding: PaddingValues) {
+    val authViewModel: AuthViewModel = hiltViewModel() // Inject for logout
+
     Column(
         modifier = Modifier
             .padding(innerPadding) // Apply innerPadding to shift content below app bar
@@ -122,6 +126,12 @@ fun HomeScreen(navController: NavController, innerPadding: PaddingValues) {
         }
         Button(onClick = { navController.navigate(NavRoutes.SUPPLY_FORM) }) {
             Text("Add Supply")
+        }
+        Button(onClick = {
+            authViewModel.logout()
+            navController.navigate(NavRoutes.LOGIN) { popUpTo(0) { inclusive = true } } // Clear back stack
+        }) {
+            Text("Logout") // Added logout button
         }
     }
 }
@@ -1172,13 +1182,6 @@ package com.xai.core.di
 import android.content.Context
 import androidx.room.Room
 import com.xai.core.data.AppDatabase
-import com.xai.core.data.dao.DoseLogDao
-import com.xai.core.data.dao.DoseScheduleDao
-import com.xai.core.data.dao.MedicationDao
-import com.xai.core.data.dao.ProfileDao
-import com.xai.core.data.dao.ReconstitutionDao
-import com.xai.core.data.dao.SupplyDao
-import com.xai.core.utils.BiometricUtils
 import com.xai.core.data.dao.*
 import dagger.Module
 import dagger.Provides
@@ -1188,8 +1191,8 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
+import com.xai.core.utils.BiometricUtils
 import com.xai.core.data.MIGRATION_1_2
-
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -1324,6 +1327,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
+import com.xai.core.nav.NavRoutes
 import com.xai.core.ui.theme.PrimaryBlue
 import com.xai.core.ui.theme.TextBlack
 
@@ -1347,7 +1351,7 @@ fun DosifyAppBar(
             }
         },
         actions = {
-            IconButton(onClick = { navController.navigate("home") { popUpTo("home") { inclusive = true } } }) {
+            IconButton(onClick = { navController.navigate(NavRoutes.HOME) { popUpTo(NavRoutes.HOME) { inclusive = true } } }) {
                 Icon(
                     imageVector = Icons.Filled.Home,
                     contentDescription = "Home"
@@ -1420,6 +1424,11 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.ExperimentalMaterial3Api
+import android.app.Activity
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryBlue,
@@ -1441,6 +1450,7 @@ private val DarkColorScheme = darkColorScheme(
     error = ErrorRed
 )
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun DosifyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -1455,6 +1465,7 @@ fun DosifyTheme(
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
+    val windowSize: WindowSizeClass = calculateWindowSizeClass(LocalContext.current as Activity) // Cast to Activity; use in screens e.g., if (windowSize.widthSizeClass == WindowWidthSizeClass.Expanded) { /* tablet */ }
 
     MaterialTheme(
         colorScheme = colorScheme,
@@ -1499,6 +1510,41 @@ val Typography = Typography(
 )
 ```
 ---
+File: core\src\main\kotlin\com\xai\core\utils\BackupUtils.kt
+```
+package com.xai.dosify.core.utils
+
+import androidx.room.RoomDatabase
+import android.content.Context
+import java.io.File
+import android.os.Environment
+import timber.log.Timber
+
+fun backupDatabase(db: RoomDatabase, context: Context) {
+    try {
+        db.close()
+        val dbFile = context.getDatabasePath("dosify.db")
+        val backupFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "dosify_backup.db")
+        dbFile.copyTo(backupFile, overwrite = true)
+        Timber.d("Backup success: ${backupFile.path}")
+    } catch (e: Exception) {
+        Timber.e(e, "Backup failed")
+    }
+}
+
+fun restoreDatabase(db: RoomDatabase, context: Context, backupFilePath: String) {
+    try {
+        db.close()
+        val dbFile = context.getDatabasePath("dosify.db")
+        val backupFile = File(backupFilePath)
+        backupFile.copyTo(dbFile, overwrite = true)
+        Timber.d("Restored from ${backupFile.path}")
+    } catch (e: Exception) {
+        Timber.e(e, "Restore failed")
+    }
+}
+```
+---
 File: core\src\main\kotlin\com\xai\core\utils\BiometricUtils.kt
 ```
 package com.xai.core.utils
@@ -1530,6 +1576,43 @@ object BiometricUtils {
 
     fun getPassphrase(context: Context): String = "secure_passphrase"  // Replace with real (e.g., KeyStore encrypted from biometrics)
 }
+```
+---
+File: core\src\main\kotlin\com\xai\core\utils\MathUtils.kt
+```
+package com.xai.core.utils
+
+import com.xai.core.data.models.DoseSchedule
+import java.time.Duration
+import java.time.LocalDateTime
+import timber.log.Timber
+
+fun calculateTimeLeftToNextDose(schedule: DoseSchedule): Duration {
+    val next = nextTime(schedule) ?: return Duration.ZERO // Fallback
+    Timber.d("Calculating time left: From now to $next")
+    return Duration.between(LocalDateTime.now(), next)
+}
+
+// Stub for nextTime - implement based on frequency/times
+private fun nextTime(schedule: DoseSchedule): LocalDateTime? {
+    if (schedule.times.isEmpty()) return null
+    val now = LocalDateTime.now()
+    val nextTime = schedule.times.firstOrNull { it.isAfter(now.toLocalTime()) } ?: schedule.times.first() // Next today or tomorrow
+    return if (nextTime.isAfter(now.toLocalTime())) {
+        now.withHour(nextTime.hour)
+            .withMinute(nextTime.minute)
+            .withSecond(0)  // Assume 0 seconds; adjust if LocalTime has seconds
+            .withNano(0)
+    } else {
+        now.plusDays(1)
+            .withHour(nextTime.hour)
+            .withMinute(nextTime.minute)
+            .withSecond(0)  // Assume 0 seconds
+            .withNano(0)
+    }
+}
+
+// Add other stats functions here, e.g., amountTakenOverTime
 ```
 ---
 File: core\src\main\kotlin\com\xai\core\utils\NotificationUtils.kt
@@ -1687,104 +1770,152 @@ package com.xai.feature_auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.OAuthProvider
 import com.google.firebase.auth.FirebaseUser
-import com.xai.core.data.repository.AuthRepository
-import com.xai.feature_sync.utils.SyncWorker
+import com.google.firebase.auth.PhoneAuthCredential
+import com.google.firebase.auth.PhoneAuthProvider
+import com.google.firebase.auth.PhoneMultiFactorGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-import timber.log.Timber
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import timber.log.Timber
+import com.google.firebase.auth.PhoneAuthOptions
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import android.app.Activity
+import com.google.firebase.FirebaseException
+import com.xai.core.data.repository.AuthRepository
+
+data class AuthState(val loading: Boolean = false, val success: Boolean = false, val error: String? = null)
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val repo: AuthRepository,
     private val auth: FirebaseAuth,
-    private val workManager: WorkManager
+    private val authRepository: AuthRepository
 ) : ViewModel() {
+
     private val _state = MutableStateFlow(AuthState())
-    val state: StateFlow<AuthState> = _state
+    val state: StateFlow<AuthState> = _state.asStateFlow()
 
-    val authUser: StateFlow<FirebaseUser?> = auth.authStateChanges()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    private val _authUser = MutableStateFlow(auth.currentUser)
+    val authUser: StateFlow<FirebaseUser?> = _authUser.asStateFlow()
 
-    fun loginEmail(email: String, password: String) = viewModelScope.launch {
-        val trimmedEmail = email.trim()
-        Timber.d("Attempting login with email: $trimmedEmail")
-        if (!isValidEmail(trimmedEmail)) {
-            _state.value = _state.value.copy(loading = false, error = "Invalid email format")
-            return@launch
-        }
-        _state.value = _state.value.copy(loading = true)
-        val success = repo.emailLogin(trimmedEmail, password)
-        _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Login failed" else null)
-        if (success) enqueueSync()
+    private val _phone = MutableStateFlow("")
+    val phone: StateFlow<String> = _phone.asStateFlow()
+
+    private val _verificationId = MutableStateFlow<String?>(null)
+    val verificationId: StateFlow<String?> = _verificationId.asStateFlow()
+
+    fun updatePhone(newPhone: String) {
+        _phone.value = newPhone
     }
 
-    fun registerEmail(email: String, password: String) = viewModelScope.launch {
-        val trimmedEmail = email.trim()
-        Timber.d("Attempting registration with email: $trimmedEmail")
-        if (!isValidEmail(trimmedEmail)) {
-            _state.value = _state.value.copy(loading = false, error = "Invalid email format")
-            return@launch
-        }
-        if (password.length < 6) {
-            _state.value = _state.value.copy(loading = false, error = "Password must be at least 6 characters")
-            return@launch
-        }
+    fun signInWithApple(activity: Activity) {
+        val provider = OAuthProvider.newBuilder("apple.com")
+            .setScopes(listOf("email", "name"))
+            .addCustomParameter("locale", "en")
+            .build()
+
+        auth.startActivityForSignInWithProvider(activity, provider)
+            .addOnSuccessListener { authResult ->
+                _authUser.value = authResult.user
+                Timber.d("Apple success: User ${authResult.user?.uid}")
+                _state.value = _state.value.copy(success = true)
+            }
+            .addOnFailureListener { e ->
+                _state.value = _state.value.copy(error = e.message)
+                Timber.e(e, "Apple sign-in failed")
+            }
+    }
+
+    fun signInWithEmail(email: String, password: String, activity: Activity) = viewModelScope.launch {
         _state.value = _state.value.copy(loading = true)
-        val success = repo.registerEmail(trimmedEmail, password)
+        val success = authRepository.emailLogin(email, password)
+        _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Login failed" else null)
+        _authUser.value = auth.currentUser
+        if (success) checkAndEnrollMFA(activity)
+    }
+
+    fun registerEmail(email: String, password: String, activity: Activity) = viewModelScope.launch {
+        _state.value = _state.value.copy(loading = true)
+        val success = authRepository.registerEmail(email, password)
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Registration failed" else null)
-        if (success) enqueueSync()
+        _authUser.value = auth.currentUser
+        if (success) checkAndEnrollMFA(activity)
+    }
+
+    fun logout() {
+        authRepository.logout()
+        _authUser.value = null
     }
 
     fun loginGoogle(idToken: String) = viewModelScope.launch {
         _state.value = _state.value.copy(loading = true)
-        val success = repo.googleLogin(idToken)
+        val success = authRepository.googleLogin(idToken)
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Google login failed" else null)
-        if (success) enqueueSync()
+        _authUser.value = auth.currentUser
     }
 
-    fun logout() = repo.logout()
-
-    private fun enqueueSync() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-
-        val periodicRequest = PeriodicWorkRequestBuilder<SyncWorker>(1, TimeUnit.HOURS)
-            .setConstraints(constraints)
-            .build()
-
-        workManager.enqueueUniquePeriodicWork("sync", ExistingPeriodicWorkPolicy.KEEP, periodicRequest)
+    private fun checkAndEnrollMFA(activity: Activity) {
+        val user = auth.currentUser ?: return
+        user.multiFactor.enrolledFactors.let { factors ->
+            if (factors.isEmpty()) {
+                Timber.d("Starting MFA enrollment")
+                user.multiFactor.session.addOnSuccessListener { session ->
+                    val phone = _phone.value
+                    if (phone.isNotEmpty()) {
+                        val options = PhoneAuthOptions.newBuilder(auth)
+                            .setPhoneNumber(phone)
+                            .setTimeout(60L, TimeUnit.SECONDS)
+                            .setActivity(activity)
+                            .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+                                override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+                                    Timber.d("MFA verification completed")
+                                    val assertion = PhoneMultiFactorGenerator.getAssertion(credential)
+                                    user.multiFactor.enroll(assertion, null)
+                                    _state.value = _state.value.copy(success = true)
+                                }
+                                override fun onVerificationFailed(e: FirebaseException) {
+                                    Timber.e(e, "MFA verification failed")
+                                    _state.value = _state.value.copy(error = e.message)
+                                }
+                                override fun onCodeSent(verificationId: String, token: PhoneAuthProvider.ForceResendingToken) {
+                                    Timber.d("MFA code sent")
+                                    _verificationId.value = verificationId
+                                }
+                            })
+                            .setMultiFactorSession(session)
+                            .build()
+                        PhoneAuthProvider.verifyPhoneNumber(options)
+                    } else {
+                        _state.value = _state.value.copy(error = "Phone number required for MFA")
+                    }
+                }.addOnFailureListener { e ->
+                    Timber.e(e, "MFA session failed")
+                    _state.value = _state.value.copy(error = "MFA setup failed: ${e.message}")
+                }
+            } else {
+                Timber.d("MFA already enrolled with ${factors.size} factors")
+            }
+        }
     }
 
-    private fun isValidEmail(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    fun verifyMfaCode(code: String) = viewModelScope.launch {
+        val verificationId = _verificationId.value ?: return@launch
+        val credential = PhoneAuthProvider.getCredential(verificationId, code)
+        val assertion = PhoneMultiFactorGenerator.getAssertion(credential)
+        auth.currentUser?.multiFactor?.enroll(assertion, null)?.addOnSuccessListener {
+            Timber.d("MFA enrolled successfully")
+            _state.value = _state.value.copy(success = true)
+            _verificationId.value = null
+        }?.addOnFailureListener { e ->
+            Timber.e(e, "MFA enrollment failed")
+            _state.value = _state.value.copy(error = e.message)
+        }
     }
-}
-
-data class AuthState(val loading: Boolean = false, val success: Boolean = false, val error: String? = null)
-
-fun FirebaseAuth.authStateChanges(): Flow<FirebaseUser?> = callbackFlow {
-    val listener = FirebaseAuth.AuthStateListener { auth ->
-        trySend(auth.currentUser)
-    }
-    addAuthStateListener(listener)
-    awaitClose { removeAuthStateListener(listener) }
 }
 ```
 ---
@@ -1812,6 +1943,7 @@ import com.xai.core.R
 import com.xai.core.nav.NavRoutes
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import android.app.Activity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1826,6 +1958,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var isRegistering by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val activity = context as Activity
     val credentialManager = remember { CredentialManager.create(context) }
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -1876,9 +2009,9 @@ fun LoginScreen(
                 onClick = {
                     coroutineScope.launch {
                         if (isRegistering) {
-                            viewModel.registerEmail(email, password)
+                            viewModel.registerEmail(email, password, activity)
                         } else {
-                            viewModel.loginEmail(email, password)
+                            viewModel.signInWithEmail(email, password, activity)
                         }
                     }
                 },
@@ -1903,6 +2036,12 @@ fun LoginScreen(
                 Text("Google Login")
             }
             Button(
+                onClick = { viewModel.signInWithApple(activity) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Apple Login")
+            }
+            Button(
                 onClick = { isRegistering = !isRegistering },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -1924,6 +2063,7 @@ private suspend fun handleGoogleSignIn(
     return try {
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
+            .setAutoSelectEnabled(false) // Added to disable auto-select and show picker for any account
             .setServerClientId(webClientId)
             .build()
 
@@ -2434,17 +2574,17 @@ import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
+import com.xai.core.data.models.DoseSchedule
 import com.xai.feature_schedule.viewmodel.CalendarViewModel
 import java.time.LocalDate
 import java.time.YearMonth
-import com.xai.core.data.models.DoseSchedule
 
 @Composable
 fun CalendarScreen(
     viewModel: CalendarViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
-    val schedules by viewModel.schedules.collectAsState(emptyList<DoseSchedule>())
+    val schedules by viewModel.schedules.collectAsState(emptyList())
     val currentMonth = YearMonth.now()
     val startMonth = currentMonth.minusMonths(12)
     val endMonth = currentMonth.plusMonths(12)
@@ -2462,7 +2602,7 @@ fun CalendarScreen(
     ) {
         HorizontalCalendar(
             state = state,
-            dayContent = { day: CalendarDay ->
+            dayContent = { day ->
                 val hasDose = hasDoseOnDay(day.date, schedules)
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(day.date.dayOfMonth.toString())
@@ -2627,11 +2767,12 @@ File: feature_schedule\src\main\kotlin\com\xai\feature_schedule\ui\ScheduleFormS
 package com.xai.feature_schedule.ui
 
 import android.app.TimePickerDialog
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -2663,9 +2804,12 @@ import com.xai.feature_schedule.viewmodel.ScheduleViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.util.Calendar // For API < 26 fallback
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
+// Removed @RequiresApi(Build.VERSION_CODES.O) to support API 24+
 @Composable
 fun ScheduleFormScreen(innerPadding: PaddingValues) {
     val viewModel: ScheduleViewModel = hiltViewModel()
@@ -2761,7 +2905,7 @@ fun ScheduleFormScreen(innerPadding: PaddingValues) {
                     expanded = expandedFreq,
                     onDismissRequest = { expandedFreq = false }
                 ) {
-                    Frequency.values().forEach { freq ->
+                    Frequency.entries.forEach { freq ->
                         DropdownMenuItem(
                             text = { Text(freq.name) },
                             onClick = {
@@ -2780,7 +2924,7 @@ fun ScheduleFormScreen(innerPadding: PaddingValues) {
                     TimePickerDialog(
                         context,
                         { _, hour, minute ->
-                            times = times + LocalTime.of(hour, minute) // Use LocalTime after desugaring
+                            times = times + LocalTime.of(hour, minute) // Should work with desugaring
                         },
                         calendar.get(Calendar.HOUR_OF_DAY),
                         calendar.get(Calendar.MINUTE),
@@ -2791,7 +2935,17 @@ fun ScheduleFormScreen(innerPadding: PaddingValues) {
             ) {
                 Text("Add Dose Time")
             }
-            Text("Times: ${times.joinToString { it.format(DateTimeFormatter.ofPattern("HH:mm")) }}")
+            Text("Times: ${times.joinToString { time ->
+                if (Build.VERSION.SDK_INT >= 26) {
+                    time.format(DateTimeFormatter.ofPattern("HH:mm")) // Use with desugaring
+                } else {
+                    val cal = Calendar.getInstance().apply {
+                        set(Calendar.HOUR_OF_DAY, time.hour)
+                        set(Calendar.MINUTE, time.minute)
+                    }
+                    SimpleDateFormat("HH:mm", Locale.getDefault()).format(cal.time)
+                }
+            }}")
 
             if (isPremium) {
                 TextField(
@@ -2960,6 +3114,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xai.feature_sync.viewmodel.SyncViewModel
 import kotlinx.coroutines.launch
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import timber.log.Timber
+import android.Manifest
 
 @Composable
 fun SettingsScreen(
@@ -2968,6 +3127,33 @@ fun SettingsScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            viewModel.backupData(context) // Pass context
+            Timber.d("Backup permission granted")
+        } else {
+            Timber.w("Backup storage permission denied")
+        }
+    }
+
+    val restorePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val path = uri.path ?: return@rememberLauncherForActivityResult
+            viewModel.restoreData(context, path) // Pass context and path
+            Timber.d("Restore file selected: $path")
+        }
+    }
+
+    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            restorePicker.launch("*/*") // Launch file picker
+            Timber.d("Restore permission granted")
+        } else {
+            Timber.w("Restore storage permission denied")
+        }
+    }
 
     Column(
         modifier = modifier
@@ -2991,6 +3177,18 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Manual Sync")
+        }
+        Button(
+            onClick = { backupLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Backup Data")
+        }
+        Button(
+            onClick = { restoreLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Restore Data")
         }
     }
     SnackbarHost(hostState = snackbarHostState, modifier = Modifier)
@@ -3064,7 +3262,11 @@ import com.xai.core.data.repository.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import com.xai.core.data.AppDatabase
+import android.content.Context
 import javax.inject.Inject
+import com.xai.dosify.core.utils.backupDatabase
+import com.xai.dosify.core.utils.restoreDatabase
 
 @HiltViewModel
 class SyncViewModel @Inject constructor(
@@ -3074,7 +3276,8 @@ class SyncViewModel @Inject constructor(
     private val logRepo: DoseLogRepository,
     private val supplyRepo: SupplyRepository,
     private val reconstRepo: ReconstitutionRepository,
-    private val profileRepo: ProfileRepository
+    private val profileRepo: ProfileRepository,
+    private val db: AppDatabase // Injected for backup/restore
 ) : ViewModel() {
 
     fun testSync() = viewModelScope.launch {
@@ -3101,6 +3304,16 @@ class SyncViewModel @Inject constructor(
             snackbarHostState.showSnackbar("Sync failed: ${e.message}")
             Timber.e(e, "Manual sync error")
         }
+    }
+
+    fun backupData(context: Context) = viewModelScope.launch {
+        backupDatabase(db, context)
+        Timber.d("Backup initiated")
+    }
+
+    fun restoreData(context: Context, backupFilePath: String) = viewModelScope.launch {
+        restoreDatabase(db, context, backupFilePath)
+        Timber.d("Restore initiated")
     }
 }
 ```
@@ -3132,12 +3345,13 @@ hilt = "2.51.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 kizitonwose-calendar = "2.5.0"
-kotlin = "1.9.24"
+kotlin = "1.9.25"
 kotlin-stdlib = "1.9.0"
-ksp = "1.9.24-1.0.20"
+ksp = "1.9.25-1.0.20"
 lifecycle = "2.9.2"
 lifecycleRuntimeKtx = "2.9.2"
 materialIconsExtended = "1.7.8"
+materialWindowSize = "1.2.1"
 mpandroidchart = "v3.1.0"
 navigation-compose = "2.9.2"
 play-services-auth = "21.3.0"
@@ -3168,6 +3382,7 @@ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-co
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "compose" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-ui-runtime = { group = "androidx.compose.runtime", name = "runtime" }
@@ -3177,6 +3392,7 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "compose-material-icons" }
+materialWindowSize = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "materialWindowSize" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin-stdlib" }
 
 # Hilt
@@ -3358,7 +3574,7 @@ android {
         schemaDirectory("$projectDir/schemas")
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -3421,6 +3637,7 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.billing.ktx)
     implementation(libs.gson)
+    implementation(libs.material)
 
     // Feature Modules
     implementation(project(":core"))
@@ -3444,17 +3661,7 @@ tasks.register<Exec>("alignDebugApk") {
     val inputApk = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
     val outputApk = layout.buildDirectory.file("outputs/apk/debug/app-debug-aligned.apk").get().asFile
     dependsOn(tasks.named("assembleDebug"))
-    doLast {
-        exec {
-            commandLine(
-                "zipalign",
-                "-f", // Force overwrite
-                "-p", "4", // 4KB page alignment
-                inputApk.absolutePath,
-                outputApk.absolutePath
-            )
-        }
-    }
+    commandLine("zipalign", "-f", "-p", "4", inputApk.absolutePath, outputApk.absolutePath) // Use commandLine directly
 }
 ```
 ---
@@ -3496,7 +3703,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -3532,7 +3739,7 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.navigation.compose)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
-
+    implementation(libs.materialWindowSize)
 }
 ```
 ---
@@ -3573,7 +3780,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -3644,7 +3851,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -3720,7 +3927,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -3791,7 +3998,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
+        kotlinCompilerExtensionVersion = "1.5.15" // Updated to latest stable version
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -3816,6 +4023,7 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.lifecycle.viewmodel.compose)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
+    implementation("androidx.compose.foundation:foundation:1.6.1") // Add this to ensure gestures.snapping is included
 
     implementation(project(":core"))
     implementation(project(":feature_iap"))
@@ -3864,7 +4072,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -3899,6 +4107,11 @@ dependencies {
 
     // Feature Modules
     implementation(project(":core"))
+
+    // Added Room deps for AppDatabase injection
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
 }
 ```
 ---
