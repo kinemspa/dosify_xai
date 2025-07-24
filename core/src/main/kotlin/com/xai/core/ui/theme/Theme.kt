@@ -9,6 +9,8 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
 
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryBlue,
@@ -44,6 +46,7 @@ fun DosifyTheme(
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
+    val windowSize: WindowSizeClass = calculateWindowSizeClass(LocalContext.current) // Use in screens e.g., if (windowSize.widthSizeClass == WindowWidthSizeClass.Expanded) { /* tablet */ }
 
     MaterialTheme(
         colorScheme = colorScheme,
