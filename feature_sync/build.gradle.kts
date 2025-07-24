@@ -68,4 +68,9 @@ dependencies {
 
     // Feature Modules
     implementation(project(":core"))
+
+    // Added Room deps for AppDatabase injection
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
 }
