@@ -1,3 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">Dosify</string>
+    <string name="web_client_id">442282970063-fv9d227q9imcntr9i7tbm1akirltjvml.apps.googleusercontent.com</string>
 </resources>

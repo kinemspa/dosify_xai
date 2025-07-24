@@ -2,7 +2,10 @@ File: app\src\main\kotlin\com\xai\dosify\nav\NavGraph.kt
 ```
 package com.xai.dosify.nav
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -13,44 +16,61 @@ import com.xai.feature_advanced.ui.ReportsScreen
 import com.xai.feature_auth.LoginScreen
 import com.xai.feature_med.ui.MedFormScreen
 import com.xai.feature_med.ui.MedListScreen
+import com.xai.feature_med.ui.SupplyFormScreen
 import com.xai.feature_schedule.ui.DoseConfirmScreen
 import com.xai.feature_schedule.ui.ScheduleFormScreen
-import com.xai.feature_sync.ui.SettingsScreen
 import com.xai.feature_schedule.ui.CalendarScreen
-import com.xai.feature_med.ui.SupplyFormScreen
+import com.xai.feature_sync.ui.SettingsScreen
 
 @Composable
-fun AppNavGraph(navController: NavHostController) {
-    NavHost(navController = navController, startDestination = NavRoutes.LOGIN) {
+fun AppNavGraph(
+    navController: NavHostController,
+    modifier: Modifier = Modifier,
+    innerPadding: PaddingValues
+) {
+    NavHost(
+        navController = navController,
+        startDestination = NavRoutes.LOGIN,
+        modifier = modifier
+    ) {
         composable(NavRoutes.LOGIN) {
-            LoginScreen(onLoginSuccess = { navController.navigate(NavRoutes.HOME) })
+            LoginScreen(
+                onLoginSuccess = { navController.navigate(NavRoutes.HOME) },
+                innerPadding = innerPadding
+            )
         }
         composable(NavRoutes.HOME) {
-            HomeScreen(navController)
+            HomeScreen(navController = navController, innerPadding = innerPadding) // Pass innerPadding
         }
         composable(NavRoutes.MED_FORM) {
-            MedFormScreen()
+            MedFormScreen(innerPadding = innerPadding) // Pass innerPadding
         }
         composable(NavRoutes.MED_LIST) {
-            MedListScreen()
+            MedListScreen(
+                modifier = Modifier.padding(innerPadding) // Already handles padding
+            )
         }
         composable(NavRoutes.SCHEDULE_FORM) {
-            ScheduleFormScreen()
+            ScheduleFormScreen(innerPadding = innerPadding) // Pass innerPadding
         }
         composable(NavRoutes.DOSE_CONFIRM) {
-            DoseConfirmScreen()
+            DoseConfirmScreen(innerPadding = innerPadding) // Pass innerPadding
         }
         composable(NavRoutes.REPORTS) {
-            ReportsScreen(hiltViewModel())
+            ReportsScreen(hiltViewModel(), innerPadding = innerPadding) // Pass innerPadding
         }
         composable(NavRoutes.SETTINGS) {
-            SettingsScreen(hiltViewModel())
+            SettingsScreen(
+                modifier = Modifier.padding(innerPadding) // Already handles padding
+            )
         }
         composable(NavRoutes.CALENDAR) {
-            CalendarScreen(hiltViewModel())
+            CalendarScreen(
+                modifier = Modifier.padding(innerPadding) // Already handles padding
+            )
         }
         composable(NavRoutes.SUPPLY_FORM) {
-            SupplyFormScreen()
+            SupplyFormScreen(innerPadding = innerPadding) // Pass innerPadding
         }
     }
 }
@@ -61,15 +81,23 @@ File: app\src\main\kotlin\com\xai\dosify\ui\HomeScreen.kt
 package com.xai.dosify.ui
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.xai.core.nav.NavRoutes
 
 @Composable
-fun HomeScreen(navController: NavController) {
-    Column {
+fun HomeScreen(navController: NavController, innerPadding: PaddingValues) {
+    Column(
+        modifier = Modifier
+            .padding(innerPadding) // Apply innerPadding to shift content below app bar
+            .padding(horizontal = 16.dp)
+    ) {
         Text("Home - Dosify Dashboard")
         Button(onClick = { navController.navigate(NavRoutes.MED_FORM) }) {
             Text("Add Medication")
@@ -116,7 +144,9 @@ import com.xai.core.ui.theme.DosifyTheme
 import com.xai.core.ui.components.DosifyAppBar
 import com.xai.dosify.nav.AppNavGraph
 import com.xai.core.nav.NavRoutes
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -145,7 +175,10 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 ) { innerPadding ->
-                    AppNavGraph(navController = navController)
+                    AppNavGraph(
+                        navController = navController,
+                        innerPadding = innerPadding // Pass innerPadding to AppNavGraph
+                    )
                 }
             }
         }
@@ -613,6 +646,7 @@ import com.google.firebase.auth.FirebaseUser
 interface AuthRepository {
     suspend fun emailLogin(email: String, password: String): Boolean
     suspend fun googleLogin(idToken: String): Boolean
+    suspend fun registerEmail(email: String, password: String): Boolean // Add this
     fun logout()
     fun currentUser(): Boolean
 }
@@ -624,11 +658,9 @@ package com.xai.core.data.repository
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
-import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-@ViewModelScoped
 class AuthRepositoryImpl @Inject constructor(
     private val auth: FirebaseAuth
 ) : AuthRepository {
@@ -639,6 +671,10 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun googleLogin(idToken: String): Boolean = try {
         auth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null)).await() != null
     } catch (e: Exception) { false }
+
+    override suspend fun registerEmail(email: String, password: String): Boolean = try {
+        auth.createUserWithEmailAndPassword(email, password).await() != null
+    } catch (e: Exception) { false } // Handle exceptions (e.g., weak password, email in use)
 
     override fun logout() = auth.signOut()
 
@@ -668,13 +704,11 @@ package com.xai.core.data.repository
 import com.xai.core.data.dao.DoseLogDao
 import com.xai.core.data.models.DoseLog
 import com.google.firebase.firestore.FirebaseFirestore
-import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-@ViewModelScoped
 class DoseLogRepositoryImpl @Inject constructor(
     private val dao: DoseLogDao,
     private val firestore: FirebaseFirestore
@@ -686,7 +720,7 @@ class DoseLogRepositoryImpl @Inject constructor(
     override fun getRecent(): Flow<List<DoseLog>> = dao.getRecent()
 
     override suspend fun syncWithFirestore(userId: String) {
-        val localLogs = dao.getAll().first()  // Assume getAll() in Dao
+        val localLogs = dao.getAll().first()
         val remoteCollection = firestore.collection("users/$userId/logs")
 
         localLogs.forEach { log ->
@@ -729,19 +763,15 @@ package com.xai.core.data.repository
 import com.xai.core.data.dao.DoseScheduleDao
 import com.xai.core.data.models.DoseSchedule
 import com.google.firebase.firestore.FirebaseFirestore
-import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-@ViewModelScoped
 class DoseScheduleRepositoryImpl @Inject constructor(
     private val dao: DoseScheduleDao,
     private val firestore: FirebaseFirestore
-
 ) : DoseScheduleRepository {
-
     override suspend fun insert(schedule: DoseSchedule) = dao.insert(schedule)
 
     override suspend fun update(schedule: DoseSchedule) = dao.update(schedule)
@@ -770,9 +800,7 @@ class DoseScheduleRepositoryImpl @Inject constructor(
                 dao.insert(remote)
             }
         }
-
     }
-
 }
 ```
 ---
@@ -806,14 +834,12 @@ import com.xai.core.data.models.Medication
 import com.xai.core.data.models.Reconstitution
 import com.xai.core.utils.ReconstitutionUtils
 import com.google.firebase.firestore.FirebaseFirestore
-import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 import javax.inject.Inject
 
-@ViewModelScoped
 class MedicationRepositoryImpl @Inject constructor(
     private val dao: MedicationDao,
     private val firestore: FirebaseFirestore,
@@ -879,13 +905,11 @@ package com.xai.core.data.repository
 import com.xai.core.data.dao.ProfileDao
 import com.xai.core.data.models.Profile
 import com.google.firebase.firestore.FirebaseFirestore
-import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-@ViewModelScoped
 class ProfileRepositoryImpl @Inject constructor(
     private val dao: ProfileDao,
     private val firestore: FirebaseFirestore
@@ -936,13 +960,11 @@ package com.xai.core.data.repository
 import com.xai.core.data.dao.ReconstitutionDao
 import com.xai.core.data.models.Reconstitution
 import com.google.firebase.firestore.FirebaseFirestore
-import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-@ViewModelScoped
 class ReconstitutionRepositoryImpl @Inject constructor(
     private val dao: ReconstitutionDao,
     private val firestore: FirebaseFirestore
@@ -996,13 +1018,11 @@ package com.xai.core.data.repository
 import com.xai.core.data.dao.SupplyDao
 import com.xai.core.data.models.Supply
 import com.google.firebase.firestore.FirebaseFirestore
-import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-@ViewModelScoped
 class SupplyRepositoryImpl @Inject constructor(
     private val dao: SupplyDao,
     private val firestore: FirebaseFirestore
@@ -1582,7 +1602,9 @@ File: feature_advanced\src\main\kotlin\com\xai\feature_advanced\ui\ReportsScreen
 ```
 package com.xai.feature_advanced.ui
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -1596,12 +1618,14 @@ import com.github.mikephil.charting.data.LineDataSet
 import com.xai.feature_advanced.viewmodel.ReportsViewModel
 
 @Composable
-fun ReportsScreen(viewModel: ReportsViewModel) {
+fun ReportsScreen(viewModel: ReportsViewModel, innerPadding: PaddingValues) { // Add innerPadding parameter
     val logs by viewModel.doseLogs.collectAsState(emptyList())
 
     AndroidView(
         factory = { LineChart(it) },
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding), // Apply innerPadding
         update = { chart ->
             val entries = logs.mapIndexed { i, log -> Entry(i.toFloat(), log.amountTaken.toFloat()) }
             val dataSet = LineDataSet(entries, "Dose History")
@@ -1681,6 +1705,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -1697,9 +1722,32 @@ class AuthViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun loginEmail(email: String, password: String) = viewModelScope.launch {
+        val trimmedEmail = email.trim()
+        Timber.d("Attempting login with email: $trimmedEmail")
+        if (!isValidEmail(trimmedEmail)) {
+            _state.value = _state.value.copy(loading = false, error = "Invalid email format")
+            return@launch
+        }
         _state.value = _state.value.copy(loading = true)
-        val success = repo.emailLogin(email, password)
+        val success = repo.emailLogin(trimmedEmail, password)
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Login failed" else null)
+        if (success) enqueueSync()
+    }
+
+    fun registerEmail(email: String, password: String) = viewModelScope.launch {
+        val trimmedEmail = email.trim()
+        Timber.d("Attempting registration with email: $trimmedEmail")
+        if (!isValidEmail(trimmedEmail)) {
+            _state.value = _state.value.copy(loading = false, error = "Invalid email format")
+            return@launch
+        }
+        if (password.length < 6) {
+            _state.value = _state.value.copy(loading = false, error = "Password must be at least 6 characters")
+            return@launch
+        }
+        _state.value = _state.value.copy(loading = true)
+        val success = repo.registerEmail(trimmedEmail, password)
+        _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Registration failed" else null)
         if (success) enqueueSync()
     }
 
@@ -1723,6 +1771,10 @@ class AuthViewModel @Inject constructor(
 
         workManager.enqueueUniquePeriodicWork("sync", ExistingPeriodicWorkPolicy.KEEP, periodicRequest)
     }
+
+    private fun isValidEmail(email: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    }
 }
 
 data class AuthState(val loading: Boolean = false, val success: Boolean = false, val error: String? = null)
@@ -1743,6 +1795,7 @@ package com.xai.feature_auth
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -1758,17 +1811,20 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.xai.core.R
 import com.xai.core.nav.NavRoutes
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    innerPadding: PaddingValues
 ) {
     val state by viewModel.state.collectAsState()
     val user by viewModel.authUser.collectAsState()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var isRegistering by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val credentialManager = remember { CredentialManager.create(context) }
     val coroutineScope = rememberCoroutineScope()
@@ -1779,54 +1835,84 @@ fun LoginScreen(
         if (user != null) onLoginSuccess()
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
-        Surface(modifier = Modifier.padding(padding).fillMaxSize()) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (user != null) {
-                    Text("Welcome, ${user!!.displayName}")
-                    Button(onClick = { viewModel.logout() }) {
-                        Text("Logout")
-                    }
-                } else {
-                    TextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email") }
-                    )
-                    TextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Password") }
-                    )
-                    Button(onClick = { viewModel.loginEmail(email, password) }) {
-                        Text("Login")
-                    }
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                val result = handleGoogleSignIn(context, credentialManager, webClientId)
-                                if (result != null) {
-                                    handleCredential(result, viewModel)
-                                    snackbarHostState.showSnackbar("Sign-in successful")
-                                } else {
-                                    snackbarHostState.showSnackbar("Sign-in failed")
-                                }
-                            }
-                        }
-                    ) {
-                        Text("Google Login")
-                    }
-                    if (state.loading) Text("Loading...")
-                    state.error?.let { Text(it) }
-                    if (state.success) Text("Logged in")
-                }
-            }
+    LaunchedEffect(state.success) {
+        if (state.success) {
+            snackbarHostState.showSnackbar(if (isRegistering) "Registration successful" else "Login successful")
+            onLoginSuccess()
+        } else if (state.error != null) {
+            snackbarHostState.showSnackbar(state.error ?: "An error occurred")
         }
+    }
+
+    Column(
+        modifier = Modifier
+            .padding(innerPadding)
+            .padding(horizontal = 16.dp)
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (user != null) {
+            Text("Welcome, ${user!!.displayName}")
+            Button(onClick = { viewModel.logout() }) {
+                Text("Logout")
+            }
+        } else {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(text = if (isRegistering) "Register" else "Login")
+            TextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        if (isRegistering) {
+                            viewModel.registerEmail(email, password)
+                        } else {
+                            viewModel.loginEmail(email, password)
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (isRegistering) "Register" else "Login")
+            }
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        val result = handleGoogleSignIn(context, credentialManager, webClientId)
+                        if (result != null) {
+                            handleCredential(result, viewModel)
+                            snackbarHostState.showSnackbar("Sign-in successful")
+                        } else {
+                            snackbarHostState.showSnackbar("Sign-in failed")
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Google Login")
+            }
+            Button(
+                onClick = { isRegistering = !isRegistering },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (isRegistering) "Switch to Login" else "Switch to Register")
+            }
+            if (state.loading) Text("Loading...")
+            state.error?.let { Text(it) }
+            if (state.success) Text("Logged in")
+        }
+        SnackbarHost(hostState = snackbarHostState)
     }
 }
 
@@ -1837,7 +1923,7 @@ private suspend fun handleGoogleSignIn(
 ): GetCredentialResponse? {
     return try {
         val googleIdOption = GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(true)
+            .setFilterByAuthorizedAccounts(false)
             .setServerClientId(webClientId)
             .build()
 
@@ -1847,20 +1933,8 @@ private suspend fun handleGoogleSignIn(
 
         credentialManager.getCredential(request = request, context = context)
     } catch (e: GetCredentialException) {
-        try {
-            val googleIdOptionFallback = GetGoogleIdOption.Builder()
-                .setFilterByAuthorizedAccounts(false)
-                .setServerClientId(webClientId)
-                .build()
-
-            val requestFallback = GetCredentialRequest.Builder()
-                .addCredentialOption(googleIdOptionFallback)
-                .build()
-
-            credentialManager.getCredential(request = requestFallback, context = context)
-        } catch (fallbackE: GetCredentialException) {
-            null
-        }
+        Timber.e(e, "Google Sign-In failed: ${e.message}")
+        null
     }
 }
 
@@ -1970,7 +2044,9 @@ package com.xai.feature_med.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -1984,7 +2060,8 @@ import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
+fun MedFormScreen(innerPadding: PaddingValues) { // Add innerPadding parameter
+    val viewModel: MedViewModel = hiltViewModel()
     var name by remember { mutableStateOf("") }
     var strength by remember { mutableStateOf("") }
     var unit by remember { mutableStateOf("") }
@@ -1999,18 +2076,46 @@ fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
+    ) { scaffoldPadding ->
         Column(
-            modifier = Modifier.padding(padding).padding(16.dp),
+            modifier = Modifier
+                .padding(scaffoldPadding) // Apply Scaffold padding
+                .padding(innerPadding) // Apply innerPadding from nav graph
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            TextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
-            TextField(value = strength, onValueChange = { strength = it }, label = { Text("Strength") })
-            TextField(value = unit, onValueChange = { unit = it }, label = { Text("Unit") })
-            TextField(value = stock, onValueChange = { stock = it }, label = { Text("Stock") })
-            TextField(value = lowStockThreshold, onValueChange = { lowStockThreshold = it }, label = { Text("Low Stock Threshold") })
+            TextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = strength,
+                onValueChange = { strength = it },
+                label = { Text("Strength") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = unit,
+                onValueChange = { unit = it },
+                label = { Text("Unit") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = stock,
+                onValueChange = { stock = it },
+                label = { Text("Stock") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = lowStockThreshold,
+                onValueChange = { lowStockThreshold = it },
+                label = { Text("Low Stock Threshold") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-            // Type dropdown
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded }
@@ -2022,7 +2127,9 @@ fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
                     label = { Text("Type") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     colors = ExposedDropdownMenuDefaults.textFieldColors(),
-                    modifier = Modifier.menuAnchor()
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expanded,
@@ -2042,35 +2149,48 @@ fun MedFormScreen(viewModel: MedViewModel = hiltViewModel()) {
             }
 
             if (type == MedType.INJECTION) {
-                TextField(value = powder, onValueChange = { powder = it }, label = { Text("Powder Amount") })
-                TextField(value = solvent, onValueChange = { solvent = it }, label = { Text("Solvent Volume") })
-            }
-            Button(onClick = {
-                Timber.d("Save button clicked")
-                val med = Medication(
-                    name = name,
-                    type = type,
-                    strength = strength.toDoubleOrNull() ?: 0.0,
-                    unit = unit,
-                    stock = stock.toIntOrNull() ?: 0,
-                    lowStockThreshold = lowStockThreshold.toIntOrNull() ?: 0,
-                    reconstitution = type == MedType.INJECTION
+                TextField(
+                    value = powder,
+                    onValueChange = { powder = it },
+                    label = { Text("Powder Amount") },
+                    modifier = Modifier.fillMaxWidth()
                 )
-                coroutineScope.launch {
-                    try {
-                        if (med.reconstitution) {
-                            viewModel.saveWithReconstitution(med, powder.toDoubleOrNull() ?: 0.0, solvent.toDoubleOrNull() ?: 0.0)
-                        } else {
-                            viewModel.insert(med)
+                TextField(
+                    value = solvent,
+                    onValueChange = { solvent = it },
+                    label = { Text("Solvent Volume") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            Button(
+                onClick = {
+                    Timber.d("Save button clicked")
+                    val med = Medication(
+                        name = name,
+                        type = type,
+                        strength = strength.toDoubleOrNull() ?: 0.0,
+                        unit = unit,
+                        stock = stock.toIntOrNull() ?: 0,
+                        lowStockThreshold = lowStockThreshold.toIntOrNull() ?: 0,
+                        reconstitution = type == MedType.INJECTION
+                    )
+                    coroutineScope.launch {
+                        try {
+                            if (med.reconstitution) {
+                                viewModel.saveWithReconstitution(med, powder.toDoubleOrNull() ?: 0.0, solvent.toDoubleOrNull() ?: 0.0)
+                            } else {
+                                viewModel.insert(med)
+                            }
+                            snackbarHostState.showSnackbar("Medication saved")
+                            Timber.d("Save success")
+                        } catch (e: Exception) {
+                            snackbarHostState.showSnackbar("Save failed: ${e.message}")
+                            Timber.e(e, "Save error")
                         }
-                        snackbarHostState.showSnackbar("Medication saved")
-                        Timber.d("Save success")
-                    } catch (e: Exception) {
-                        snackbarHostState.showSnackbar("Save failed: ${e.message}")
-                        Timber.e(e, "Save error")
                     }
-                }
-            }) {
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Save")
             }
         }
@@ -2088,14 +2208,25 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xai.feature_med.viewmodel.MedListViewModel
 
 @Composable
-fun MedListScreen(viewModel: MedListViewModel = hiltViewModel()) {
+fun MedListScreen(
+    viewModel: MedListViewModel = hiltViewModel(),
+    modifier: Modifier = Modifier
+) {
     val meds by viewModel.meds.collectAsState(emptyList())
 
-    LazyColumn {
+    LazyColumn(
+        modifier = modifier
+            .padding(16.dp)
+            .fillMaxWidth()
+    ) {
         items(meds) { med ->
             Text("${med.name} - Stock: ${med.stock}")
         }
@@ -2109,7 +2240,9 @@ package com.xai.feature_med.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -2133,7 +2266,8 @@ import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SupplyFormScreen(viewModel: SupplyViewModel = hiltViewModel()) {
+fun SupplyFormScreen(innerPadding: PaddingValues) { // Add innerPadding parameter
+    val viewModel: SupplyViewModel = hiltViewModel()
     var name by remember { mutableStateOf("") }
     var unit by remember { mutableStateOf("") }
     var stock by remember { mutableStateOf("") }
@@ -2143,34 +2277,61 @@ fun SupplyFormScreen(viewModel: SupplyViewModel = hiltViewModel()) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
+    ) { scaffoldPadding ->
         Column(
-            modifier = Modifier.padding(padding).padding(16.dp),
+            modifier = Modifier
+                .padding(scaffoldPadding) // Apply Scaffold padding
+                .padding(innerPadding) // Apply innerPadding from nav graph
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            TextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
-            TextField(value = unit, onValueChange = { unit = it }, label = { Text("Unit") })
-            TextField(value = stock, onValueChange = { stock = it }, label = { Text("Stock") })
-            TextField(value = lowStockThreshold, onValueChange = { lowStockThreshold = it }, label = { Text("Low Stock Threshold") })
-            Button(onClick = {
-                Timber.d("Save supply button clicked")
-                val supply = Supply(
-                    name = name,
-                    unit = unit,
-                    stock = stock.toDoubleOrNull() ?: 0.0,
-                    lowStockThreshold = lowStockThreshold.toDoubleOrNull() ?: 0.0
-                )
-                coroutineScope.launch {
-                    try {
-                        viewModel.insert(supply)
-                        snackbarHostState.showSnackbar("Supply saved")
-                        Timber.d("Save success")
-                    } catch (e: Exception) {
-                        snackbarHostState.showSnackbar("Save failed: ${e.message}")
-                        Timber.e(e, "Save error")
+            TextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = unit,
+                onValueChange = { unit = it },
+                label = { Text("Unit") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = stock,
+                onValueChange = { stock = it },
+                label = { Text("Stock") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextField(
+                value = lowStockThreshold,
+                onValueChange = { lowStockThreshold = it },
+                label = { Text("Low Stock Threshold") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Button(
+                onClick = {
+                    Timber.d("Save supply button clicked")
+                    val supply = Supply(
+                        name = name,
+                        unit = unit,
+                        stock = stock.toDoubleOrNull() ?: 0.0,
+                        lowStockThreshold = lowStockThreshold.toDoubleOrNull() ?: 0.0
+                    )
+                    coroutineScope.launch {
+                        try {
+                            viewModel.insert(supply)
+                            snackbarHostState.showSnackbar("Supply saved")
+                            Timber.d("Save success")
+                        } catch (e: Exception) {
+                            snackbarHostState.showSnackbar("Save failed: ${e.message}")
+                            Timber.e(e, "Save error")
+                        }
                     }
-                }
-            }) {
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Save")
             }
         }
@@ -2257,6 +2418,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -2276,8 +2439,11 @@ import java.time.LocalDate
 import java.time.YearMonth
 import com.xai.core.data.models.DoseSchedule
 
-
-@Composable fun CalendarScreen(viewModel: CalendarViewModel) {
+@Composable
+fun CalendarScreen(
+    viewModel: CalendarViewModel = hiltViewModel(),
+    modifier: Modifier = Modifier
+) {
     val schedules by viewModel.schedules.collectAsState(emptyList<DoseSchedule>())
     val currentMonth = YearMonth.now()
     val startMonth = currentMonth.minusMonths(12)
@@ -2289,28 +2455,33 @@ import com.xai.core.data.models.DoseSchedule
         firstDayOfWeek = firstDayOfWeekFromLocale()
     )
 
-    HorizontalCalendar(
-        state = state,
-        dayContent = { day: CalendarDay ->
-            val hasDose = hasDoseOnDay(day.date, schedules)
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(day.date.dayOfMonth.toString())
-                if (hasDose) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .background(MaterialTheme.colorScheme.primary, CircleShape)
-                    )
+    Column(
+        modifier = modifier
+            .padding(16.dp)
+            .fillMaxWidth()
+    ) {
+        HorizontalCalendar(
+            state = state,
+            dayContent = { day: CalendarDay ->
+                val hasDose = hasDoseOnDay(day.date, schedules)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(day.date.dayOfMonth.toString())
+                    if (hasDose) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .background(MaterialTheme.colorScheme.primary, CircleShape)
+                        )
+                    }
                 }
             }
-        }
-    )
+        )
+    }
 }
 
 private fun hasDoseOnDay(day: LocalDate, schedules: List<DoseSchedule>): Boolean {
     return schedules.any { schedule ->
         day >= schedule.startDate && (schedule.endDate == null || day <= schedule.endDate)
-        // Add frequency logic later, e.g., for WEEKLY: day.dayOfWeek in schedule.daysOfWeek
     }
 }
 ```
@@ -2321,8 +2492,9 @@ package com.xai.feature_schedule.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -2353,7 +2525,8 @@ import java.time.LocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
+fun DoseConfirmScreen(innerPadding: PaddingValues) { // Add innerPadding parameter
+    val viewModel: DoseConfirmViewModel = hiltViewModel()
     val schedules by viewModel.activeSchedules.collectAsState(emptyList())
     var selectedSchedule by remember { mutableStateOf<DoseSchedule?>(null) }
     var notes by remember { mutableStateOf("") }
@@ -2363,14 +2536,16 @@ fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
     val context = LocalContext.current
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        modifier = Modifier.padding(16.dp)
-    ) { paddingValues: PaddingValues ->
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { scaffoldPadding ->
         Column(
-            modifier = Modifier.padding(paddingValues),
+            modifier = Modifier
+                .padding(scaffoldPadding) // Apply Scaffold padding
+                .padding(innerPadding) // Apply innerPadding from nav graph
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Schedule dropdown
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded }
@@ -2381,7 +2556,9 @@ fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
                     onValueChange = { },
                     label = { Text("Schedule") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.menuAnchor()
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expanded,
@@ -2400,43 +2577,44 @@ fun DoseConfirmScreen(viewModel: DoseConfirmViewModel = hiltViewModel()) {
                 }
             }
 
-            // Notes field
             TextField(
                 value = notes,
                 onValueChange = { notes = it },
-                label = { Text("Notes (optional)") }
+                label = { Text("Notes (optional)") },
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Button(onClick = {
-                if (selectedSchedule == null) {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("Select a schedule")
-                    }
-                    return@Button
-                }
-                coroutineScope.launch {
-                    try {
-                        val doseLog = DoseLog(
-                            scheduleId = selectedSchedule!!.id,
-                            amountTaken = selectedSchedule!!.doseAmount,
-                            takenTime = LocalDateTime.now(),
-                            notes = notes.takeIf { it.isNotBlank() }
-                        )
-                        viewModel.doseLogRepo.insert(doseLog)
-                        // Decrement stock
-                        val success = viewModel.medRepo.decrementStock(selectedSchedule!!.medId, selectedSchedule!!.doseAmount)
-                        if (!success) {
-                            snackbarHostState.showSnackbar("Low stock")
-                        } else {
-                            // Set next alarm
-                            setDoseAlarm(context, selectedSchedule!!)
-                            snackbarHostState.showSnackbar("Dose confirmed")
+            Button(
+                onClick = {
+                    if (selectedSchedule == null) {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Select a schedule")
                         }
-                    } catch (e: Exception) {
-                        snackbarHostState.showSnackbar("Confirm failed: ${e.message}")
+                        return@Button
                     }
-                }
-            }) {
+                    coroutineScope.launch {
+                        try {
+                            val doseLog = DoseLog(
+                                scheduleId = selectedSchedule!!.id,
+                                amountTaken = selectedSchedule!!.doseAmount,
+                                takenTime = LocalDateTime.now(),
+                                notes = notes.takeIf { it.isNotBlank() }
+                            )
+                            viewModel.doseLogRepo.insert(doseLog)
+                            val success = viewModel.medRepo.decrementStock(selectedSchedule!!.medId, selectedSchedule!!.doseAmount)
+                            if (!success) {
+                                snackbarHostState.showSnackbar("Low stock")
+                            } else {
+                                setDoseAlarm(context, selectedSchedule!!)
+                                snackbarHostState.showSnackbar("Dose confirmed")
+                            }
+                        } catch (e: Exception) {
+                            snackbarHostState.showSnackbar("Confirm failed: ${e.message}")
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Confirm Dose")
             }
         }
@@ -2451,8 +2629,9 @@ package com.xai.feature_schedule.ui
 import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -2484,14 +2663,14 @@ import com.xai.feature_schedule.viewmodel.ScheduleViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.Calendar // For API < 26 fallback
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ScheduleFormScreen(
-    viewModel: ScheduleViewModel = hiltViewModel(),
-    iapViewModel: IapViewModel = hiltViewModel(),
-    medViewModel: MedListViewModel = hiltViewModel()
-) {
+fun ScheduleFormScreen(innerPadding: PaddingValues) {
+    val viewModel: ScheduleViewModel = hiltViewModel()
+    val iapViewModel: IapViewModel = hiltViewModel()
+    val medViewModel: MedListViewModel = hiltViewModel()
     val isPremium by iapViewModel.isPremium.collectAsState(false)
     val meds by medViewModel.meds.collectAsState(emptyList())
     var doseAmount by remember { mutableStateOf("") }
@@ -2507,14 +2686,16 @@ fun ScheduleFormScreen(
     val context = LocalContext.current
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        modifier = Modifier.padding(16.dp)
-    ) { paddingValues: PaddingValues ->
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { scaffoldPadding ->
         Column(
-            modifier = Modifier.padding(paddingValues),
+            modifier = Modifier
+                .padding(scaffoldPadding)
+                .padding(innerPadding)
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Medication dropdown
             ExposedDropdownMenuBox(
                 expanded = expandedMed,
                 onExpandedChange = { expandedMed = !expandedMed }
@@ -2525,7 +2706,9 @@ fun ScheduleFormScreen(
                     onValueChange = { },
                     label = { Text("Medication") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedMed) },
-                    modifier = Modifier.menuAnchor()
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expandedMed,
@@ -2545,22 +2728,21 @@ fun ScheduleFormScreen(
                 }
             }
 
-            // Dose amount
             TextField(
                 value = doseAmount,
                 onValueChange = { doseAmount = it },
-                label = { Text("Dose Amount") }
+                label = { Text("Dose Amount") },
+                modifier = Modifier.fillMaxWidth()
             )
 
-            // Unit (auto-filled from med)
             TextField(
                 value = unit,
                 onValueChange = { unit = it },
                 label = { Text("Unit") },
-                enabled = false // Read-only from med
+                enabled = false,
+                modifier = Modifier.fillMaxWidth()
             )
 
-            // Frequency dropdown
             ExposedDropdownMenuBox(
                 expanded = expandedFreq,
                 onExpandedChange = { expandedFreq = !expandedFreq }
@@ -2571,7 +2753,9 @@ fun ScheduleFormScreen(
                     onValueChange = { },
                     label = { Text("Frequency") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedFreq) },
-                    modifier = Modifier.menuAnchor()
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expandedFreq,
@@ -2590,19 +2774,21 @@ fun ScheduleFormScreen(
                 }
             }
 
-            // Time picker button
-            Button(onClick = {
-                val now = LocalTime.now()
-                TimePickerDialog(
-                    context,
-                    { _, hour, minute ->
-                        times = times + LocalTime.of(hour, minute)
-                    },
-                    now.hour,
-                    now.minute,
-                    true // 24-hour format
-                ).show()
-            }) {
+            Button(
+                onClick = {
+                    val calendar = Calendar.getInstance()
+                    TimePickerDialog(
+                        context,
+                        { _, hour, minute ->
+                            times = times + LocalTime.of(hour, minute) // Use LocalTime after desugaring
+                        },
+                        calendar.get(Calendar.HOUR_OF_DAY),
+                        calendar.get(Calendar.MINUTE),
+                        true
+                    ).show()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Add Dose Time")
             }
             Text("Times: ${times.joinToString { it.format(DateTimeFormatter.ofPattern("HH:mm")) }}")
@@ -2611,40 +2797,46 @@ fun ScheduleFormScreen(
                 TextField(
                     value = cycleWeeks,
                     onValueChange = { cycleWeeks = it },
-                    label = { Text("Cycle Weeks") }
+                    label = { Text("Cycle Weeks") },
+                    modifier = Modifier.fillMaxWidth()
                 )
-                // Add cycleOffWeeks, isCycling checkbox, titration later
             } else {
                 Text("Premium feature - Subscribe for cycling/titration")
-                Button(onClick = { /* Launch billing flow later */ }) {
+                Button(
+                    onClick = { /* Launch billing flow later */ },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text("Subscribe")
                 }
             }
 
-            Button(onClick = {
-                if (selectedMed == null) {
+            Button(
+                onClick = {
+                    if (selectedMed == null) {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Select a medication")
+                        }
+                        return@Button
+                    }
+                    val schedule = DoseSchedule(
+                        medId = selectedMed!!.id,
+                        doseAmount = doseAmount.toDoubleOrNull() ?: 0.0,
+                        unit = unit,
+                        frequency = frequency,
+                        times = times
+                    )
                     coroutineScope.launch {
-                        snackbarHostState.showSnackbar("Select a medication")
+                        try {
+                            viewModel.save(schedule)
+                            setDoseAlarm(context, schedule)
+                            snackbarHostState.showSnackbar("Schedule saved")
+                        } catch (e: Exception) {
+                            snackbarHostState.showSnackbar("Save failed: ${e.message}")
+                        }
                     }
-                    return@Button
-                }
-                val schedule = DoseSchedule(
-                    medId = selectedMed!!.id,
-                    doseAmount = doseAmount.toDoubleOrNull() ?: 0.0,
-                    unit = unit,
-                    frequency = frequency,
-                    times = times
-                )
-                coroutineScope.launch {
-                    try {
-                        viewModel.save(schedule)
-                        setDoseAlarm(context, schedule)
-                        snackbarHostState.showSnackbar("Schedule saved")
-                    } catch (e: Exception) {
-                        snackbarHostState.showSnackbar("Save failed: ${e.message}")
-                    }
-                }
-            }) {
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Save Schedule")
             }
         }
@@ -2752,6 +2944,8 @@ File: feature_sync\src\main\kotlin\com\xai\feature_sync\ui\SettingsScreen.kt
 package com.xai.feature_sync.ui
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -2762,32 +2956,44 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xai.feature_sync.viewmodel.SyncViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(viewModel: SyncViewModel) {
+fun SettingsScreen(
+    viewModel: SyncViewModel = hiltViewModel(),
+    modifier: Modifier = Modifier // Add modifier parameter to accept innerPadding
+) {
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    Column (
-        modifier = Modifier,
-        verticalArrangement = Arrangement.Top,
+    Column(
+        modifier = modifier
+            .padding(16.dp)
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        Button(onClick = { viewModel.testSync() }) {
+        Button(
+            onClick = { viewModel.testSync() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Text("Test DB Integrity & Sync")
         }
-        Button(onClick = {
-            coroutineScope.launch {
-                viewModel.manualSync(snackbarHostState)
-            }
-        }) {
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    viewModel.manualSync(snackbarHostState)
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Text("Manual Sync")
         }
     }
-    SnackbarHost( hostState = snackbarHostState, modifier = Modifier )
+    SnackbarHost(hostState = snackbarHostState, modifier = Modifier)
 }
 ```
 ---
@@ -3230,6 +3436,26 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.espresso.core)
 }
+
+// Add zipalign task for 16 KB page size compatibility
+tasks.register<Exec>("alignDebugApk") {
+    group = "build"
+    description = "Aligns the debug APK for 16 KB page size compatibility"
+    val inputApk = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
+    val outputApk = layout.buildDirectory.file("outputs/apk/debug/app-debug-aligned.apk").get().asFile
+    dependsOn(tasks.named("assembleDebug"))
+    doLast {
+        exec {
+            commandLine(
+                "zipalign",
+                "-f", // Force overwrite
+                "-p", "4", // 4KB page alignment
+                inputApk.absolutePath,
+                outputApk.absolutePath
+            )
+        }
+    }
+}
 ```
 ---
 File: core/build.gradle.kts
@@ -3443,7 +3669,8 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     implementation(libs.hilt.work)
     implementation(libs.kotlin.stdlib)
-    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.android) // Already present
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3") // Explicitly add core
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.material)
     implementation(libs.navigation.compose)
@@ -3453,6 +3680,7 @@ dependencies {
     ksp(libs.hilt.work.compiler)
     implementation(project(":core"))
     implementation(project(":feature_sync"))
+    implementation(libs.timber)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -3559,6 +3787,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
 
     composeOptions {
@@ -3586,6 +3815,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.timber)
     implementation(libs.lifecycle.viewmodel.compose)
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(project(":core"))
     implementation(project(":feature_iap"))
@@ -3730,6 +3960,8 @@ File: app/src/main/AndroidManifest.xml
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.INTERNET" /> <!-- Add this for network access -->
+    <uses-permission android:name="com.google.android.gms.permission.CREDENTIAL_MANAGER" />
 
     <application
         android:name=".DosifyApplication"

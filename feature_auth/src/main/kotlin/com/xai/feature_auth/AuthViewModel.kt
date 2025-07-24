@@ -1,103 +1,63 @@
-package com.xai.feature_auth
+package com.xai.dosify.feature.auth.ui
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.xai.core.data.repository.AuthRepository
-import com.xai.feature_sync.utils.SyncWorker
+import com.google.firebase.auth.OAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-import timber.log.Timber
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import timber.log.Timber
+import com.google.firebase.auth.PhoneAuthOptions
+import com.google.firebase.auth.PhoneAuthProvider
+import java.util.concurrent.TimeUnit
 
 @HiltViewModel
-class AuthViewModel @Inject constructor(
-    private val repo: AuthRepository,
-    private val auth: FirebaseAuth,
-    private val workManager: WorkManager
-) : ViewModel() {
-    private val _state = MutableStateFlow(AuthState())
-    val state: StateFlow<AuthState> = _state
+class AuthViewModel @Inject constructor(private val auth: FirebaseAuth) : ViewModel() {
 
-    val authUser: StateFlow<FirebaseUser?> = auth.authStateChanges()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-    fun loginEmail(email: String, password: String) = viewModelScope.launch {
-        val trimmedEmail = email.trim()
-        Timber.d("Attempting login with email: $trimmedEmail")
-        if (!isValidEmail(trimmedEmail)) {
-            _state.value = _state.value.copy(loading = false, error = "Invalid email format")
-            return@launch
-        }
-        _state.value = _state.value.copy(loading = true)
-        val success = repo.emailLogin(trimmedEmail, password)
-        _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Login failed" else null)
-        if (success) enqueueSync()
-    }
-
-    fun registerEmail(email: String, password: String) = viewModelScope.launch {
-        val trimmedEmail = email.trim()
-        Timber.d("Attempting registration with email: $trimmedEmail")
-        if (!isValidEmail(trimmedEmail)) {
-            _state.value = _state.value.copy(loading = false, error = "Invalid email format")
-            return@launch
-        }
-        if (password.length < 6) {
-            _state.value = _state.value.copy(loading = false, error = "Password must be at least 6 characters")
-            return@launch
-        }
-        _state.value = _state.value.copy(loading = true)
-        val success = repo.registerEmail(trimmedEmail, password)
-        _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Registration failed" else null)
-        if (success) enqueueSync()
-    }
-
-    fun loginGoogle(idToken: String) = viewModelScope.launch {
-        _state.value = _state.value.copy(loading = true)
-        val success = repo.googleLogin(idToken)
-        _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Google login failed" else null)
-        if (success) enqueueSync()
-    }
-
-    fun logout() = repo.logout()
-
-    private fun enqueueSync() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
+    fun signInWithApple() {
+        val provider = OAuthProvider.newBuilder("apple.com")
+            .setScopes(listOf("email", "name"))
+            .addCustomParameter("locale", "en")
             .build()
 
-        val periodicRequest = PeriodicWorkRequestBuilder<SyncWorker>(1, TimeUnit.HOURS)
-            .setConstraints(constraints)
-            .build()
-
-        workManager.enqueueUniquePeriodicWork("sync", ExistingPeriodicWorkPolicy.KEEP, periodicRequest)
+        auth.startActivityForSignInWithProvider(/* activity */ provider)
+            .addOnSuccessListener { authResult ->
+                Timber.d("Apple success: User ${authResult.user?.uid}")
+            }
+            .addOnFailureListener { e ->
+                Timber.e(e, "Apple sign-in failed")
+            }
     }
 
-    private fun isValidEmail(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    fun signInWithEmail(email: String, password: String) {
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnSuccessListener {
+                checkAndEnrollMFA()
+            }
     }
-}
 
-data class AuthState(val loading: Boolean = false, val success: Boolean = false, val error: String? = null)
-
-fun FirebaseAuth.authStateChanges(): Flow<FirebaseUser?> = callbackFlow {
-    val listener = FirebaseAuth.AuthStateListener { auth ->
-        trySend(auth.currentUser)
+    private fun checkAndEnrollMFA() {
+        val user = auth.currentUser ?: return
+        user.multiFactor.enrolledFactors.let { factors ->
+            if (factors.isEmpty()) {
+                Timber.d("Starting MFA enrollment")
+                user.multiFactor.session.addOnSuccessListener { session ->
+                    // Prompt user for phone (assume UI collects it, e.g., via LiveData)
+                    val phone = "+1" + userPhone // Replace with actual input
+                    val options = PhoneAuthOptions.newBuilder(auth)
+                        .setPhoneNumber(phone)
+                        .setTimeout(60L, TimeUnit.SECONDS)
+                        .setActivity(/* pass activity from UI */)
+                        .setCallbacks(/* verification callbacks */)
+                        .setMultiFactorSession(session)
+                        .build()
+                    PhoneAuthProvider.verifyPhoneNumber(options)
+                }.addOnFailureListener { e ->
+                    Timber.e(e, "MFA session failed")
+                    // Show UI toast: "MFA setup failed, try again"
+                }
+            } else {
+                Timber.d("MFA already enrolled with ${factors.size} factors")
+            }
+        }
     }
-    addAuthStateListener(listener)
-    awaitClose { removeAuthStateListener(listener) }
 }

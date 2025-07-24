@@ -38,14 +38,14 @@ fun AppNavGraph(
             )
         }
         composable(NavRoutes.HOME) {
-            HomeScreen(navController, innerPadding = innerPadding) // Pass innerPadding
+            HomeScreen(navController = navController, innerPadding = innerPadding) // Pass innerPadding
         }
         composable(NavRoutes.MED_FORM) {
             MedFormScreen(innerPadding = innerPadding) // Pass innerPadding
         }
         composable(NavRoutes.MED_LIST) {
             MedListScreen(
-                modifier = Modifier.padding(innerPadding) // Already uses padding
+                modifier = Modifier.padding(innerPadding) // Already handles padding
             )
         }
         composable(NavRoutes.SCHEDULE_FORM) {
@@ -59,12 +59,12 @@ fun AppNavGraph(
         }
         composable(NavRoutes.SETTINGS) {
             SettingsScreen(
-                modifier = Modifier.padding(innerPadding) // Already uses padding
+                modifier = Modifier.padding(innerPadding) // Already handles padding
             )
         }
         composable(NavRoutes.CALENDAR) {
             CalendarScreen(
-                modifier = Modifier.padding(innerPadding) // Already uses padding
+                modifier = Modifier.padding(innerPadding) // Already handles padding
             )
         }
         composable(NavRoutes.SUPPLY_FORM) {

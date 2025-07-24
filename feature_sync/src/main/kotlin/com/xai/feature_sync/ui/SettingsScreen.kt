@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xai.feature_sync.viewmodel.SyncViewModel
 import kotlinx.coroutines.launch
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 
 @Composable
 fun SettingsScreen(
@@ -50,5 +52,10 @@ fun SettingsScreen(
             Text("Manual Sync")
         }
     }
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(RequestPermission()) { granted ->
+        if (granted) viewModel.backupData() else Timber.w("Storage permission denied")
+    }
+    Button(onClick = { launcher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE) }) { Text("Backup Data") }
     SnackbarHost(hostState = snackbarHostState, modifier = Modifier)
 }
