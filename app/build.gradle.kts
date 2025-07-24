@@ -125,15 +125,5 @@ tasks.register<Exec>("alignDebugApk") {
     val inputApk = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
     val outputApk = layout.buildDirectory.file("outputs/apk/debug/app-debug-aligned.apk").get().asFile
     dependsOn(tasks.named("assembleDebug"))
-    doLast {
-        exec {
-            commandLine(
-                "zipalign",
-                "-f", // Force overwrite
-                "-p", "4", // 4KB page alignment
-                inputApk.absolutePath,
-                outputApk.absolutePath
-            )
-        }
-    }
+    commandLine("zipalign", "-f", "-p", "4", inputApk.absolutePath, outputApk.absolutePath)
 }
