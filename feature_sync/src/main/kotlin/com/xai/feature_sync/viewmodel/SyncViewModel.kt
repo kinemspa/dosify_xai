@@ -8,7 +8,11 @@ import com.xai.core.data.repository.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import com.xai.core.data.AppDatabase
+import android.content.Context
 import javax.inject.Inject
+import com.xai.dosify.core.utils.backupDatabase
+import com.xai.dosify.core.utils.restoreDatabase
 
 @HiltViewModel
 class SyncViewModel @Inject constructor(
@@ -18,7 +22,8 @@ class SyncViewModel @Inject constructor(
     private val logRepo: DoseLogRepository,
     private val supplyRepo: SupplyRepository,
     private val reconstRepo: ReconstitutionRepository,
-    private val profileRepo: ProfileRepository
+    private val profileRepo: ProfileRepository,
+    private val db: AppDatabase // Injected for backup/restore
 ) : ViewModel() {
 
     fun testSync() = viewModelScope.launch {
@@ -45,5 +50,15 @@ class SyncViewModel @Inject constructor(
             snackbarHostState.showSnackbar("Sync failed: ${e.message}")
             Timber.e(e, "Manual sync error")
         }
+    }
+
+    fun backupData(context: Context) = viewModelScope.launch {
+        backupDatabase(db, context)
+        Timber.d("Backup initiated")
+    }
+
+    fun restoreData(context: Context, backupFilePath: String) = viewModelScope.launch {
+        restoreDatabase(db, context, backupFilePath)
+        Timber.d("Restore initiated")
     }
 }
