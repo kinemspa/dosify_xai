@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.ExperimentalMaterial3Api
+import android.app.Activity
 
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryBlue,
@@ -32,6 +34,7 @@ private val DarkColorScheme = darkColorScheme(
     error = ErrorRed
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DosifyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -46,7 +49,7 @@ fun DosifyTheme(
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
-    val windowSize: WindowSizeClass = calculateWindowSizeClass(LocalContext.current) // Use in screens e.g., if (windowSize.widthSizeClass == WindowWidthSizeClass.Expanded) { /* tablet */ }
+    val windowSize: WindowSizeClass = calculateWindowSizeClass(LocalContext.current as Activity) // Cast to Activity; use in screens e.g., if (windowSize.widthSizeClass == WindowWidthSizeClass.Expanded) { /* tablet */ }
 
     MaterialTheme(
         colorScheme = colorScheme,
