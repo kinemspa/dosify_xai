@@ -1,5 +1,6 @@
 package com.xai.feature_auth
 
+import android.app.Activity
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,13 +15,13 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.xai.core.R
-import com.xai.core.nav.NavRoutes
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import android.app.Activity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,6 +100,12 @@ fun LoginScreen(
             Button(
                 onClick = {
                     coroutineScope.launch {
+                        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                            .requestIdToken(webClientId)
+                            .requestEmail()
+                            .build()
+                        val googleSignInClient = GoogleSignIn.getClient(context, gso)
+                        googleSignInClient.signOut().await() // Forces sign-in page by clearing session
                         val result = handleGoogleSignIn(context, credentialManager, webClientId)
                         if (result != null) {
                             handleCredential(result, viewModel)
