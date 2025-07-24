@@ -71,5 +71,6 @@ dependencies {
     implementation(libs.navigation.compose)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     implementation(libs.materialWindowSize)
+    implementation(project(":feature_auth")) // Added for AuthViewModel
 
 }

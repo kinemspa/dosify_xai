@@ -2,6 +2,7 @@ package com.xai.core.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -11,14 +12,17 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
+import com.xai.core.nav.NavRoutes
 import com.xai.core.ui.theme.PrimaryBlue
 import com.xai.core.ui.theme.TextBlack
+import com.xai.feature_auth.AuthViewModel // Added import
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DosifyAppBar(
     title: String,
     navController: NavController,
+    viewModel: AuthViewModel,
     showBackButton: Boolean = true
 ) {
     TopAppBar(
@@ -34,10 +38,19 @@ fun DosifyAppBar(
             }
         },
         actions = {
-            IconButton(onClick = { navController.navigate("home") { popUpTo("home") { inclusive = true } } }) {
+            IconButton(onClick = { navController.navigate(NavRoutes.HOME) { popUpTo(NavRoutes.HOME) { inclusive = true } } }) {
                 Icon(
                     imageVector = Icons.Filled.Home,
                     contentDescription = "Home"
+                )
+            }
+            IconButton(onClick = {
+                viewModel.logout()
+                navController.navigate(NavRoutes.LOGIN) { popUpTo(0) { inclusive = true } }
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.ExitToApp,
+                    contentDescription = "Logout"
                 )
             }
         },
