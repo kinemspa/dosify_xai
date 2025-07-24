@@ -70,5 +70,6 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.navigation.compose)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
+    implementation(libs.materialWindowSize)
 
 }

@@ -102,6 +102,7 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.billing.ktx)
     implementation(libs.gson)
+    implementation(libs.material)
 
     // Feature Modules
     implementation(project(":core"))
