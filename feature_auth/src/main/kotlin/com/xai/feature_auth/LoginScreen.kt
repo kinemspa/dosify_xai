@@ -20,6 +20,7 @@ import com.xai.core.R
 import com.xai.core.nav.NavRoutes
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import android.app.Activity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +35,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var isRegistering by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val activity = context as Activity
     val credentialManager = remember { CredentialManager.create(context) }
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -86,7 +88,7 @@ fun LoginScreen(
                         if (isRegistering) {
                             viewModel.registerEmail(email, password)
                         } else {
-                            viewModel.loginEmail(email, password)
+                            viewModel.signInWithEmail(email, password)
                         }
                     }
                 },
@@ -109,6 +111,12 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Google Login")
+            }
+            Button(
+                onClick = { viewModel.signInWithApple(activity) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Apple Login")
             }
             Button(
                 onClick = { isRegistering = !isRegistering },
