@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import android.app.Activity
 import com.google.firebase.FirebaseException
 import com.xai.core.data.repository.AuthRepository
+import com.xai.core.data.AppDatabase
 
 data class AuthState(val loading: Boolean = false, val success: Boolean = false, val error: String? = null)
 
@@ -27,6 +28,7 @@ data class AuthState(val loading: Boolean = false, val success: Boolean = false,
 class AuthViewModel @Inject constructor(
     private val auth: FirebaseAuth,
     private val authRepository: AuthRepository
+    private val db: AppDatabase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthState())
@@ -79,8 +81,9 @@ class AuthViewModel @Inject constructor(
         if (success) checkAndEnrollMFA(activity)
     }
 
-    fun logout() {
+    fun logout() = viewModelScope.launch {
         authRepository.logout()
+        db.clearAllTables() // Clear local Room database
         _authUser.value = null
     }
 

@@ -61,4 +61,20 @@ class SyncViewModel @Inject constructor(
         restoreDatabase(db, context, backupFilePath)
         Timber.d("Restore initiated")
     }
+
+    fun syncOnLogin() = viewModelScope.launch {
+        val userId = auth.currentUser?.uid ?: return@launch
+        try {
+            db.clearAllTables() // Clear local data before syncing
+            medRepo.syncWithFirestore(userId)
+            scheduleRepo.syncWithFirestore(userId)
+            logRepo.syncWithFirestore(userId)
+            supplyRepo.syncWithFirestore(userId)
+            reconstRepo.syncWithFirestore(userId)
+            profileRepo.syncWithFirestore(userId)
+            Timber.d("Sync on login success")
+        } catch (e: Exception) {
+            Timber.e(e, "Sync on login failed")
+        }
+    }
 }
