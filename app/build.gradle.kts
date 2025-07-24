@@ -125,5 +125,5 @@ tasks.register<Exec>("alignDebugApk") {
     val inputApk = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
     val outputApk = layout.buildDirectory.file("outputs/apk/debug/app-debug-aligned.apk").get().asFile
     dependsOn(tasks.named("assembleDebug"))
-    commandLine("zipalign", "-f", "-p", "4", inputApk.absolutePath, outputApk.absolutePath)
+    commandLine("zipalign", "-f", "-p", "4", inputApk.absolutePath, outputApk.absolutePath) // Use commandLine directly
 }

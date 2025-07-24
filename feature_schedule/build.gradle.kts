@@ -34,7 +34,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.6.11" // Update to match latest Compose
+        kotlinCompilerExtensionVersion = "1.5.15" // Updated to latest stable version
     }
     kotlinOptions {
         jvmTarget = "11"
