@@ -10,9 +10,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.xai.core.nav.NavRoutes
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.xai.feature_auth.AuthViewModel
 
 @Composable
 fun HomeScreen(navController: NavController, innerPadding: PaddingValues) {
+    val authViewModel: AuthViewModel = hiltViewModel() // Inject for logout
+
     Column(
         modifier = Modifier
             .padding(innerPadding) // Apply innerPadding to shift content below app bar
@@ -42,6 +46,12 @@ fun HomeScreen(navController: NavController, innerPadding: PaddingValues) {
         }
         Button(onClick = { navController.navigate(NavRoutes.SUPPLY_FORM) }) {
             Text("Add Supply")
+        }
+        Button(onClick = {
+            authViewModel.logout()
+            navController.navigate(NavRoutes.LOGIN) { popUpTo(0) { inclusive = true } } // Clear back stack
+        }) {
+            Text("Logout") // Added logout button
         }
     }
 }
