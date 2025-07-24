@@ -1,6 +1,8 @@
 package com.xai.feature_auth
 
 import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -9,16 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.credentials.CredentialManager
-import androidx.credentials.CustomCredential
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.GetCredentialResponse
-import androidx.credentials.exceptions.GetCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.tasks.Task
 import com.xai.core.R
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -38,10 +37,32 @@ fun LoginScreen(
     var isRegistering by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val activity = context as Activity
-    val credentialManager = remember { CredentialManager.create(context) }
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val webClientId = stringResource(R.string.web_client_id)
+
+    val gso = remember {
+        GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(webClientId)
+            .requestEmail()
+            .build()
+    }
+    val googleSignInClient = remember { GoogleSignIn.getClient(context, gso) }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.let { data ->
+                val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+                coroutineScope.launch {
+                    handleSignInResult(task, viewModel, snackbarHostState)
+                }
+            }
+        } else {
+            snackbarHostState.showSnackbar("Sign-in canceled")
+        }
+    }
 
     LaunchedEffect(user) {
         if (user != null) onLoginSuccess()
@@ -101,19 +122,9 @@ fun LoginScreen(
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                            .requestIdToken(webClientId)
-                            .requestEmail()
-                            .build()
-                        val googleSignInClient = GoogleSignIn.getClient(context, gso)
-                        googleSignInClient.signOut().await() // Forces sign-in page by clearing session
-                        val result = handleGoogleSignIn(context, credentialManager, webClientId)
-                        if (result != null) {
-                            handleCredential(result, viewModel)
-                            snackbarHostState.showSnackbar("Sign-in successful")
-                        } else {
-                            snackbarHostState.showSnackbar("Sign-in failed")
-                        }
+                        googleSignInClient.signOut().await() // Clear session to force sign-in page
+                        val signInIntent = googleSignInClient.signInIntent
+                        launcher.launch(signInIntent)
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -140,35 +151,22 @@ fun LoginScreen(
     }
 }
 
-private suspend fun handleGoogleSignIn(
-    context: android.content.Context,
-    credentialManager: CredentialManager,
-    webClientId: String
-): GetCredentialResponse? {
-    return try {
-        val googleIdOption = GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(false)
-            .setAutoSelectEnabled(false) // Added to disable auto-select and show picker for any account
-            .setServerClientId(webClientId)
-            .build()
-
-        val request = GetCredentialRequest.Builder()
-            .addCredentialOption(googleIdOption)
-            .build()
-
-        credentialManager.getCredential(request = request, context = context)
-    } catch (e: GetCredentialException) {
-        Timber.e(e, "Google Sign-In failed: ${e.message}")
-        null
-    }
-}
-
-private suspend fun handleCredential(result: GetCredentialResponse, viewModel: AuthViewModel) {
-    val credential = result.credential
-    if (credential is CustomCredential &&
-        credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-    ) {
-        val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-        viewModel.loginGoogle(googleIdTokenCredential.idToken)
+private suspend fun handleSignInResult(
+    completedTask: Task<GoogleSignInAccount>,
+    viewModel: AuthViewModel,
+    snackbarHostState: SnackbarHostState
+) {
+    try {
+        val account = completedTask.getResult(ApiException::class.java)
+        val idToken = account.idToken
+        if (idToken != null) {
+            viewModel.loginGoogle(idToken)
+            snackbarHostState.showSnackbar("Sign-in successful")
+        } else {
+            snackbarHostState.showSnackbar("No ID token")
+        }
+    } catch (e: ApiException) {
+        Timber.e(e, "Google Sign-In failed: ${e.statusCode}")
+        snackbarHostState.showSnackbar("Sign-in failed: ${e.message}")
     }
 }
