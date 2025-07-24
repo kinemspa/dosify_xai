@@ -15,7 +15,6 @@ import net.sqlcipher.database.SupportFactory
 import com.xai.core.utils.BiometricUtils
 import com.xai.core.data.MIGRATION_1_2
 import android.content.SharedPreferences
-import android.preference.PreferenceManager
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -48,6 +47,6 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences {
-        return PreferenceManager.getDefaultSharedPreferences(context)
+        return context.getSharedPreferences("dosify_prefs", Context.MODE_PRIVATE)
     }
 }

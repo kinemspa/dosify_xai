@@ -106,12 +106,12 @@ class AuthViewModel @Inject constructor(
         _authUser.value = null
     }
 
-    fun loginGoogle(idToken: String, activity: Activity) = viewModelScope.launch {
+    fun loginGoogle(idToken: String) = viewModelScope.launch {
         _state.value = _state.value.copy(loading = true)
         val success = authRepository.googleLogin(idToken)
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Google login failed" else null)
         _authUser.value = auth.currentUser
-        if (success) checkAndEnrollMFA(activity)
+        if (success)
         clearAndSyncOnUserChange()
     }
 
