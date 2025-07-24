@@ -60,7 +60,9 @@ fun LoginScreen(
                 }
             }
         } else {
-            snackbarHostState.showSnackbar("Sign-in canceled")
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar("Sign-in canceled")
+            }
         }
     }
 
