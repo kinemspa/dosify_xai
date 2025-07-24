@@ -73,4 +73,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.play.services.auth)
     implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
 }
