@@ -9,6 +9,9 @@ import javax.inject.Inject
 import timber.log.Timber
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
+import com.google.firebase.auth.FirebaseException
+import com.google.firebase.auth.PhoneAuthCredential
+import com.google.firebase.auth.PhoneMultiFactorGenerator
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,8 +19,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.app.Activity
 import com.xai.core.data.repository.AuthRepository
-import com.google.firebase.auth.PhoneAuthCredential
-import com.google.firebase.auth.PhoneAuthProvider.OnVerificationStateChangedCallbacks
 
 data class AuthState(val loading: Boolean = false, val success: Boolean = false, val error: String? = null)
 
@@ -96,14 +97,15 @@ class AuthViewModel @Inject constructor(
                     val options = PhoneAuthOptions.newBuilder(auth)
                         .setPhoneNumber(phone)
                         .setTimeout(60L, TimeUnit.SECONDS)
-                        .setActivity(activity ?: return@addOnSuccessListener)  // Use activity from UI
-                        .setCallbacks(object : OnVerificationStateChangedCallbacks() {
+                        .setActivity(activity)  // Use activity from UI
+                        .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
                             override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-                                // Auto-resolved (e.g., instant verification)
+                                // Auto-resolved
                                 Timber.d("MFA verification completed")
-                                user.multiFactor.enroll(credential, null)
+                                val assertion = PhoneMultiFactorGenerator.getAssertion(credential)
+                                user.multiFactor.enroll(assertion, null)
                             }
-                            override fun onVerificationFailed(e: Exception) {
+                            override fun onVerificationFailed(e: FirebaseException) {
                                 Timber.e(e, "MFA verification failed")
                                 _state.value = _state.value.copy(error = e.message)
                             }
@@ -111,7 +113,8 @@ class AuthViewModel @Inject constructor(
                                 // Save verificationId/token for UI code input
                                 Timber.d("MFA code sent")
                                 // Show UI for code entry, then use credential = PhoneAuthProvider.getCredential(verificationId, code)
-                                // user.multiFactor.enroll(credential, null)
+                                // val assertion = PhoneMultiFactorGenerator.getAssertion(credential)
+                                // user.multiFactor.enroll(assertion, null)
                             }
                         })
                         .setMultiFactorSession(session)
