@@ -31,8 +31,11 @@ fun LoginScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val user by viewModel.authUser.collectAsState()
+    val phone by viewModel.phone.collectAsState()
+    val verificationId by viewModel.verificationId.collectAsState()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var code by remember { mutableStateOf("") }
     var isRegistering by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val activity = context as Activity
@@ -63,7 +66,7 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (user != null) {
-            Text("Welcome, ${user!!.displayName}")
+            Text("Welcome, ${user?.displayName ?: ""}")
             Button(onClick = { viewModel.logout() }) {
                 Text("Logout")
             }
@@ -86,9 +89,9 @@ fun LoginScreen(
                 onClick = {
                     coroutineScope.launch {
                         if (isRegistering) {
-                            viewModel.registerEmail(email, password)
+                            viewModel.registerEmail(email, password, activity)
                         } else {
-                            viewModel.signInWithEmail(email, password)
+                            viewModel.signInWithEmail(email, password, activity)
                         }
                     }
                 },
@@ -123,6 +126,22 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (isRegistering) "Switch to Login" else "Switch to Register")
+            }
+            if (verificationId != null) {
+                Spacer(modifier = Modifier.height(16.dp)
+                        Text("Enter MFA Code")
+                        TextField(
+                        value = code,
+                    onValueChange = { code = it },
+                    label = { Text("Verification Code") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Button(
+                    onClick = { viewModel.verifyMfaCode(code) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Verify Code")
+                }
             }
             if (state.loading) Text("Loading...")
             state.error?.let { Text(it) }

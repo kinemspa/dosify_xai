@@ -4,20 +4,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.OAuthProvider
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.PhoneAuthCredential
+import com.google.firebase.auth.PhoneAuthProvider
+import com.google.firebase.auth.PhoneMultiFactorGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import timber.log.Timber
 import com.google.firebase.auth.PhoneAuthOptions
-import com.google.firebase.auth.PhoneAuthProvider
-import com.google.firebase.auth.FirebaseException
-import com.google.firebase.auth.PhoneAuthCredential
-import com.google.firebase.auth.PhoneMultiFactorGenerator
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.app.Activity
+import com.google.firebase.FirebaseException
 import com.xai.core.data.repository.AuthRepository
 
 data class AuthState(val loading: Boolean = false, val success: Boolean = false, val error: String? = null)
@@ -25,7 +26,7 @@ data class AuthState(val loading: Boolean = false, val success: Boolean = false,
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val auth: FirebaseAuth,
-    private val authRepository: AuthRepository  // Injected repository for login/register
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthState())
@@ -36,6 +37,9 @@ class AuthViewModel @Inject constructor(
 
     private val _phone = MutableStateFlow("")
     val phone: StateFlow<String> = _phone.asStateFlow()
+
+    private val _verificationId = MutableStateFlow<String?>(null)
+    val verificationId: StateFlow<String?> = _verificationId.asStateFlow()
 
     fun updatePhone(newPhone: String) {
         _phone.value = newPhone
@@ -59,20 +63,20 @@ class AuthViewModel @Inject constructor(
             }
     }
 
-    fun signInWithEmail(email: String, password: String) = viewModelScope.launch {
+    fun signInWithEmail(email: String, password: String, activity: Activity) = viewModelScope.launch {
         _state.value = _state.value.copy(loading = true)
         val success = authRepository.emailLogin(email, password)
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Login failed" else null)
         _authUser.value = auth.currentUser
-        if (success) checkAndEnrollMFA(null) // Pass null or activity from UI
+        if (success) checkAndEnrollMFA(activity)
     }
 
-    fun registerEmail(email: String, password: String) = viewModelScope.launch {
+    fun registerEmail(email: String, password: String, activity: Activity) = viewModelScope.launch {
         _state.value = _state.value.copy(loading = true)
         val success = authRepository.registerEmail(email, password)
         _state.value = _state.value.copy(loading = false, success = success, error = if (!success) "Registration failed" else null)
         _authUser.value = auth.currentUser
-        if (success) checkAndEnrollMFA(null) // Pass null or activity from UI
+        if (success) checkAndEnrollMFA(activity)
     }
 
     fun logout() {
@@ -87,46 +91,61 @@ class AuthViewModel @Inject constructor(
         _authUser.value = auth.currentUser
     }
 
-    private fun checkAndEnrollMFA(activity: Activity?) {
+    private fun checkAndEnrollMFA(activity: Activity) {
         val user = auth.currentUser ?: return
         user.multiFactor.enrolledFactors.let { factors ->
             if (factors.isEmpty()) {
                 Timber.d("Starting MFA enrollment")
                 user.multiFactor.session.addOnSuccessListener { session ->
                     val phone = _phone.value
-                    val options = PhoneAuthOptions.newBuilder(auth)
-                        .setPhoneNumber(phone)
-                        .setTimeout(60L, TimeUnit.SECONDS)
-                        .setActivity(activity)  // Use activity from UI
-                        .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-                            override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-                                // Auto-resolved
-                                Timber.d("MFA verification completed")
-                                val assertion = PhoneMultiFactorGenerator.getAssertion(credential)
-                                user.multiFactor.enroll(assertion, null)
-                            }
-                            override fun onVerificationFailed(e: FirebaseException) {
-                                Timber.e(e, "MFA verification failed")
-                                _state.value = _state.value.copy(error = e.message)
-                            }
-                            override fun onCodeSent(verificationId: String, token: PhoneAuthProvider.ForceResendingToken) {
-                                // Save verificationId/token for UI code input
-                                Timber.d("MFA code sent")
-                                // Show UI for code entry, then use credential = PhoneAuthProvider.getCredential(verificationId, code)
-                                // val assertion = PhoneMultiFactorGenerator.getAssertion(credential)
-                                // user.multiFactor.enroll(assertion, null)
-                            }
-                        })
-                        .setMultiFactorSession(session)
-                        .build()
-                    PhoneAuthProvider.verifyPhoneNumber(options)
+                    if (phone.isNotEmpty()) {
+                        val options = PhoneAuthOptions.newBuilder(auth)
+                            .setPhoneNumber(phone)
+                            .setTimeout(60L, TimeUnit.SECONDS)
+                            .setActivity(activity)
+                            .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+                                override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+                                    Timber.d("MFA verification completed")
+                                    val assertion = PhoneMultiFactorGenerator.getAssertion(credential)
+                                    user.multiFactor.enroll(assertion, null)
+                                    _state.value = _state.value.copy(success = true)
+                                }
+                                override fun onVerificationFailed(e: FirebaseException) {
+                                    Timber.e(e, "MFA verification failed")
+                                    _state.value = _state.value.copy(error = e.message)
+                                }
+                                override fun onCodeSent(verificationId: String, token: PhoneAuthProvider.ForceResendingToken) {
+                                    Timber.d("MFA code sent")
+                                    _verificationId.value = verificationId
+                                }
+                            })
+                            .setMultiFactorSession(session)
+                            .build()
+                        PhoneAuthProvider.verifyPhoneNumber(options)
+                    } else {
+                        _state.value = _state.value.copy(error = "Phone number required for MFA")
+                    }
                 }.addOnFailureListener { e ->
                     Timber.e(e, "MFA session failed")
-                    // Show UI toast: "MFA setup failed, try again"
+                    _state.value = _state.value.copy(error = "MFA setup failed: ${e.message}")
                 }
             } else {
                 Timber.d("MFA already enrolled with ${factors.size} factors")
             }
+        }
+    }
+
+    fun verifyMfaCode(code: String) = viewModelScope.launch {
+        val verificationId = _verificationId.value ?: return@launch
+        val credential = PhoneAuthProvider.getCredential(verificationId, code)
+        val assertion = PhoneMultiFactorGenerator.getAssertion(credential)
+        auth.currentUser?.multiFactor?.enroll(assertion, null)?.addOnSuccessListener {
+            Timber.d("MFA enrolled successfully")
+            _state.value = _state.value.copy(success = true)
+            _verificationId.value = null
+        }?.addOnFailureListener { e ->
+            Timber.e(e, "MFA enrollment failed")
+            _state.value = _state.value.copy(error = e.message)
         }
     }
 }
