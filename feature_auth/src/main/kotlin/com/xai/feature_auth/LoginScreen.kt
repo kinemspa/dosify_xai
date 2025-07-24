@@ -31,11 +31,8 @@ fun LoginScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val user by viewModel.authUser.collectAsState()
-    val phone by viewModel.phone.collectAsState()
-    val verificationId by viewModel.verificationId.collectAsState()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var code by remember { mutableStateOf("") }
     var isRegistering by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val activity = context as Activity
@@ -66,7 +63,7 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (user != null) {
-            Text("Welcome, ${user?.displayName ?: ""}")
+            Text("Welcome, ${user!!.displayName}")
             Button(onClick = { viewModel.logout() }) {
                 Text("Logout")
             }
@@ -127,22 +124,6 @@ fun LoginScreen(
             ) {
                 Text(if (isRegistering) "Switch to Login" else "Switch to Register")
             }
-            if (verificationId != null) {
-                Spacer(modifier = Modifier.height(16.dp)
-                        Text("Enter MFA Code")
-                        TextField(
-                        value = code,
-                    onValueChange = { code = it },
-                    label = { Text("Verification Code") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Button(
-                    onClick = { viewModel.verifyMfaCode(code) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Verify Code")
-                }
-            }
             if (state.loading) Text("Loading...")
             state.error?.let { Text(it) }
             if (state.success) Text("Logged in")
@@ -159,6 +140,7 @@ private suspend fun handleGoogleSignIn(
     return try {
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
+            .setAutoSelectEnabled(false) // Added to disable auto-select and show picker for any account
             .setServerClientId(webClientId)
             .build()
 
