@@ -48,6 +48,7 @@ fun CalendarScreen(
             .padding(16.dp)
             .fillMaxWidth()
     ) {
+        Timber.d("Attempting to load HorizontalCalendar")
         HorizontalCalendar(
             state = state,
             dayContent = { day ->
@@ -64,6 +65,7 @@ fun CalendarScreen(
                 }
             }
         )
+        Timber.d("HorizontalCalendar loaded successfully")
     }
 }
 
