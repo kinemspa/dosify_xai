@@ -24,6 +24,7 @@ import com.xai.core.data.models.DoseSchedule
 import com.xai.feature_schedule.viewmodel.CalendarViewModel
 import java.time.LocalDate
 import java.time.YearMonth
+import timber.log.Timber
 
 @Composable
 fun CalendarScreen(
@@ -31,6 +32,7 @@ fun CalendarScreen(
     modifier: Modifier = Modifier
 ) {
     val schedules by viewModel.schedules.collectAsState(emptyList())
+    Timber.d("Entering CalendarScreen - Schedules count: ${schedules.size}")
     val currentMonth = YearMonth.now()
     val startMonth = currentMonth.minusMonths(12)
     val endMonth = currentMonth.plusMonths(12)
