@@ -59,7 +59,7 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.lifecycle.viewmodel.compose)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
-    implementation("androidx.compose.foundation:foundation:1.6.1") // Add this to ensure gestures.snapping is included
+    implementation(libs.androidx.compose.foundation) // Add this to ensure gestures.snapping is included
 
     implementation(project(":core"))
     implementation(project(":feature_iap"))
